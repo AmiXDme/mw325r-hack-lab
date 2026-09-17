@@ -99,7 +99,7 @@ async function login() {
 }
 $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 
-const TABS = [['status','📊 Status'],['wifi','📶 WiFi'],['net','🌐 Network'],['sec','🛡️ Security'],['sys','⚙️ System'],['fw','🧬 Firmware'],['raw','🧰 Blocks']];
+const TABS = [['status','📊 Status'],['wifi','📶 WiFi'],['net','🌐 Network'],['wan','🌍 Internet'],['fwd','🚪 Forwarding'],['sec','🛡️ Security'],['sys','⚙️ System'],['tools','🔧 Tools'],['fw','🧬 Firmware'],['raw','🧰 Blocks']];
 function buildTabs() {
   $('tabs').innerHTML = TABS.map(([id, label], i) =>
     `<div class="tab${i === 0 ? ' active' : ''}" id="tab-${id}" onclick="showTab('${id}')">${label}</div>`).join('');
@@ -108,7 +108,7 @@ async function showTab(id) {
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
   $('tab-' + id).classList.add('active');
   $('tabbody').innerHTML = '<div class="card">Loading…</div>';
-  try { await ({status: tabStatus, wifi: tabWifi, net: tabNet, sec: tabSec, sys: tabSys, fw: tabFw, raw: tabRaw})[id](); }
+  try { await ({status: tabStatus, wifi: tabWifi, net: tabNet, wan: tabWan, fwd: tabFwd, sec: tabSec, sys: tabSys, tools: tabTools, fw: tabFw, raw: tabRaw})[id](); }
   catch(e) { $('tabbody').innerHTML = `<div class="card"><span class="bad">Failed: ${esc(e.message)}. Reload + log in again.</span></div>`; }
 }
 function say(id, html, ok) { const el = $(id); if (el) el.innerHTML = `<span class="${ok === false ? 'bad' : 'ok'}">${html}</span>`; }
@@ -282,6 +282,138 @@ async function tabRaw() {
       <div class="btnrow"><button onclick="rawRead()">Read block</button></div>
       <pre id="rawout">Pick an ID and press Read block.</pre></div>`;
 }
+async function rawRead() {
+  const id = $('rawid').value;
+  $('rawout').textContent = 'Reading…';
+  const d = await get('/api/block?id=' + id);
+  $('rawout').textContent = d.ok ? JSON.stringify(d.block, null, 1) : 'Failed: ' + JSON.stringify(d);
+}
+
+async function tabWan() {
+  const st = (await get('/api/block?id=23')).block;
+  const link = (await get('/api/block?id=22')).block;
+  const ppp = (await get('/api/block?id=26')).block;
+  const types = {'0': 'Dynamic IP', '1': 'Static IP', '2': 'PPPoE', '3': 'L2TP', '4': 'PPTP'};
+  $('tabbody').innerHTML =
+    `<div class="card"><h3>🌍 Internet status (live)</h3>
+      ${row('WAN IP', st.ip || '—')}${row('Mask', st.mask || '—')}${row('Gateway', st.gateway || '—')}
+      ${row('DNS', Array.isArray(st.dns) ? st.dns.join(' / ') : (st.dns || '—'))}
+      ${row('Uptime', st.upTime || '—')}${row('RX/TX pkts', (st.inPkts || '?') + ' / ' + (st.outPkts || '?'))}
+      ${row('Link type', types[String(link.linkType)] || link.linkType)}</div>
+    <div class="card"><h3>🔌 Connection (view)</h3>
+      ${row('PPPoE user', ppp.name || '(none)')}${row('PPPoE password', ppp.paswd ? '•••••• (set)' : '(empty)')}
+      ${row('MTU', ppp.mtu || st.mtu || '?')}
+      <p class="note">Changing WAN type can drop the internet — tell me your ISP details and we do it together.</p></div>
+    <div class="card"><h3>🏠 DHCP server</h3><div id="dhcpcfg">Loading…</div></div>`;
+  const dh = (await get('/api/block?id=8')).block;
+  $('dhcpcfg').innerHTML =
+    `<div class="kv"><label>Enabled</label><select id="dh-en"><option value="1"${dh.enable === '1' ? ' selected' : ''}>ON</option><option value="0"${dh.enable !== '1' ? ' selected' : ''}>OFF</option></select></div>
+     <div class="kv"><label>Pool start</label><input id="dh-s" value="${esc(dh.poolStart)}"></div>
+     <div class="kv"><label>Pool end</label><input id="dh-e" value="${esc(dh.poolEnd)}"></div>
+     <div class="kv"><label>Lease (minutes)</label><input id="dh-l" value="${esc(dh.leaseTime)}"></div>
+     <div class="btnrow"><button onclick="saveDhcp()">Apply DHCP</button></div><div class="msg" id="dhmsg"></div>`;
+}
+async function saveDhcp() {
+  if (!confirm('Apply DHCP server settings?')) return;
+  say('dhmsg', 'Working…');
+  const d = await post('/api/write_fields', {id: 8, fields: {
+    enable: $('dh-en').value, poolStart: $('dh-s').value.trim(),
+    poolEnd: $('dh-e').value.trim(), leaseTime: $('dh-l').value.trim()}});
+  say('dhmsg', d.ok ? 'DHCP updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+
+async function tabFwd() {
+  const vs = (await get('/api/block?id=21')).block;
+  const dmz = (await get('/api/block?id=18')).block;
+  const rules = (vs.list || []).map((r, i) => ({i, ...r})).filter(r => r.vsEntryEnable === '1' || r.vsLclPort !== '0');
+  $('tabbody').innerHTML =
+    `<div class="card"><h3>🚪 Port forwarding rules (${rules.length} active)</h3>
+      <table><thead><tr><th>#</th><th>WAN port</th><th>→ LAN IP</th><th>LAN port</th><th>Proto</th><th></th></tr></thead><tbody id="vsrows">${
+        rules.map(r => `<tr><td>${r.i}</td><td>${esc(r.vsRmtPort)}</td><td>${esc(r.vsLclIp)}</td><td>${esc(r.vsLclPort)}</td><td>${r.vsPtc === '1' ? 'TCP' : r.vsPtc === '2' ? 'UDP' : 'TCP/UDP'}</td><td><button onclick="delRule(${r.i})" style="padding:6px 10px">Delete</button></td></tr>`).join('') || '<tr><td colspan="6">none</td></tr>'
+      }</tbody></table>
+      <div class="kv"><label>WAN port</label><input id="vs-rp" placeholder="e.g. 8080"></div>
+      <div class="kv"><label>LAN IP</label><input id="vs-ip" placeholder="e.g. 192.168.1.100"></div>
+      <div class="kv"><label>LAN port</label><input id="vs-lp" placeholder="e.g. 80"></div>
+      <div class="kv"><label>Protocol</label><select id="vs-pt"><option value="0">TCP/UDP</option><option value="1">TCP</option><option value="2">UDP</option></select></div>
+      <div class="btnrow"><button onclick="addRule()">Add rule (first free slot)</button></div>
+      <div class="msg" id="vsmsg"></div></div>
+    <div class="card"><h3>🎯 DMZ host</h3>
+      <div class="kv"><label>Enabled</label><select id="dmz-en"><option value="1"${dmz.dmzEnable === '1' ? ' selected' : ''}>ON</option><option value="0"${dmz.dmzEnable !== '1' ? ' selected' : ''}>OFF</option></select></div>
+      <div class="kv"><label>DMZ IP</label><input id="dmz-ip" value="${esc(dmz.dmzClient)}"></div>
+      <div class="btnrow"><button onclick="saveDmz()">Apply DMZ</button></div>
+      <div class="msg" id="dmsg"></div></div>`;
+}
+async function addRule() {
+  const rp = $('vs-rp').value.trim(), ip = $('vs-ip').value.trim(), lp = $('vs-lp').value.trim();
+  if (!rp || !ip || !lp) { say('vsmsg', 'Fill WAN port, LAN IP and LAN port.', false); return; }
+  if (!confirm(`Forward WAN:${rp} → ${ip}:${lp}?`)) return;
+  say('vsmsg', 'Working…');
+  const w = await post('/api/fwd', {op: 'add', ip, lport: lp, start: rp, end: rp, ptc: $('vs-pt').value});
+  say('vsmsg', w.ok ? 'Rule added.' : 'Failed: ' + JSON.stringify(w), w.ok);
+  if (w.ok) tabFwd();
+}
+async function delRule(idx) {
+  if (!confirm('Delete forwarding rule #' + idx + '?')) return;
+  say('vsmsg', 'Working…');
+  const w = await post('/api/fwd', {op: 'delete', idx});
+  say('vsmsg', w.ok ? 'Rule deleted.' : 'Failed: ' + JSON.stringify(w), w.ok);
+  if (w.ok) tabFwd();
+}
+async function saveDmz() {
+  if (!confirm('Apply DMZ? The DMZ host is fully exposed to the internet.')) return;
+  say('dmsg', 'Working…');
+  const d = await post('/api/write_fields', {id: 18, fields: {dmzEnable: $('dmz-en').value === '1' ? '1' : '0', dmzClient: $('dmz-ip').value.trim()}});
+  say('dmsg', d.ok ? 'DMZ updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+
+async function tabTools() {
+  $('tabbody').innerHTML =
+    `<div class="card"><h3>🔧 Ping / Traceroute (runs ON the router)</h3>
+      <div class="kv"><label>Type</label><select id="dg-t"><option value="ping">Ping</option><option value="tracert">Traceroute</option></select></div>
+      <div class="kv"><label>Target</label><input id="dg-h" value="8.8.8.8"></div>
+      <div class="kv"><label>Count (ping)</label><input id="dg-c" value="4"></div>
+      <div class="btnrow"><button onclick="dgStart()">Start</button><button onclick="dgStop()" style="background:#9e6a03">Stop</button></div>
+      <pre id="dgout">Output appears here…</pre></div>
+    <div class="card"><h3>📜 System log (latest)</h3><div class="btnrow"><button onclick="loadLog()">Refresh log</button></div><pre id="logout">Press Refresh log.</pre></div>
+    <div class="card"><h3>🗺️ Route table</h3><div id="rtable">Loading…</div></div>`;
+  const rt = (await get('/api/block?id=16')).block;
+  $('rtable').innerHTML = '<table><thead><tr><th>Network</th><th>Mask</th><th>Gateway</th></tr></thead><tbody>' +
+    ((rt.list || []).filter(r => r.net && r.net !== '0.0.0.0').map(r => `<tr><td>${esc(r.net)}</td><td>${esc(r.mask)}</td><td>${esc(r.gateway)}</td></tr>`).join('') || '<tr><td colspan="3">none</td></tr>') + '</tbody></table>';
+}
+let _dgTimer = null, _dgId = null, _dgType = 'ping';
+async function dgStart() {
+  if (_dgId !== null) { say('dgout', ''); }
+  const t = $('dg-t').value, h = $('dg-h').value.trim();
+  if (!h) return;
+  _dgType = t;
+  $('dgout').textContent = 'Starting ' + t + ' ' + h + '…';
+  const d = await post('/api/diag', {action: 'start', type: t, target: h, count: $('dg-c').value.trim() || '4'});
+  if (!d.ok) { $('dgout').textContent = 'Start failed: ' + JSON.stringify(d); return; }
+  _dgId = d.icmpId;
+  clearInterval(_dgTimer);
+  _dgTimer = setInterval(dgPoll, 1200);
+}
+async function dgPoll() {
+  if (_dgId === null) return;
+  const d = await post('/api/diag', {action: 'poll', type: _dgType, icmpId: _dgId});
+  if (!d.ok) { $('dgout').textContent += '\n[lookup error]'; return; }
+  if (d.text) $('dgout').textContent = d.text;
+  if (String(d.finished) === '1') { clearInterval(_dgTimer); _dgId = null; $('dgout').textContent += '\n— done —'; }
+}
+async function dgStop() {
+  if (_dgId === null) return;
+  await post('/api/diag', {action: 'stop', type: _dgType, icmpId: _dgId});
+  clearInterval(_dgTimer); _dgId = null;
+  $('dgout').textContent += '\n— stopped —';
+}
+async function loadLog() {
+  $('logout').textContent = 'Reading…';
+  const d = await get('/api/block?id=2');
+  if (!d.ok) { $('logout').textContent = 'Failed.'; return; }
+  const list = (d.block.list || []).slice(-25).reverse();
+  $('logout').textContent = list.map(e => `[${e.days || 0}d ${e.hours || 0}:${e.mins || 0}:${e.secs || 0}] ${e.msg || ''}`).join('\n') || '(empty)';
+}
+
 async function rawRead() {
   const id = $('rawid').value;
   $('rawout').textContent = 'Reading…';

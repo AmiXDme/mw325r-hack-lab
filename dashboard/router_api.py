@@ -256,6 +256,81 @@ def do_backup_url():
         "+\"?code=\"+TDDP_INSTRUCT+\"&asyn=0\");})()")}
 
 
+def do_diag(action, dtype="ping", target="", size="64", count="4",
+             timeout="800", hops="20", icmp_id=None):
+    """TDDP INSTRUCT systool ping/tracert. start->poll->stop lifecycle."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    if dtype not in ("ping", "tracert"):
+        return {"ok": False, "error": "bad-type"}
+    if action == "start":
+        if not target:
+            return {"ok": False, "error": "empty-target"}
+        tgt = "".join(c for c in target if c.isalnum() or c in ".-")
+        if dtype == "ping":
+            cmd = (f"systool ping code:0 target:{tgt} "
+                   f"size:{int(size)} metric:{int(count)} "
+                   f"timeout:{int(timeout)}")
+        else:
+            cmd = f"systool tracert code:0 target:{tgt} metric:{int(hops)}"
+        r = cdp_eval(f"JSON.stringify($.instr({json.dumps(cmd)}))")
+        try:
+            o = json.loads(r)
+        except Exception:
+            return {"ok": False, "error": "bad-response"}
+        if o.get("errorno") != 0:
+            return {"ok": False, "errorno": o.get("errorno")}
+        try:
+            return {"ok": True, "icmpId": int(str(o.get("data", "")).strip())}
+        except Exception:
+            return {"ok": False, "error": "no-icmpid",
+                    "data": o.get("data")}
+    if icmp_id is None:
+        return {"ok": False, "error": "empty-icmpid"}
+    code = "2" if action == "poll" else "1" if action == "stop" else None
+    if code is None:
+        return {"ok": False, "error": "bad-action"}
+    r = cdp_eval("JSON.stringify($.instr(" + json.dumps(
+        f"systool {dtype} code:{code} icmpId:{int(icmp_id)}") + "))")
+    try:
+        o = json.loads(r)
+    except Exception:
+        return {"ok": False, "error": "bad-response"}
+    if action == "poll" and o.get("errorno") == 0:
+        data = str(o.get("data", ""))
+        pos = data.find("\r\n")
+        if pos >= 0:
+            return {"ok": True, "finished": data[:pos].strip(),
+                    "text": data[pos + 2:]}
+    return {"ok": o.get("errorno") == 0, "errorno": o.get("errorno"),
+            "data": o.get("data")}
+
+
+def do_fwd(op, idx=None, ip="", lport="", start="", end="", ptc="0"):
+    """Port-forwarding via TDDP INSTRUCT (block 21 is read-only)."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    if op == "add":
+        if not (ip and lport and start and end):
+            return {"ok": False, "error": "missing-fields"}
+        cmd = (f"forward vs -add lip:{ip} lport:{lport} "
+               f"start:{start} end:{end} ptc:{ptc} valid")
+    elif op == "delete":
+        if idx is None:
+            return {"ok": False, "error": "missing-index"}
+        cmd = f"forward vs -delete index:{int(idx)}"
+    elif op == "clear":
+        cmd = "forward vs -clr"
+    else:
+        return {"ok": False, "error": "bad-op"}
+    r = cdp_eval("JSON.stringify($.instr(" + json.dumps(cmd) + "))")
+    try:
+        o = json.loads(r)
+    except Exception:
+        return {"ok": False, "error": "bad-response"}
+    return {"ok": o.get("errorno") == 0, "errorno": o.get("errorno")}
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "MW325R-Panel/1.0"
 
@@ -316,6 +391,17 @@ class Handler(BaseHTTPRequestHandler):
                     return self._json({"ok": False,
                                        "error": "confirm-missing"})
                 return self._json(do_factory_reset())
+            if u.path == "/api/fwd":
+                return self._json(do_fwd(
+                    data.get("op"), data.get("idx"), data.get("ip", ""),
+                    data.get("lport", ""), data.get("start", ""),
+                    data.get("end", ""), data.get("ptc", "0")))
+            if u.path == "/api/diag":
+                return self._json(do_diag(
+                    data.get("action"), data.get("type", "ping"),
+                    data.get("target", ""), data.get("size", "64"),
+                    data.get("count", "4"), data.get("timeout", "800"),
+                    data.get("hops", "20"), data.get("icmpId")))
         except Exception as e:
             return self._json({"ok": False, "error": f"backend-error: {e}"},
                               500)
