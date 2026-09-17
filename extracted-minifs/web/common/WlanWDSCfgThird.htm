@@ -1,0 +1,26 @@
+<style type="text/css">
+	div.WDSThBlock{
+		height:190px;
+	}
+	ul.hsInputUlFirst{
+		margin-top:36px !important;
+	}
+</style>
+<script type="text/javascript">function init(){function navigateToNext(){if(0==lanIpResult){loadPage("WlanWDSCfgFive.htm","WDSCon")}else{if(lan.ip==originalLanIp){isLanIpChanged=false}else{isLanIpChanged=true}backFromNextPage=false;loadPage("WlanWDSCfgFour.htm","WDSCon")}}function checkStop(){checking=false;navigateToNext()}function getDhcpDetectStatus(){var cmd="wlan dhcpsDetectStatus";if(false==checking){return}$.instr(cmd,function(){var dhcpsStatus=$.result.data;if(DETECT_DETECTED==dhcpsStatus||detectingCount>10){getDhcpsDetectResult();getLanIpConflictResult()}else{detectingCount++;$.setTimeout(getDhcpDetectStatus,1000)}})}function getDhcpsDetectResult(){var cmd="wlan dhcpsDetectResult";$.instr(cmd);dhcpsResult=$.result.data}function getLanIpConflictResult(){var cmd="wlan lanIpConflictResult";closeLoading();$.instr(cmd);lanIpResult=$.result.data;navigateToNext()}function getLanIpConflictStatus(){var cmd="wlan lanIpConflictStatus";if(false==checking){return}$.instr(cmd,function(){var lanIpStatus=$.result.data;if(DETECT_DETECTED==lanIpStatus||detectingCount>10){getDhcpDetectStatus()}else{detectingCount++;$.setTimeout(getLanIpConflictStatus,1000)}})}function startLanIpConflictCheck(){checking=true;showLoading(label.WDSCheckingLanIp,checkStop);detectingCount=0;$.setTimeout(getLanIpConflictStatus,1000)}id("next").onclick=function(){var secEnable=0;if(0==ssid.value.length){return errHandle(EINVSSIDLEN,ssid)}if(0==pwd.value.length){secEnable=0}else{var errNo=checkWlanPwd(pwd.value);if(ENONE!=errNo){return errHandle(errNo,pwd)}secEnable=1}wlanMBssidData.cSsid=ssid.value;wlanMBssidData.bSecurityEnable=secEnable;wlanMBssidData.uAuthType=3;wlanMBssidData.uPSKSecOpt=3;wlanMBssidData.uPSKEncryptType=3;if(1==secEnable){wlanMBssidData.cPskSecret=pwd.value;wlanMBssidData.bSecCheck=0}else{wlanMBssidData.bSecCheck=1}WDSCon.style.visibility="hidden";startLanIpConflictCheck()};id("pre").onclick=function(){loadPage("WlanWDSCfgSecond.htm","WDSCon")};var wlanMBssidData=$.findBlock(MBSSID_MAIN_DATA_ID);var wlanBasicData=$.findBlock(WLAN_BASIC_DATA_ID);var lan=$.findBlock(LAN_DATA_ID);var wlanApcData=wlanBasicData.apc;var WDSCon=id("WDSCon");var DETECT_DETECTED=2;var detectingCount=0;var checking=false;if($.local==true){wlanMBssidData.cSsid="void";wlanMBssidData.cPskSecret=""}var ssid=id("wlanName");var pwd=id("wlanPwd");if(false==isSsidChanged){ssid.value=wlanApcData.cBridgedSsid;if(1==wlanApcData.uSecurityType){pwd.value=""}else{pwd.value=wlanApcData.cPassWD}isSsidChanged=true}else{ssid.value=wlanMBssidData.cSsid;if(1==wlanMBssidData.bSecurityEnable){pwd.value=wlanMBssidData.cPskSecret}else{pwd.value=""}}}init();</script>
+<div class="WDSBlock WDSThBlock">
+	<p class="WDSTitle"><%label.wirelessWDSSet%></p>
+	<ul class="hsInputUl hsInputUlFirst">
+		<li class="hsInputLi">
+			<label for="wlanName"><%label.wirelessName%><i></i></label><input id="wlanName" maxLength="32" /><i class="tip"></i>
+		</li>
+	</ul>
+	<ul class="hsInputUl">
+		<li class="hsInputLi">
+			<label for="wlanPwd"><%label.wirelessPwd%><i></i></label><input id="wlanPwd" maxLength="63" /><i class="tip"></i>
+		</li>
+	</ul>
+</div>
+<div class="blockFuncA blockFuncWDS">
+	<span id="pre" class="wdsPre"><i class="subBtnLg"></i><label><%btn.preStep%></label></span>
+	<span id="next" class="wdsNext"><i class="subBtnLg"></i><label><%btn.nextStep%></label></span>
+</div>

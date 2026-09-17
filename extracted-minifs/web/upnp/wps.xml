@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+<specVersion>
+<major>2</major>
+<minor>0</minor>
+</specVersion>
+<URLBase></URLBase>
+<device>
+<deviceType>urn:schemas-wifialliance-org:device:WFADevice:1</deviceType>
+<presentationURL>PRESENTATIONURL_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_PRESENTATIONURL</presentationURL>
+<friendlyName>FRIENDLYNAME_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_FRIENDLYNAME</friendlyName>
+<manufacturer>MERCUSYS</manufacturer>
+<manufacturerURL>http://www.mercusys.com</manufacturerURL>
+<modelDescription>MW325R 2.0</modelDescription>
+<modelName>MW325R</modelName>
+<modelNumber>2.0</modelNumber>
+<modelURL></modelURL>
+<serialNumber>12345678900001</serialNumber>
+<UDN>uuid:upnp-WFADevice-UDN_AAAA_UDN</UDN>
+<UPC>192168001001</UPC>
+<serviceList>
+<service>
+<serviceType>urn:schemas-wifialliance-org:service:WFAWLANConfig:1</serviceType>
+<serviceId>urn:schemas-wifialliance-org:serviceId:WFAWLANConfig1</serviceId>
+<controlURL>/wfa</controlURL>
+<eventSubURL>/wfa</eventSubURL>
+<SCPDURL>/wfa.xml</SCPDURL>
+</service>
+</serviceList>
+</device>
+</root>

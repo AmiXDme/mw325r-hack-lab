@@ -1,0 +1,71 @@
+<style type="text/css">
+	#dhcpmin{
+		width:167px;
+	}
+	#hsErr p.detail {
+		height: 85px;
+		margin-top: 27px;
+		margin-left: 20px;
+		width: 360px;
+	}
+</style>
+<script type="text/javascript">function init(){function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return true;case EINVADDRPOOL:showStr=errStr.dhcpsAddrPoolErr;break;case EINVLEASETIME:showStr=errStr.dhcpsLeaseErr;break;case EINVGTW:showStr=errStr.gatewayErr;break;case ENOTLANSUBNET:showStr=errStr.dhcpsGateWayErr;break;case EADDRPOOLNOTLANSUBNET:showStr=errStr.dhcpsAddrPoolNetErr;break;case EINVFDNSVR:showStr=errStr.primDnsErr;break;case EINVSDNSVR:showStr=errStr.seDnsErr;break;case EINVIP:showStr=errStr.ipAddrErr;break;case EINVIPFMT:showStr=errStr.ipAddrFmtErr;break;case EINVGROUPIP:showStr=errStr.ipAddrGroupErr;break;case EINVLOOPIP:showStr=errStr.ipAddrLoopErr;break;case EINVMACFMT:showStr=errStr.macFmtErr;break;case EINVMACZERO:showStr=errStr.macZeroErr;break;case EINVMACBROAD:showStr=errStr.macBroadErr;break;case EINVMACGROUP:showStr=errStr.macGroupErr;break;case EENTRYNOTEXIST:showStr=errStr.entryNoExistErr;break;case EENTRYEXIST:showStr=errStr.entryExistErr;break;case EENTRYCONFLIC:showStr=errStr.entryConflicErr;break;case ETABLEFULL:showStr=errStr.tableFullErr;break;case EINVINSTRUCT:showStr=errStr.instructErr;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return false}function dhcpSwitchState(state){var dhcpsData=$.readEx(DHCPS_DATA_ID);var errNo=ENONE;if(state!=dhcpsData.enable){dhcpsData.enable=state;errNo=$.write($.toText(dhcpsData),$.block);errHandle(errNo)}}function dhcpLeaseRefresh(){var dhcpsLease=$.readEx(DHCPS_LEASE_DATA_ID);dataGridLs.setDataSource(dhcpsLease.list);dhcpLeaseBindBtnRefresh();return true}function dhcpLeaseInit(){var dhcpsLease=$.findBlock(DHCPS_LEASE_DATA_ID);dataGridLs=new DataGrid();dataGridLs.init({id:"dhcpLeaseTbl",data:dhcpsLease.list,hasSelBox:false,checkIndex:2,edit:false,max:128,head:[{field:label.host,width:183},{field:label.mac,width:175},{field:label.ipAddr,width:129},{field:label.availTime,width:98}],list:[{edit:false,name:"hostName",type:"str"},{edit:false,name:"mac",type:"mac"},{edit:false,name:"ip",type:"ip"},{edit:false,name:"expires",type:"timeP"}],toolBar:{id:"dhcpLsUl",refresh:dhcpLeaseRefresh}})}function dhcpLeaseBindSet(){var dhcpsFixList=$.findBlock(STACTRLTBL_DATA_ID).list;var dhcpsLsList=$.findBlock(DHCPS_LEASE_DATA_ID).list;var fixlistItem,lsListItem;for(var indexLs=0,len=dhcpsLsList.length;indexLs<len;indexLs++){lsListItem=dhcpsLsList[indexLs];if("0.0.0.0"==lsListItem.ip){break}if((5!=lsListItem.state)||(4294967295==lsListItem.expires)){lsListItem.ip="0.0.0.0";dhcpsLsList.splice(indexLs,1);dhcpsLsList.push(lsListItem);indexLs--;continue}for(var indexFix in dhcpsFixList){fixlistItem=dhcpsFixList[indexFix];if(lsListItem.mac.toUpperCase()==fixlistItem.mac.toUpperCase()){lsListItem.hostName=fixlistItem.name}}if(""==lsListItem.hostName){lsListItem.hostName=label.anonymousHost}}}function dhcpLeaseBindBtnRefresh(){var dhcpsLsList=$.findBlock(DHCPS_LEASE_DATA_ID).list;dhcpLeaseBindSet();dataGridLs.setDataSource(dhcpsLsList);dataGridLs.refresh(1)}function checkTime(value,max,min){if((false==checkNum(value))||(false==checkNumRange(parseInt(value),max,min))){return false}return true}function checkIPSameNet(orIp,taIp,mask){return(0==((transIp(orIp)&transIp(mask))^(transIp(taIp)&transIp(mask))))}function onSave(){var errNo=ENONE,ipStartVal=id("dhcpIpStart").value,ipEndVal=id("dhcpIpEnd").value,lsTimeVal=id("dhcpLsTime").value;var gatewayVal=id("dhcpGateway").value,dnsPriVal=id("dhcpDnsPri").value,dnsBakVal=id("dhcpDnsBak").value;var ipStart,ipEnd,ipTmp,lanMask=lanData.mask,lanIp=lanData.ip;if((""==ipStartVal)||(ENONE!=checkIp(ipStartVal))){return errHandle(EINVADDRPOOL,"dhcpIpStart")}if(true!=checkIPSameNet(ipStartVal,lanIp,lanMask)){return errHandle(EADDRPOOLNOTLANSUBNET,"dhcpIpStart")}if((""==ipEndVal)||(ENONE!=checkIp(ipEndVal))){return errHandle(EINVADDRPOOL,"dhcpIpEnd")}if(true!=checkIPSameNet(ipEndVal,lanIp,lanMask)){return errHandle(EADDRPOOLNOTLANSUBNET,"dhcpIpEnd")}ipStart=transIp(ipStartVal);ipEnd=transIp(ipEndVal);if(ipStart>ipEnd){ipTmp=ipStartVal;ipStartVal=ipEndVal;ipEndVal=ipTmp;id("dhcpIpStart").value=ipStartVal;id("dhcpIpEnd").value=ipEndVal}if((""==lsTimeVal)||(!checkTime(lsTimeVal,2880,1))){return errHandle(EINVLEASETIME,"dhcpLsTime")}if((""!=gatewayVal)&&("0.0.0.0"!=gatewayVal)){if(ENONE!=checkIp(gatewayVal)){return errHandle(EINVGTW,"dhcpGateway")}if(false==checkIPSameNet(gatewayVal,lanIp,lanMask)){return errHandle(ENOTLANSUBNET,"dhcpGateway")}}if((""!=dnsPriVal)&&("0.0.0.0"!=dnsPriVal)&&(ENONE!=checkIp(dnsPriVal))){return errHandle(EINVFDNSVR,"dhcpDnsPri")}if((""!=dnsBakVal)&&("0.0.0.0"!=dnsBakVal)&&(ENONE!=checkIp(dnsBakVal))){return errHandle(EINVSDNSVR,"dhcpDnsBak")}dhcpsData.poolStart=ipStartVal;dhcpsData.poolEnd=ipEndVal;dhcpsData.leaseTime=lsTimeVal;dhcpsData.gateway=gatewayVal;dhcpsData.dns[0]=dnsPriVal;dhcpsData.dns[1]=dnsBakVal;setLoadingId("save");errNo=$.write($.toText(dhcpsData),$.block);return errHandle(errNo)}var dataGridSta;var dataGridLs;var dhcpsData=$.findBlock(DHCPS_DATA_ID);var lanData=$.findBlock(LAN_DATA_ID);$.read(DHCPS_DATA_ID+"#"+DHCPS_LEASE_DATA_ID+"#"+STACTRLTBL_DATA_ID+"#"+LAN_DATA_ID);dhcpLeaseBindSet();dhcpLeaseInit();id("dhcpIpStart").value=dhcpsData.poolStart;id("dhcpIpEnd").value=dhcpsData.poolEnd;id("dhcpLsTime").value=dhcpsData.leaseTime;id("dhcpGateway").value=dhcpsData.gateway;id("dhcpDnsPri").value=dhcpsData.dns[0]==undefined?"":dhcpsData.dns[0];id("dhcpDnsBak").value=dhcpsData.dns[1]==undefined?"":dhcpsData.dns[1];id("save").onclick=onSave;new Switch("switchCon",dhcpsData.enable,dhcpSwitchState)}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleA">
+		<label class="title"><%menuStr.DHCPServer%></label>
+		<div id="switchCon" class="switchCon switchConHs">
+			<i class="switchBg"></i>
+			<i class="switchBall"></i>
+		</div>
+		<i class="helpBtn" helpStr="dhcpServerHelp"></i>
+	</div>
+	<div class="block">
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label for="dhcpIpStart"><%label.addrPoolStart%><i></i></label><input id="dhcpIpStart" maxLength="15" /><i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label for="dhcpIpEnd"><%label.addrPoolEnd%><i></i></label><input id="dhcpIpEnd" maxLength="15" /><i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi hsInputLiC" >
+				<label for="dhcpLsTime"><%label.addrLease%><i></i></label><input id="dhcpLsTime" maxLength="4" />
+			</li>
+			<li class="twoLineWidth">
+				<label id="dhcpmin"class="twoLineNote"><%label.DHCPMin%></label>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label for="dhcpGateway"><%label.gateway%><i></i></label><input id="dhcpGateway" maxLength="15" /><i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label for="dhcpDnsPri"><%label.dns0%><i></i></label><input id="dhcpDnsPri" maxLength="15" /><i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="dhcpDnsBak"><%label.dns1%><i></i></label><input id="dhcpDnsBak" maxLength="15" /><i class="tip"></i>
+			</li>
+		</ul>
+		<div class="blockFuncA">
+			<span id="save" class="subBtn subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+
+	<p class="hsTitleLine"></p>
+	<div class="title titleB titleSub">
+		<label class="title"><%label.dhcpEquipment%></label>
+	</div>
+	<div class="blockTable">
+		<table id="dhcpLeaseTbl" class="dataGrid"></table>
+		<div id="dhcpLsUl" class="blockFuncA blockFuncTable">
+			<span gridType="refresh" class="refresh"><i class="subBtnLg"></i><label><%btn.refresh%></label></span>
+		</div>
+	</div>
+</div>

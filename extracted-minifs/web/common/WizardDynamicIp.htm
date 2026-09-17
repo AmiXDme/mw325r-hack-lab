@@ -1,0 +1,25 @@
+<script type="text/javascript">function init(){wzdConSet({height:"480px"});selectInit("netModeSel",options,LINK_TYPE_DHCP,netWorkModeChange);wzdStopSet();id("sub").onclick=function(){var link=$.findBlock(LINK_DATA_ID);link.linkType=LINK_TYPE_DHCP;loadPage("WizardWireless.htm","wizardCon",doNothing)}}init();</script>
+<ul class="wzdUl">
+	<span class="wizardSkip"><i class="wzdSkipImg"></i><br /><span class="wzdSkipDes"><%label.skipWzd%></span></span>
+	<li class="wizardTop wizardTopWan">
+		<img class="wzdWanLogo" src="../images/netSet_me.png" />
+	</li>
+	<li class="wizardMid wizardMidWan">
+		<h1><%label.netSet%></h1>
+	</li>
+	<li class="wizardBom">
+		<p class="wizardTip"><%label.dynIpWzdTip%></p>
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi">
+				<label><%label.netMode%></label>
+				<span id="netModeSel" class="select">
+					<span class="value wzdValue"></span>
+					<i class="arrow"></i>
+				</span>
+			</li>
+		</ul>
+	</li>
+	<li class="lgBtns">
+		<a id="sub" href="javascript:void(0)"><i class="btnR"></i></a>
+	</li>
+</ul>

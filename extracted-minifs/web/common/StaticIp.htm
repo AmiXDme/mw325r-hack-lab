@@ -1,0 +1,77 @@
+<style type="text/css">
+	#staticmtu{
+		width:207px;
+	}
+</style>
+<script type="text/javascript">function init(){var updateTimerHandle;function updateStatus(){clearTimeout(updateTimerHandle);$.readNonBlock(LINK_STATUS_DATA_ID,function(){var status=$.findBlock(LINK_STATUS_DATA_ID);switch(parseInt(status.status)){case LINK_DOWN:if((LINK_CODE_MANUAL!=status.code)&&(LINK_CODE_NORMAL!=status.code)){hsStatSet("error",linkCode[status.code]);break}hsStatSet("error",linkStatus[LINK_DOWN]);break;case LINK_UP:hsStatSet("correct",linkStatus[LINK_UP]);break;default:hsStatSet("link",linkStatus[status.status]);break}updateTimerHandle=$.setTimeout(updateTimer,2000)})}function updateTimer(){if(LINK_TYPE_STATIC_IP==parseInt(link.linkType)){updateStatus()}}function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return false;case EINVNET:showStr=errStr.ipAddrNetErr;break;case EINVIP:showStr=errStr.ipAddrErr;break;case EINVIPFMT:showStr=errStr.ipAddrFmtErr;break;case EINVGROUPIP:showStr=errStr.ipAddrGroupErr;break;case EINVLOOPIP:showStr=errStr.ipAddrLoopErr;break;case EINVMASK:showStr=errStr.maskErr;break;case EINVNETID:showStr=errStr.ipAddrNetIdErr;break;case EINVHOSTID:showStr=errStr.ipAddrHostIdErr;break;case EINVIPMASKPAIR:showStr=errStr.ipAddrMaskNotMatch;break;case ECOMFLICTNET:showStr=errStr.ipAddrLanWanConflict;break;case EINVGTW:showStr=errStr.gatewayErr;break;case EINVMTU:showStr=errStr.stcMtuErr;break;case EINVFDNSVR:showStr=errStr.primDnsErr;break;case EINVSDNSVR:showStr=errStr.seDnsErr;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return true}function checkLanConflict(ipVal,maskVal){var lanIp=transIp(lan.ip),lanMask=transIp(lan.mask);var stcIp=transIp(ipVal),stcMask=transIp(maskVal);return(0==((lanIp^stcIp)&lanMask&stcMask))?ECOMFLICTNET:ENONE}function checkGateway(value){return ENONE!=checkIp(value)?EINVGTW:ENONE}function checkPrimDns(value){if(lan.ip==value){return EINVFDNSVR}return ENONE!=checkIp(value)?EINVFDNSVR:ENONE}function checkSeDns(value){if(""==value||"0.0.0.0"==value){id("dns1").value="0.0.0.0";return ENONE}if(lan.ip==value){return EINVSDNSVR}return ENONE!=checkIp(value)?EINVSDNSVR:ENONE}function onSave(){var errNo=ENONE;var ipVal=id("ip").value,maskVal=id("mask").value,gatewayVal=id("gateway").value;var primDnsVal=id("dns0").value,seDnsVal=id("dns1").value,mtuVal=id("mtu").value;var linkModeVal=id("wanRateSel").value;if(errHandle(checkIp(ipVal),"ip")||errHandle(checkMask(maskVal),"mask")||errHandle(checkIpMask(ipVal,maskVal),"mask")||errHandle(checkLanConflict(ipVal,maskVal),"ipVal")||errHandle(checkGateway(gatewayVal),"gateway")||errHandle(checkPrimDns(primDnsVal),"dns0")||errHandle(checkSeDns(seDnsVal),"dns1")||errHandle(checkMtu(mtuVal),"mtu")){return}seDnsVal=id("dns1").value;if(LINK_TYPE_STATIC_IP!=link.linkType||link.linkMode!=linkModeVal||stcIp.ip!=ipVal||stcIp.mask!=maskVal||stcIp.gateway!=gatewayVal||stcIp.dns[0]!=primDnsVal||stcIp.dns[1]!=seDnsVal||stcIp.mtu!=mtuVal){stcIp.ip=ipVal;stcIp.mask=maskVal;stcIp.gateway=gatewayVal;stcIp.dns[0]=primDnsVal;stcIp.dns[1]=seDnsVal;stcIp.mtu=mtuVal;link.linkType=LINK_TYPE_STATIC_IP;link.linkMode=linkModeVal;setLoadingId("save");errNo=$.write($.toText(stcIp)+$.toText(link),$.block);if(errHandle(errNo)){$.read(STATIC_IP_DATA_ID+"#"+LINK_DATA_ID);return}closeAlert();updateStatus()}}var link=$.findBlock(LINK_DATA_ID);var stcIp=$.findBlock(STATIC_IP_DATA_ID);var lan=$.findBlock(LAN_DATA_ID);$.read(STATIC_IP_DATA_ID+"#"+LAN_DATA_ID);selectInit("wanSel",wanOptions,LINK_TYPE_STATIC_IP,wanSelectChange);selectInit("wanRateSel",rateOptions,getWanRateOption(link.linkMode),undefined,30);id("ip").value=stcIp.ip;id("mask").value=stcIp.mask;id("gateway").value=stcIp.gateway;id("dns0").value=stcIp.dns[0]||"";id("dns1").value=stcIp.dns[1]||"";id("mtu").value=stcIp.mtu;id("save").onclick=onSave;updateTimer()}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleA" id="stateDiv">
+		<label class="title"><%menuStr.wanSet%></label>
+		<div id="netSetState" class="handleRelCon">
+			<i class="state"></i>
+			<span class="state"></span>
+		</div>
+		<i class="helpBtn" helpStr="staticIpHelp"></i>
+	</div>
+	<div class="block">
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label class="inputLiLbl"><%label.netMode%><i></i></label>
+				<span class="highSetSelect">
+					<span id="wanSel" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label for="ip"><%label.ipAddr%><i></i></label><input id="ip" maxLength="15" /><i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label for="mask"><%label.mask%><i></i></label><input id="mask" maxLength="15" /><i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label for="gateway"><%label.gateway%><i></i></label><input id="gateway" maxLength="15" /><i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label for="dns0"><%label.dns0%><i></i></label><input id="dns0" maxLength="15" /><i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="dns1"><%label.dns1%><i></i></label><input id="dns1" maxLength="15" /><i class="tip"></i>
+			</li>
+			<li>
+				<label class="oneLineNote"><%label.optional%></label>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi hsInputLiC" >
+				<label for="mtu"><%label.mtu%><i></i></label><input id="mtu" maxLength="4" />
+			</li>
+			<li class="twoLineWidth">
+				<label id="staticmtu" class="twoLineNote"><%label.mtuComment%></label>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label class="inputLiLbl"><%label.wanRateSet%><i></i></label>
+				<span class="highSetSelect">
+					<span id="wanRateSel" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<div class="blockFuncA">
+			<span id="save" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+</div>

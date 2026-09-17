@@ -1,0 +1,227 @@
+<style type="text/css">
+#lanWanSplitLine
+{
+	margin-top: 50px;
+}
+#shareSessionBlock, #manualDnsBlock
+{
+	margin-top: -5px !important;
+}
+#pdEnableBlock
+{
+	margin-top: -20px !important;
+}
+ul.normalFont label
+{
+	font-weight: normal !important;
+}
+ul.hsInputUlDes
+{
+	margin-bottom: 0px;
+}
+ul.hsInputUlDes.firstUlDes
+{
+	margin-top: 30px;
+}
+ul.hsInputUlDes li.hsInputLiDes
+{
+	border: none;
+}
+ul.hsInputUlDes li.hsInputLiDes label.desLbl
+{
+	text-align: left;
+	width: 200px;
+}
+</style>
+<script type="text/javascript">function init(){var OK=0;var ERROR=-1;var ipv6ModeOptions=[{str:label.ipv6ModeDisable,value:IPV6_MODE_DISABLE},{str:label.ipv6ModeRoute,value:IPV6_MODE_ROUTER},{str:label.ipv6ModePassthrough,value:IPV6_MODE_PASSTHROUGH}];function toggleHelp(mode){if(mode!=IPV6_MODE_ROUTER){$("#ipv6ModeHelp").show();$("#ipv6RouterHelp").hide()}else{$("#ipv6ModeHelp").hide();$("#ipv6RouterHelp").show()}}function ipv6Switch(mode){switch(mode){case IPV6_MODE_DISABLE:$("#lanWanSetBlock").hide();$("#disconnect").hide();break;case IPV6_MODE_ROUTER:$("#lanWanSetBlock").show();$("#disconnect").show();break;case IPV6_MODE_PASSTHROUGH:$("#lanWanSetBlock").hide();$("#disconnect").hide();break}toggleHelp(mode)}var ipv6WanTypeList=[{value:IPV6_WAN_TYPE_ETHERNET,str:label.ether},{value:IPV6_WAN_TYPE_PPPOE,str:label.pppoe},{value:IPV6_WAN_TYPE_TUNNEL6TO4,str:label.tunnel6to4},];function toggleShareSessionCheckBox(){var linkData=$.findBlock(LINK_DATA_ID);if(linkData.linkType==LINK_TYPE_PPPOE){var pppoeData=$.findBlock(IPV6_PPPOE_DATA_ID);id("shareSession").checked=(1==pppoeData.shareSession);id("shareSession").disabled=0}else{id("shareSession").disabled=1}}function ipv6WanTypeChange(type){switch(type){case IPV6_WAN_TYPE_PPPOE:$("#shareSessionBlock").show();toggleShareSessionCheckBox();doPPPoEShareSessionSet();break;case IPV6_WAN_TYPE_TUNNEL6TO4:$("#ulAddrMethod").hide();$("#ulAddrInput").hide();$("#ulWanPrefixLenInput").hide();$("#ulGatewayInput").hide();$("#pdEnableBlock").hide();$("#prefixAddrInputBlock").hide();$("#prefixLenInputBlock").hide();case IPV6_WAN_TYPE_ETHERNET:default:$("#shareSessionBlock").hide();$("#usernameBlock").hide();$("#passwordBlock").hide();break}if(type!=IPV6_WAN_TYPE_TUNNEL6TO4){$("#ulAddrMethod").show();id("addrType").changeSel(id("addrType").value);ipv6AddrGetMethodChange(id("addrType").value);$("#pdEnableBlock").show();doPrefixEnableSet()}}var ipv6AddrGetMethodList=[{value:IPV6_ADDR_TYPE_AUTO,str:label.ipv6AddrGetMethodAuto},{value:IPV6_ADDR_TYPE_STATIC,str:label.ipv6AddrGetMethodStatic},];function ipv6AddrGetMethodChange(method){if(method==IPV6_ADDR_TYPE_STATIC){$("#ulAddrInput").show();$("#ulWanPrefixLenInput").show();$("#ulGatewayInput").show()}else{$("#ulAddrInput").hide();$("#ulWanPrefixLenInput").hide();$("#ulGatewayInput").hide()}}function doPPPoEShareSessionSet(){var enabled=id("shareSession").checked;if(enabled){$("#usernameBlock").hide();$("#passwordBlock").hide()}else{$("#usernameBlock").show();$("#passwordBlock").show()}}function doManualDnsSet(){var enabled=id("manualDns").checked;if(enabled==true){$("#dns0InputBlock").show();$("#dns1InputBlock").show()}else{$("#dns0InputBlock").hide();$("#dns1InputBlock").hide()}}function doPrefixEnableSet(){var enabled=id("pdEnable").checked;if(enabled==true){$("#prefixAddrInputBlock").hide();$("#prefixLenInputBlock").hide()}else{$("#prefixAddrInputBlock").show();$("#prefixLenInputBlock").show()}}function isIp6AddrValid(addr){var parseResult=ip6AddrParse(addr);return parseResult.formatError==false&&parseResult.multicast==false&&parseResult.unspecified==false&&parseResult.loopback==false}function commitData(){var modeData=$.findBlock(IPV6_MODE_DATA_ID);var wanInterface=$.findBlock(IPV6_WAN_INTERFACE_DATA_ID);var pppoeData=$.findBlock(IPV6_PPPOE_DATA_ID);var wanAddr=$.findBlock(IPV6_WAN_ADDR_DATA_ID);var dnsData=$.findBlock(IPV6_WAN_DNS_DATA_ID);var prefixDelegation=$.findBlock(IPV6_PREFIX_DELEGATION_DATA_ID);var lanPrefix=$.findBlock(IPV6_LAN_PREFIX_DATA_ID);var error=false;var oldMode=modeData.mode;setLoadingId("save");modeData.mode=id("ipv6Mode").value;if(modeData.mode!=IPV6_MODE_ROUTER){if(oldMode==IPV6_MODE_ROUTER){$.instr("wan -linkDownIPv6")}error=$.write($.toText(modeData),$.block)}else{wanInterface.interfaceType=id("wanType").value;dnsData.dnsGetMethod=id("manualDns").checked?IPV6_DNS_TYPE_STATIC:IPV6_DNS_TYPE_AUTO;if(dnsData.dnsGetMethod==IPV6_DNS_TYPE_STATIC){if(!isIp6AddrValid(id("dns0").value)){showAlert(errStr.ipv6AddrErr,"dns0");return ERROR}if(id("dns1").value.trim()!=""&&!isIp6AddrValid(id("dns1").value)){showAlert(errStr.ipv6AddrErr,"dns1");return ERROR}dnsData.dns[0]=id("dns0").value;dnsData.dns[1]=id("dns1").value}if(wanInterface.interfaceType==IPV6_WAN_TYPE_TUNNEL6TO4){wanInterface.ipGetMethod=IPV6_ADDR_TYPE_TUNNEL;$.write($.toText(modeData)+$.toText(wanInterface)+$.toText(dnsData),$.block);$.instr("wan -linkUpIPv6");$.readNonBlock(IPV6_WAN_STATUS_DATA_ID+"#"+IPV6_LAN_STATUS_DATA_ID,showStatus);return OK}if(wanInterface.interfaceType==IPV6_WAN_TYPE_PPPOE){pppoeData.shareSession=id("shareSession").checked?1:0;if(pppoeData.shareSession==0){pppoeData.username=id("username").value;pppoeData.password=id("password").value}}wanInterface.ipGetMethod=id("addrType").value;if(wanInterface.ipGetMethod==IPV6_ADDR_TYPE_STATIC){var ip=id("addr").value;var prefixLen=id("addrPrefixLen").value;var gateway=id("gateway").value;if(!isIp6AddrValid(ip)){showAlert(errStr.ipv6AddrErr,"addr");return ERROR}if(/^[0-9]{1,3}$/.test(prefixLen)==false||prefixLen>128||prefixLen<0){showAlert(errStr.ipv6PrefixLenErr,"addrPrefixLen");return ERROR}if(!isIp6AddrValid(gateway)){showAlert(errStr.ipv6AddrErr,"gateway");return ERROR}wanAddr.wanIp=ip;wanAddr.wanPrefixLen=prefixLen;wanAddr.gateway=gateway}prefixDelegation.enable=id("pdEnable").checked?1:0;if(prefixDelegation.enable==0){var prefix=id("prefixAddr").value;if(!validIp6Prefix(prefix)){showAlert(errStr.ipv6AddrErr,"prefixAddr");return ERROR}else{if(/^2002/.test(prefix)){showAlert(errStr.ipv6Prefix2002Err,"prefixAddr");return ERROR}}var prefixLen=id("prefixLength").value;if(/^[0-9]{1,3}$/.test(prefixLen)==false||prefixLen>128||prefixLen<0){showAlert(errStr.ipv6PrefixLenErr,"prefixLength");return ERROR}lanPrefix.prefixAddr=prefix;lanPrefix.prefixLen=prefixLen}$.write($.toText(modeData)+$.toText(wanInterface)+$.toText(pppoeData)+$.toText(wanAddr)+$.toText(dnsData)+$.toText(prefixDelegation)+$.toText(lanPrefix),$.block);$.instr("wan -linkUpIPv6");return OK}$.readNonBlock(IPV6_WAN_STATUS_DATA_ID+"#"+IPV6_LAN_STATUS_DATA_ID,showStatus);return OK}function doSave(){var modeData=$.findBlock(IPV6_MODE_DATA_ID);var oldMode=modeData.mode;var newMode=id("ipv6Mode").value;if(newMode!=oldMode){showConfirm(label.ipv6RebootWarning,function(confirmResult){if(confirmResult==false){return}if(commitData()==OK){$("#wanState").hide();showProgressNum(14000,undefined,function(){window.location.reload()})}})}else{commitData()}}var statusTimer=null;var checkInterval=2000;function checkStatus(){if(id("ipv6Mode").value==0){statusTimer=$.setTimeout(checkStatus,checkInterval);return}$.readNonBlock(IPV6_WAN_STATUS_DATA_ID+"#"+IPV6_LAN_STATUS_DATA_ID,function(){showStatus();statusTimer=$.setTimeout(checkStatus,checkInterval)})}function stopCheckStatus(){if(statusTimer!=null){clearTimeout(statusTimer);statusTimer=null}}function ipv6AddrToDisplayFormat(addr,len){if(addr.trim()==""||addr.trim()=="::"){return""}if(len==null){return addr}return addr+"/"+len}function linkDown(){setLoadingId("disconnect");$.instr("wan -linkDownIPv6");$.readNonBlock(IPV6_WAN_STATUS_DATA_ID+"#"+IPV6_LAN_STATUS_DATA_ID,showStatus)}function linkUp(){$.instr("wan -linkUpIPv6")}function showStatus(){var modeData=$.findBlock(IPV6_MODE_DATA_ID);var wanInterface=$.findBlock(IPV6_WAN_INTERFACE_DATA_ID);var wanStatus=$.findBlock(IPV6_WAN_STATUS_DATA_ID);var lanStatus=$.findBlock(IPV6_LAN_STATUS_DATA_ID);var prefixDelegation=$.findBlock(IPV6_PREFIX_DELEGATION_DATA_ID);switch(eval(wanStatus.status)){case IPV6_INTERFACE_LINK_DOWN:disableBtn("disconnect",true,"delAll","delAllUn");var state="error";var desc=linkStatus[LINK_DOWN];switch(eval(wanStatus.errorCode)){case LINK_CODE_UNKNOWN:case LINK_CODE_DENY:case LINK_CODE_PHYDOWN:case LINK_CODE_NOECHO:case LINK_CODE_SRVDOWN:case LINK_CODE_OPT_UNSUPPORT:case LINK_CODE_AUTH_ERR:case LINK_CODE_AUTH_UNSUPPORT:case LINK_CODE_IP_CONFLICT:case LINK_CODE_NO_IPV4:desc=linkCode[wanStatus.errorCode];break;case LINK_CODE_NORMAL:case LINK_CODE_MANUAL:default:break}hsStatSet(state,desc);break;case IPV6_ADDRESS_LINK_UP:disableBtn("disconnect",false,"delAllUn","delAll",linkDown);hsStatSet("correct",linkStatus[LINK_UP]);break;case IPV6_ADDRESS_LINKING_DOWN:case IPV6_ADDRESS_LINK_DOWN:case IPV6_INTERFACE_LINKING_DOWN:disableBtn("disconnect",true,"delAll","delAllUn");hsStatSet("link",linkStatus[LINKING_DOWN]);break;case IPV6_INTERFACE_LINKING_UP:case IPV6_INTERFACE_LINK_UP:case IPV6_ADDRESS_LINKING_UP:disableBtn("disconnect",false,"delAllUn","delAll",linkDown);hsStatSet("link",linkStatus[LINKING_UP]);break;default:var state="error";var desc=linkCode[LINK_CODE_UNKNOWN];hsStatSet(state,desc);disableBtn("disconnect",true,"delAllUn","delAll",linkDown);break}if(wanInterface.ipGetMethod!=IPV6_ADDR_TYPE_STATIC){id("wanGlobalAddr").innerHTML=ipv6AddrToDisplayFormat(wanStatus.globalIp);id("wanGateway").innerHTML=ipv6AddrToDisplayFormat(wanStatus.gateway);if(wanStatus.dns.length>0){id("wanDns0").innerHTML=ipv6AddrToDisplayFormat(wanStatus.dns[0])}if(wanStatus.dns.length>1){id("wanDns1").innerHTML=ipv6AddrToDisplayFormat(wanStatus.dns[1])}}id("wanGlobalAddr").innerHTML=ipv6AddrToDisplayFormat(wanStatus.globalIp);id("wanLocalAddr").innerHTML=ipv6AddrToDisplayFormat(wanStatus.linkLocalIp);id("wanGateway").innerHTML=ipv6AddrToDisplayFormat(wanStatus.gateway);id("wanDns0").innerHTML=ipv6AddrToDisplayFormat(wanStatus.dns[0]);id("wanDns1").innerHTML=ipv6AddrToDisplayFormat(wanStatus.dns[1]);id("lanPrefix").innerHTML=ipv6AddrToDisplayFormat(lanStatus.prefixAddr,lanStatus.prefixLen);id("lanLocalAddr").innerHTML=ipv6AddrToDisplayFormat(lanStatus.linkLocalIp)}$("#lanWanSetBlock").hide();$("#disconnect").hide();$("#ulAddrInput").hide();$("#ulWanPrefixLenInput").hide();$("#ulGatewayInput").hide();$("#shareSessionBlock").hide();$("#usernameBlock").hide();$("#passwordBlock").hide();$("#dns0InputBlock").hide();$("#dns1InputBlock").hide();id("pdEnable").checked=true;$("#prefixAddrInputBlock").hide();$("#prefixLenInputBlock").hide();$.read(IPV6_MODE_DATA_ID+"#"+IPV6_WAN_INTERFACE_DATA_ID+"#"+IPV6_PPPOE_DATA_ID+"#"+IPV6_WAN_ADDR_DATA_ID+"#"+IPV6_WAN_DNS_DATA_ID+"#"+IPV6_LAN_PREFIX_DATA_ID+"#"+LINK_DATA_ID);var modeData=$.findBlock(IPV6_MODE_DATA_ID);var wanInterface=$.findBlock(IPV6_WAN_INTERFACE_DATA_ID);var initWanType=IPV6_WAN_TYPE_ETHERNET;var initAddrType=IPV6_ADDR_TYPE_AUTO;if(modeData.mode==IPV6_MODE_ROUTER){initWanType=wanInterface.interfaceType;initAddrType=wanInterface.ipGetMethod;if(initAddrType!=IPV6_ADDR_TYPE_AUTO&&initAddrType!=IPV6_ADDR_TYPE_STATIC){initAddrType!=IPV6_ADDR_TYPE_AUTO}}disableBtn("disconnect",true,"delAll","delAllUn");selectInit("ipv6Mode",ipv6ModeOptions,modeData.mode,ipv6Switch);selectInit("wanType",ipv6WanTypeList,initWanType,ipv6WanTypeChange);selectInit("addrType",ipv6AddrGetMethodList,initAddrType,ipv6AddrGetMethodChange);id("shareSession").onclick=doPPPoEShareSessionSet;id("manualDns").onclick=doManualDnsSet;id("pdEnable").onclick=doPrefixEnableSet;id("disconnect").onclick=linkDown;id("save").onclick=doSave;if(modeData.mode==IPV6_MODE_ROUTER){if(initWanType==IPV6_WAN_TYPE_PPPOE){var pppoeData=$.findBlock(IPV6_PPPOE_DATA_ID);id("username").value=pppoeData.username;id("password").value=pppoeData.password;toggleShareSessionCheckBox();$("#shareSessionBlock").show();doPPPoEShareSessionSet()}if(initAddrType==IPV6_ADDR_TYPE_STATIC){$.read(IPV6_WAN_ADDR_DATA_ID);var wanAddr=$.findBlock(IPV6_WAN_ADDR_DATA_ID);id("addr").value=wanAddr.wanIp;id("addrPrefixLen").value=wanAddr.wanPrefixLen;id("gateway").value=wanAddr.gateway}ipv6AddrGetMethodChange(initAddrType);$.read(IPV6_WAN_DNS_DATA_ID);var wanDns=$.findBlock(IPV6_WAN_DNS_DATA_ID);if(wanDns.dnsGetMethod==IPV6_DNS_TYPE_STATIC){id("manualDns").checked=true;id("dns0").value=ipv6AddrToDisplayFormat(wanDns.dns[0]);id("dns1").value=ipv6AddrToDisplayFormat(wanDns.dns[1])}doManualDnsSet();$.read(IPV6_PREFIX_DELEGATION_DATA_ID+"#"+IPV6_LAN_PREFIX_DATA_ID);var prefixDelegation=$.findBlock(IPV6_PREFIX_DELEGATION_DATA_ID);var lanPrefix=$.findBlock(IPV6_LAN_PREFIX_DATA_ID);if(prefixDelegation.enable==1){id("pdEnable").checked=true}else{id("pdEnable").checked=false;id("prefixAddr").value=lanPrefix.prefixAddr;id("prefixLength").value=lanPrefix.prefixLen}doPrefixEnableSet();if(initWanType==IPV6_WAN_TYPE_TUNNEL6TO4){$("#ulAddrMethod").hide();$("#ulAddrInput").hide();$("#ulWanPrefixLenInput").hide();$("#ulGatewayInput").hide();$("#pdEnableBlock").hide();$("#prefixAddrInputBlock").hide();$("#prefixLenInputBlock").hide()}$("#lanWanSetBlock").show();$("#disconnect").show();checkStatus()}toggleHelp(modeData.mode)}init();</script>
+
+
+<div id="hcCo" class="hcCo">
+	<div class="hsHelp"></div>
+	<div class="title titleB">
+		<label class="title"><%menuStr.ipv6Set%></label>
+		<i class="helpBtn" helpStr="ipv6Help"></i>
+	</div>
+	<ul class="hsInputUl">
+		<li class="hsInputLi">
+			<label class="inputLiLbl"><%label.ipv6Mode%><i></i></label>
+			<span class="highSetSelect">
+				<span id="ipv6Mode" class="select">
+					<span class="value"></span><i class="hsArrowM"></i>
+				</span>
+			</span>
+		</li>
+	</ul>
+
+	<div id="lanWanSetBlock">
+		<p class="hsTitleLine" id="lanWanSplitLine"></p>
+
+		<div class="title titleC">
+			<label class="title"><%menuStr.ipv6WanSet%></label>
+			<div id="wanState" class="handleRelCon">
+				<i class="state"></i>
+				<span class="state"></span>
+			</div>
+		</div>
+		<div class="block" id="ipv6Wan">
+			<ul class="hsInputUl">
+				<li class="hsInputLi">
+					<label class="inputLiLbl"><%label.wanMode%><i></i></label>
+					<span class="highSetSelect">
+						<span id="wanType" class="select">
+							<span class="value"></span><i class="hsArrowM"></i>
+						</span>
+					</span>
+				</li>
+			</ul>
+			<ul class="hsInputUl" id="ulAddrMethod">
+				<li class="hsInputLi">
+					<label class="inputLiLbl"><%label.ipv6AddrGetMethod%><i></i></label>
+					<span class="highSetSelect">
+						<span id="addrType" class="select">
+							<span class="value"></span><i class="hsArrowM"></i>
+						</span>
+					</span>
+				</li>
+			</ul>
+			<ul class="hsInputUl" id="ulAddrInput">
+				<li class="hsInputLi">
+					<label for="addr"><%label.ipv6Addr%><i></i></label>
+					<input id="addr" maxLength="45"/>
+				</li>
+			</ul>
+			<ul class="hsInputUl" id="ulWanPrefixLenInput">
+				<li class="hsInputLi" >
+					<label for="addrPrefixLen"><%label.ipv6PrefixLen%><i></i></label>
+					<input id="addrPrefixLen" maxLength="3"/>
+				</li>
+			</ul>
+			<ul class="hsInputUl" id="ulGatewayInput">
+				<li class="hsInputLi" >
+					<label for="gateway"><%label.gateway%><i></i></label>
+					<input id="gateway" maxLength="45"/>
+				</li>
+			</ul>
+			<ul class="gridLine gridLineB normalFont" id="shareSessionBlock">
+				<input id="shareSession" class="checkbox" type="checkbox"/>
+				<label for="shareSession" class="noteLbl">
+					<%label.ipv6PPPoEShareSession%>
+				</label>
+				<li class="twoLineWidth">
+					<label class="twoLineNote" style="width:200px"><%label.ipv6ShareSessionNote1%></label>
+				</li>
+			</ul>
+			<ul class="hsInputUl" id="usernameBlock">
+				<li class="hsInputLi" >
+					<label for="username"><%label.netAccount%><i></i></label>
+					<input id="username" maxLength="255"/>
+				</li>
+			</ul>
+			<ul class="hsInputUl" id="passwordBlock">
+				<li class="hsInputLi" >
+					<label for="password"><%label.netPwd%><i></i></label>
+					<input id="password" maxLength="255" type="password"/>
+				</li>
+			</ul>
+
+			<ul class="gridLine gridLineB normalFont" id="manualDnsBlock">
+				<input id="manualDns" class="checkbox" type="checkbox" />
+				<label for="manualDns" class="noteLbl"><%label.manualDns%></label>
+			</ul>
+			<ul class="hsInputUl" id="dns0InputBlock">
+				<li class="hsInputLi" >
+					<label for="dns0"><%label.dns0%><i></i></label>
+					<input id="dns0" maxLength="45" /><i class="tip"></i>
+				</li>
+			</ul>
+			<ul class="hsInputUl" id="dns1InputBlock">
+				<li class="hsInputLi" >
+					<label for="dns1"><%label.dns1%><i></i></label>
+					<input id="dns1" maxLength="45" /><i class="tip"></i>
+				</li>
+				<li>
+					<label class="oneLineNote"><%label.optional%></label>
+				</li>
+			</ul>
+			<ul class="hsInputUlDes firstUlDes" id="wanLocalAddrDescBlock">
+				<li class="hsInputLiDes">
+					<label class="desLbl"><%label.ipv6LocalAddr%><i></i></label>
+					<label id="wanLocalAddr" class="noteLbl"></label>
+				</li>
+			</ul>
+			<ul class="hsInputUlDes" id="wanGlobalAddrDescBlock">
+				<li class="hsInputLiDes">
+					<label class="desLbl"><%label.ipv6GlobalAddr%><i></i></label>
+					<label id="wanGlobalAddr" class="noteLbl"></label>
+				</li>
+			</ul>
+			<ul class="hsInputUlDes" id="wanGatewayDescBlock">
+				<li class="hsInputLiDes">
+					<label class="desLbl"><%label.gateway%><i></i></label>
+					<label id="wanGateway" class="noteLbl"></label>
+				</li>
+			</ul>
+			<ul class="hsInputUlDes" id="dnsDescBlock">
+				<li class="hsInputLiDes" id="dns0DescLine">
+					<label class="desLbl"><%label.dnsServer%><i></i></label>
+					<label id="wanDns0" class="noteLbl"></label>
+				</li>
+				<li class="hsInputLiDes" id="dns1DescLine">
+					<label class="desLbl"><i></i></label>
+					<label id="wanDns1" class="noteLbl"></label>
+				</li>
+			</ul>
+		</div>
+
+		<p class="hsTitleLine" id="lanWanSplitLine"></p>
+
+		<div class="title titleC">
+			<label class="title"><%menuStr.ipv6LanSet%></label>
+			<div id="lanState" class="handleRelCon">
+				<i class="state"></i>
+				<span class="state"></span>
+			</div>
+		</div>
+
+		<div class="block" id="ipv6Lan">
+			<ul class="gridLine gridLineB normalFont" id="pdEnableBlock">
+				<input id="pdEnable" class="checkbox" type="checkbox"/>
+				<label for="pdEnable" class="noteLbl"><%label.ipv6PdEnable%></label>
+			</ul>
+			<ul class="hsInputUl" id="prefixAddrInputBlock">
+				<li class="hsInputLi" >
+					<label for="prefixAddr"><%label.ipv6PrefixAddr%><i></i></label>
+					<input id="prefixAddr" maxLength="45"/>
+				</li>
+			</ul>
+			<ul class="hsInputUl" id="prefixLenInputBlock">
+				<li class="hsInputLi" >
+					<label for="prefixLenth"><%label.ipv6PrefixLen%><i></i></label>
+					<input id="prefixLength" maxLength="3"/>
+				</li>
+			</ul>
+			<ul class="hsInputUlDes firstUlDes" id="lanAddrDescBlock">
+				<li class="hsInputLiDes">
+					<label class="desLbl"><%label.ipv6LocalAddr%><i></i></label>
+					<label id="lanLocalAddr" class="noteLbl"></label>
+				</li>
+			</ul>
+			<ul class="hsInputUlDes" id="prefixDescBlock">
+				<li class="hsInputLiDes">
+					<label class="desLbl"><%label.ipv6Prefix%><i></i></label>
+					<label id="lanPrefix" class="noteLbl"></label>
+				</li>
+			</ul>
+		</div>
+	</div>
+
+	<div class="blockFuncA">
+		<span id="disconnect" class="delAll">
+			<i class="subBtnLg"></i><label><%btn.disconnect%></label>
+		</span>
+		<span id="save" class="subBtnSv">
+			<i class="subBtnLg"></i><label><%btn.save%></label>
+		</span>
+	</div>
+
+</div>

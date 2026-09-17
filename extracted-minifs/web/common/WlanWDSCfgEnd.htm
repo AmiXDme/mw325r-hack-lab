@@ -1,0 +1,67 @@
+<style type="text/css">
+	div.titleB{
+		margin-left:140px !important;
+		width:366px !important;
+	}
+	span.WDSLinkRetrySp{
+		border-bottom:1px solid #D86A54;
+		height:18px;
+	}
+	div.WDSNavigtion{
+		text-align:left;
+		margin:0 0 14px 140px;
+		position:relative;
+	}
+	input.WDSWzdBtn{
+		border:0;
+		color:#FFFFFF;
+		font-size:12px;
+		padding:0 18px;
+		background:#FF6060;
+		border-radius:9px;
+		vertical-align:middle;
+		cursor:pointer;
+		height: 19px;
+		line-height: 19px;
+	}
+	ul.WDSFNote{
+		height:136px;
+		margin-top:13px;
+		padding-left:40px;
+		border:1px solid #CBCBCB;
+		background:#FCFCFC;
+	}
+	ul.WDSFNote li{
+		line-height:30px;
+		text-align:left;
+	}
+	ul.WDSFNote li.WDSFNoteF{
+		margin-top:20px;
+	}
+	#WDSWwitchCon{
+		visibility:visible !important;
+	}
+	#hsSwitchState{
+		visibility:visible !important;
+	}
+	ul.WDSENDMTop{
+		margin-top:30px !important;
+	}
+</style>
+<script type="text/javascript">var updateStatusHandle;var connectingCount=0;function updateStatus(){$.instr("wlan wdsstatus",function(result){var wdsStatus=result.data;switch(parseInt(wdsStatus)){case WDS_LINK_DISCONNECTED:hsStatSet("error",wdsLinkStatus[WDS_LINK_DISCONNECTED]);break;case WDS_LINK_INIT:case WDS_LINK_SCAN:case WDS_LINK_AUTH:case WDS_LINK_ASSOC:connectingCount++;if(connectingCount<MAX_CONNECTING_TIME){hsStatSet("link",wdsLinkStatus[WDS_LINK_CONNECTING])}else{connectingCount=0;hsStatSet("error",label.WDSLinkFail+"<span id='retry' class='WDSLinkRetrySp' onclick='updateStatus()'>"+btn.retry+"</span>"+label.period);return}break;case WDS_LINK_CONNECTED:connectingCount=0;hsStatSet("correct",wdsLinkStatus[WDS_LINK_CONNECTED]);break;default:hsStatSet("error",wdsLinkStatus[WDS_LINK_DISCONNECTED]);break}updateStatusHandle=$.setTimeout(updateStatus,2000)})}function init(){function startUpdateStatus(){connectingCount=0;if(0==wlanApcData.bBridgeEnabled||0==wlanMBssidData.bEnable){hsStatSet("error",wdsLinkStatus[WDS_LINK_DISCONNECTED]);if(undefined!=updateStatusHandle){clearTimeout(updateStatusHandle)}}else{updateStatus()}}function WDSSwitchChange(state){var errNo=ENONE;if(state!=wlanApcData.bBridgeEnabled){wlanApcData.bBridgeEnabled=state;errNo=$.write($.toText(wlanBasicData),$.block);if(errNo!=ENONE){return errHandle(errNo)}startUpdateStatus()}}function onSave(){if(0==ssid.value.length){return errHandle(EINVSSIDLEN,ssid)}var uSecType=1;if(0==wdsPwd.value.length){uSecType=1}else{errNo=checkWlanPwd(wdsPwd.value);if(ENONE!=errNo){return errHandle(errNo,wdsPwd)}uSecType=4}if((wlanApcData.cBridgedSsid!=ssid.value)||(wlanApcData.uSecurityType!=uSecType)||(wlanApcData.cPassWD!=wdsPwd.value)){wlanApcData.cBridgedSsid=ssid.value;wlanApcData.uSecurityType=uSecType;wlanApcData.cPassWD=wdsPwd.value;setLoadingId("save");errNo=$.write($.toText(wlanBasicData),$.block);if(errNo!=ENONE){return errHandle(errNo)}if(undefined!=updateStatusHandle){clearTimeout(updateStatusHandle)}$.setTimeout(startUpdateStatus,1000)}}var wlanMBssidData=$.findBlock(MBSSID_MAIN_DATA_ID);var wlanBasicData=$.findBlock(WLAN_BASIC_DATA_ID);var wlanApcData=wlanBasicData.apc;var ssid=id("wdsSsid");var wdsPwd=id("wdsPwd");new Switch("WDSWwitchCon",wlanApcData.bBridgeEnabled,WDSSwitchChange);ssid.value=wlanApcData.cBridgedSsid;wdsPwd.value=(1==wlanApcData.uSecurityType)?"":wlanApcData.cPassWD;id("navigteWzd").onclick=function(){hsStatSet("null");clearTimeout(updateStatusHandle);loadPage("WlanWDSCfgFirst.htm","WDSCon")};id("save").onclick=onSave;startUpdateStatus()}init();</script>
+<div class="WDSNavigtion">
+	<input id="navigteWzd" value="<%btn.WDSWzd%>" type="button" class="WDSWzdBtn" />
+</div>
+<ul class="hsInputUl">
+	<li class="hsInputLi">
+		<label for="wdsSsid"><%label.WDSHSSID%><i></i></label><input id="wdsSsid" maxLength="32" /><i class="tip"></i>
+	</li>
+</ul>
+<ul class="hsInputUl">
+	<li class="hsInputLi">
+		<label for="wdsPwd"><%label.wirelessHPwd%><i></i></label><input id="wdsPwd" maxLength="63" /><i class="tip"></i>
+	</li>
+</ul>
+<div class="blockFuncA">
+	<span id="save" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+</div>

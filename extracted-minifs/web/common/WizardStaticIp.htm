@@ -1,0 +1,105 @@
+<style type="text/css">
+	li.wizardBom li.inputLi label{
+		width: 240px;
+	}
+	li.wizardBom li.inputLi span.select{
+		width: 240px;
+	}
+	li.wizardBom li.inputLi span.select span.wzdValue, li.wizardBom li.inputLi input {
+		width: 210px;
+	}
+	#wzdIpNote div.noteCon {
+		position: absolute;
+		margin-top: -23px;
+	}	
+</style>
+<script type="text/javascript">function init(){function errHandle(errNo){switch(errNo){case ENONE:return false;case EINVNET:showNote("wzdIpNote",errStr.ipAddrNetErr);break;case EINVIP:showNote("wzdIpNote",errStr.ipAddrErr);break;case EINVIPFMT:showNote("wzdIpNote",errStr.ipAddrFmtNoteErr);break;case EINVGROUPIP:showNote("wzdIpNote",errStr.ipAddrGroupErr);break;case EINVLOOPIP:showNote("wzdIpNote",errStr.ipAddrLoopErr);break;case EINVMASK:showNote("wzdMaskNote");break;case EINVNETID:case EINVHOSTID:case EINVIPMASKPAIR:showNote("wzdIpNote",errStr.ipAddrMaskNotMatchNote);break;case ECOMFLICTNET:showNote("wzdIpNote",errStr.ipAddrLanWanConflictShortNote);$("#wzdIpNote .noteCon p").width(380);break;case EINVGTW:showNote("wzdGatewayNote");break;case EINVFDNSVR:showNote("wzdPrimDnsNote");break;case EINVSDNSVR:showNote("wzdSeDnsNote");break;default:break}return true}function checkLanConflict(ipVal,maskVal){var lanIp=transIp(lan.ip),lanMask=transIp(lan.mask);var stcIp=transIp(ipVal),stcMask=transIp(maskVal);return(0==((lanIp^stcIp)&lanMask&stcMask))?ECOMFLICTNET:ENONE}function checkGateway(value){return ENONE!=checkIp(value)?EINVGTW:ENONE}function checkPrimDns(value){if(lan.ip==value){return EINVFDNSVR}return ENONE!=checkIp(value)?EINVFDNSVR:ENONE}function checkSeDns(value){if(""==value||"0.0.0.0"==value){id("dns1").value="0.0.0.0";return ENONE}if(lan.ip==value){return EINVSDNSVR}return ENONE!=checkIp(value)?EINVSDNSVR:ENONE}function onSave(){var stcIp=$.findBlock(STATIC_IP_DATA_ID),link=$.findBlock(LINK_DATA_ID);var ipVal=id("ip").value,maskVal=id("mask").value,gatewayVal=id("gateway").value;var primDnsVal=id("dns0").value,seDnsVal=id("dns1").value;closeNote("wzdIpNote");closeNote("wzdMaskNote");closeNote("wzdGatewayNote");closeNote("wzdPrimDnsNote");closeNote("wzdSeDnsNote");if(errHandle(checkIp(ipVal))||errHandle(checkMask(maskVal))||errHandle(checkIpMask(ipVal,maskVal))||errHandle(checkLanConflict(ipVal,maskVal))||errHandle(checkGateway(gatewayVal))||errHandle(checkPrimDns(primDnsVal))||errHandle(checkSeDns(seDnsVal))){return}seDnsVal=id("dns1").value;stcIp.ip=ipVal;stcIp.mask=maskVal;stcIp.gateway=gatewayVal;stcIp.dns[0]=primDnsVal;stcIp.dns[1]=seDnsVal;link.linkType=LINK_TYPE_STATIC_IP;loadPage("WizardWireless.htm","wizardCon",doNothing)}var stcIp=$.findBlock(STATIC_IP_DATA_ID);var lan=$.findBlock(LAN_DATA_ID);wzdConSet({height:"640px"});selectInit("netModeSel",options,LINK_TYPE_STATIC_IP,netWorkModeChange);wzdStopSet();id("sub").onclick=onSave;id("ip").value=stcIp.ip;id("mask").value=stcIp.mask;id("gateway").value=stcIp.gateway;id("dns0").value=stcIp.dns[0]||"";id("dns1").value=stcIp.dns[1]||""}init();</script>
+<ul class="wzdUl">
+	<span class="wizardSkip"><i class="wzdSkipImg"></i><br /><span class="wzdSkipDes"><%label.skipWzd%></span></span>
+	<li class="wizardTop wizardTopWan">
+		<img class="wzdWanLogo" src="../images/netSet_me.png" />
+	</li>
+	<li class="wizardMid wizardMidWan">
+		<h1><%label.netSet%></h1>
+	</li>
+	<li class="wizardBom">
+		<p class="wizardTip"><%label.stcIpWzdTip%></p>
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi">
+				<label><%label.netMode%></label>
+				<span id="netModeSel" class="select">
+					<span class="value wzdValue"></span>
+					<i class="arrow"></i>
+				</span>
+			</li>
+		</ul>
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi">
+				<label for=""><%label.ipAddr%></label>
+				<input id="ip" type="text" maxLength="15" />
+				<i class="tip"></i>
+			</li>
+			<li id="wzdIpNote" class="note">
+				<i class="arrowL"></i>
+				<div class="noteCon">
+					<p><%errStr.ipAddrFmtNoteErr%></p>
+				</div>
+			</li>
+		</ul>
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi">
+				<label for=""><%label.mask%></label>
+				<input id="mask" type="text" maxLength="15" />
+				<i class="tip"></i>
+			</li>
+			<li id="wzdMaskNote" class="note">
+				<i class="arrowL"></i>
+				<div class="noteCon">
+					<p><%errStr.maskErr%></p>
+				</div>
+			</li>
+		</ul>
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi">
+				<label for=""><%label.gateway%></label>
+				<input id="gateway" type="text" maxLength="15" />
+				<i class="tip"></i>
+			</li>
+			<li id="wzdGatewayNote" class="note">
+				<i class="arrowL"></i>
+				<div class="noteCon">
+					<p><%errStr.gatewayErr%></p>
+				</div>
+			</li>
+		</ul>
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi">
+				<label class="M" for=""><%label.dns0%></label>
+				<input id="dns0" class="M" type="text" maxLength="15" />
+				<i class="tip"></i>
+			</li>
+			<li id="wzdPrimDnsNote" class="note">
+				<i class="arrowL"></i>
+				<div class="noteCon">
+					<p><%errStr.wzdPrimDnsErr%></p>
+				</div>
+			</li>
+		</ul>
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi">
+				<label class="M" for=""><%label.dns1%></label>
+				<input id="dns1" class="M" type="text" maxLength="15" />
+				<i class="tip"></i>
+			</li>
+			<li id="wzdSeDnsNote" class="note">
+				<i class="arrowL"></i>
+				<div class="noteCon">
+					<p><%errStr.wzdSeDnsErr%></p>
+				</div>
+			</li>
+		</ul>
+	</li>
+	<li class="lgBtns">
+		<a id="sub" href="javascript:void(0)"><i class="btnR"></i></a>
+	</li>
+</ul>

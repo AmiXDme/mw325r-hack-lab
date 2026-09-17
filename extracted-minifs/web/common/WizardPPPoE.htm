@@ -1,0 +1,42 @@
+<script type="text/javascript">function init(){$("#shareSessionNote").hide();function wzdPppoePwdConfirm(){var i,input,p,span,divFunc;var divCon=document.createElement("div");divCon.className="confirmCon";document.body.appendChild(divCon);var div=document.createElement("div");div.className="confirm";divCon.appendChild(div);i=document.createElement("i");i.className="confirmLogo";div.appendChild(i);span=document.createElement("span");span.className="WzdAccPwdConfirmQuestion";span.innerHTML=label.accPwdNullTip;div.appendChild(span);divFunc=document.createElement("div");divFunc.className="confirmFuncCon";div.appendChild(divFunc);input=document.createElement("input");input.className="subBtn subBtnL";input.value=btn.confirm;input.type="button";input.onclick=function(){hideCover(function(){document.body.removeChild(divCon);saveData(id("name").value,id("psw").value)})};divFunc.appendChild(input);input=document.createElement("input");input.className="subBtn subBtnR";input.value=btn.backWzd;input.type="button";input.onclick=function(){hideCover(function(){var name=id("name");var psw=id("psw");if(name.value==0){name.focus()}else{psw.focus()}document.body.removeChild(divCon)})};divFunc.appendChild(input)}function saveData(nameVal,pswVal){var pppoe=$.findBlock(PPPOE_DATA_ID);var link=$.findBlock(LINK_DATA_ID);link.linkType=LINK_TYPE_PPPOE;pppoe.name=nameVal;pppoe.paswd=pswVal;loadPage("WizardWireless.htm","wizardCon",doNothing)}function onSave(){var nameVal=id("name").value,pswVal=id("psw").value;if(0==nameVal.length||0==pswVal.length){showCover(wzdPppoePwdConfirm)}else{saveData(nameVal,pswVal)}}var pppoe=$.findBlock(PPPOE_DATA_ID);selectInit("netModeSel",options,LINK_TYPE_PPPOE,netWorkModeChange);wzdStopSet();var ipv6Mode=$.readEx(IPV6_MODE_DATA_ID);var ipv6WanInterface=$.readEx(IPV6_WAN_INTERFACE_DATA_ID);var ipv6PPPoE=$.readEx(IPV6_PPPOE_DATA_ID);if(ipv6Mode.mode==IPV6_MODE_ROUTER&&ipv6WanInterface.interfaceType==IPV6_WAN_TYPE_PPPOE&&ipv6PPPoE.shareSession==1){id("netModeSel").disable(true);$("#shareSessionNote label").css({marginLeft:249});$("#shareSessionNote").show()}id("sub").onclick=onSave;id("name").value=pppoe.name;id("psw").value=pppoe.paswd}init();</script>
+<ul class="wzdUl">
+	<span class="wizardSkip"><i class="wzdSkipImg"></i><br /><span class="wzdSkipDes"><%label.skipWzd%></span></span>
+	<li class="wizardTop wizardTopWan">
+		<img class="wzdWanLogo" src="../images/netSet_me.png" />
+	</li>
+	<li class="wizardMid wizardMidWan">
+		<h1><%label.netSet%></h1>
+	</li>
+	<li class="wizardBom">
+		<p class="wizardTip"><%label.netSetPwdTip%></p>
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi">
+				<label><%label.netMode%></label>
+				<span id="netModeSel" class="select">
+					<span class="value wzdValue"></span>
+					<i class="arrow"></i>
+				</span>
+			</li>
+			<li id="shareSessionNote" class="hidden">
+				<label class="threeLineNote"><%label.ipv6ShareSessionNote2%></label>
+			</li>
+		</ul>
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi">
+				<label for=""><%label.netAccount%></label>
+				<input id="name" type="text" maxLength="255" />
+				<i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi">
+				<label for=""><%label.netPwd%></label>
+				<input id="psw" type="password" maxLength="255" />
+				<i class="tip"></i>
+			</li>
+		</ul>
+	</li>
+	<li class="lgBtns">
+		<a id="sub" href="javascript:void(0)"><i class="btnR"></i></a>
+	</li>
+</ul>

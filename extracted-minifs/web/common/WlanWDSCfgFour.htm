@@ -1,0 +1,55 @@
+<style type="text/css">
+	div.WDSFoBlock{
+		margin-top:13px;
+		border:1px solid #CBCBCB;
+		background:#FCFCFC;
+		position:relative;
+		text-align:left;
+	}
+	img.WDSFoImg{
+		width:38px;
+		height:38px;
+		top:65px;
+		left:23px;
+		position:absolute;
+	}
+	p.WDSFoNoteF{
+		margin-top:25px;
+		line-height:25px;
+		padding-left:75px;
+	}
+	p.WDSFoNoteS{
+		line-height:25px;
+		margin-bottom:13px;
+		padding-left:75px;
+	}
+	ul.WDSFoNoteUl{
+		margin-top:19px !important;
+		padding-left:75px;
+	}
+	label.WDSDesLbl{
+		float:left;
+		font-size:12px;
+		margin-right:3px;
+		text-align:right;
+	}
+	span.WDSNoteCF{
+		font-size:12px;
+		font-weight:bold;
+	}
+</style>
+<script type="text/javascript">function init(){id("WDSCon").style.visibility="visible";id("next").onclick=function(){if(ENONE!=checkIp(lanIp.value)){errHandle(EINVIP,lanIp);return}if(lanIp.value!=lan.ip){lan.ip=lanIp.value}if(lan.ip!=originalLanIp){isLanIpChanged=true}else{isLanIpChanged=false}loadPage("WlanWDSCfgFive.htm","WDSCon")};id("pre").onclick=function(){loadPage("WlanWDSCfgThird.htm","WDSCon")};var lan=$.findBlock(LAN_DATA_ID);if($.local==true){lan.ip="192.168.1.1"}var lastIdx=lan.ip.lastIndexOf(".");var ipFrontal=lan.ip.substr(0,lastIdx);var lanIp=id("lanIpAddr");if(1==lanIpResult&&false==isLanIpChanged&&false==backFromNextPage){var tmpIp=ipFrontal+"."+252;if(tmpIp==originalLanIp){lanIp.value=ipFrontal+"."+1}else{lanIp.value=tmpIp}}else{lanIp.value=lan.ip}}init();</script>
+<div class="WDSBlock WDSFoBlock">
+	<p class="WDSTitle"><%label.WDSSetLanIp%></p>
+	<p class="WDSFoNoteF"><%label.WDSLanConfNote%></p>
+	<p class="WDSFoNoteS"><%label.WDSLanConfExp%></p>
+	<ul class="hsInputUl">
+		<li class="hsInputLi">
+			<label for="lanIpAddr"><%label.WDSLanIP%><i></i></label><input id="lanIpAddr" maxLength="15" /><i class="tip"></i>
+		</li>
+	</ul>
+</div>
+<div class="blockFuncA">
+	<span id="pre" class="wdsPre"><i class="subBtnLg"></i><label><%btn.preStep%></label></span>
+	<span id="next" class="wdsNext"><i class="subBtnLg"></i><label><%btn.nextStep%></label></span>
+</div>

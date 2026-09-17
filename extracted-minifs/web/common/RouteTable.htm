@@ -1,0 +1,25 @@
+<script type="text/javascript">function init(){function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return true;case EINVIP:showStr=errStr.ipAddrErr;break;case EINVIPFMT:showStr=errStr.ipAddrFmtErr;break;case EINVNET:showStr=errStr.routeIpInLanWanNet;break;case EINVGROUPIP:showStr=errStr.ipAddrGroupErr;break;case EINVLOOPIP:showStr=errStr.ipAddrLoopErr;break;case EINVMASK:showStr=errStr.maskErr;break;case EINVGTW:showStr=errStr.gatewayErr;break;case EINVIPMASKPAIR:showStr=errStr.ipAddrMaskNotMatch;break;case EGTWUNREACH:showStr=errStr.gatewayUnreachErr;break;case EENTRYNOTEXIST:showStr=errStr.entryNoExistErr;break;case EENTRYEXIST:showStr=errStr.entryExistErr;break;case EENTRYCONFLIC:showStr=errStr.entryConflicErr;break;case ETABLEFULL:showStr=errStr.tableFullErr;break;case EINVINSTRUCT:showStr=errStr.instructErr;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return false}function bRouteNetIsLoopback(value){var ipByte=value.split(".");return(127==ipByte[0])?true:false}function routeSysListIfnetRename(routeSysList){for(var index=0;index<routeSysList.length;index++){if(bRouteNetIsLoopback(routeSysList[index].net)){routeSysList.splice(index--,1);continue}switch(routeSysList[index].netif){case"0":routeSysList[index].netif="LAN/WLAN";break;case"1":routeSysList[index].netif="WAN";break;default:break}}}function routeStaticSave(mode,index){var routeStc=$.findBlock(STATIC_ROUTE_DATA_ID).list;var cmd="main route -stc -"+mode+" index:"+index+" net:"+routeStc[index].net+" mask:"+routeStc[index].mask+" gateway:"+routeStc[index].gateway+" valid";var errorno=$.instr(cmd).errorno;$.setTimeout(routeSysRefreshExtern,1000);return errHandle(errorno)}function routeStaticDelSel(indexStr){var indexList=indexStr.split("-");var cmd;var errorno;for(var index in indexList){cmd="main route -stc -delete index:"+indexList[index];errorno=$.instr(cmd).errorno}$.setTimeout(routeSysRefreshExtern,1000);return errHandle(errorno)}function routeStaticDelAll(){var cmd="main route -stc -clr";var errorno=$.instr(cmd).errorno;$.setTimeout(routeSysRefreshExtern,1000);return errHandle(errorno)}function routeSysRefresh(){var routeSys=$.readEx(SYSTEM_ROUTE_DATA_ID);routeSysListIfnetRename(routeSys.list);dataGridSys.setDataSource(routeSys.list);return true}function routeSysRefreshExtern(){var routeSys=$.readEx(SYSTEM_ROUTE_DATA_ID);routeSysListIfnetRename(routeSys.list);dataGridSys.setDataSource(routeSys.list);dataGridSys.refresh(1)}function routeStaticInit(){var routeStatic=$.readEx(STATIC_ROUTE_DATA_ID);dataGridSta=new DataGrid();dataGridSta.init({id:"routeStaticTbl",data:routeStatic.list,max:16,head:[{field:label.targetAddr,width:160},{field:label.mask,width:160},{field:label.nextStepAddr,width:160}],list:[{name:"net",type:"ip"},{name:"mask",type:"mask"},{name:"gateway",type:"gateway"}],toolBar:{id:"routeStcUl",delSel:routeStaticDelSel,save:routeStaticSave,delAll:routeStaticDelAll}})}function routeSysInit(){var routeSys=$.readEx(SYSTEM_ROUTE_DATA_ID);routeSysListIfnetRename(routeSys.list);dataGridSys=new DataGrid();dataGridSys.init({id:"routeSysTbl",data:routeSys.list,hasSelBox:false,checkIndex:2,edit:false,head:[{field:label.targetAddr,width:150},{field:label.mask,width:150},{field:label.nextStepAddr,width:150},{field:label.ifName,width:110}],list:[{edit:false,name:"net",type:"str"},{edit:false,name:"mask",type:"str"},{edit:false,name:"gateway",type:"gateway"},{edit:false,name:"netif",type:"str"}],toolBar:{id:"routeSysUl",refresh:routeSysRefresh}})}var dataGridSta;var dataGridSys;routeStaticInit();routeSysInit()}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleB">
+		<label class="title"><%label.routeStcList%></label>
+		<i class="helpBtn" helpStr="routeTableHelp"></i>
+	</div>
+	<div class="blockTable">
+		<table id="routeStaticTbl" class="dataGrid"></table>
+		<div id="routeStcUl" class="blockFuncA blockFuncTable">
+			<span gridType="add" class="add"><i class="subBtnLg"></i><label><%btn.add%></label></span>
+			<span gridType="delAll" class="delAll"><i class="subBtnLg"></i><label><%btn.deleteAll%></label></span>
+			<span gridType="delSel" class="delSel"><i class="subBtnLg"></i><label><%btn.deleteSel%></label></span>
+		</div>
+	</div>
+	<p class="hsTitleLine"></p>
+	<div class="title titleB">
+		<label class="title"><%label.routeSysList%></label>
+	</div>
+	<div class="blockTable">
+		<table id="routeSysTbl" class="dataGrid"></table>
+		<div id="routeSysUl" class="blockFuncA blockFuncTable">
+			<span gridType="refresh" class="refresh"><i class="subBtnLg"></i><label><%btn.refresh%></label></span>
+		</div>
+	</div>
+</div>

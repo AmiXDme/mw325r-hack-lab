@@ -1,0 +1,75 @@
+<style type="text/css">
+	div.pEptLogo{
+		color:#000000;
+		font-weight:bold;
+		top:90px;
+		left:75.5px;
+		position:absolute;
+	}
+	h2.pcCalenderTitle{
+		color:#000000;
+		font-size:14px;
+		font-weight:bold;
+		vertical-align:middle;
+		margin:30px 0 20px 75.5px;
+	}
+	p.pcTimeDemo{
+		width:50%;
+		margin:15px 0 0 75.5px;
+		text-align:left;
+	}
+	p.pcTimeDemo span{
+		color:#999999;
+		margin-right:10px;
+		vertical-align:middle;
+	}
+	p.pcTimeDemo i{
+		height:18px;
+		width:18px;
+		vertical-align:middle;
+		background:#A0D468;
+		display:inline-block;
+	}
+	div.blockParentCtrl{
+		padding-top:20px;
+	}
+	#pcTimeGrid{
+		margin-left:75.5px;
+	}
+	#hsConf {
+		height: 235px;
+	}
+	#hsConf p.detail {
+		height: 130px;
+	}
+</style>
+<script type="text/javascript">function init(){var hostList=[{str:label.pSelect,value:-1}];var parentList=[];function parentCtrlSwitchState(state){var errNo,cmd=(1==state)?"advanced pc -enable":"advanced pc -disable";if(state==parentCtrl.enable){return}errNo=$.instr(cmd).errorno;if(false==errHandle(errNo)){switchRadio.setState(state?0:1);return}parentCtrl.enable=state;if(1==state){showAlert(label.parentCtrlNote)}}function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return true;case EINVMACFMT:showStr=errStr.macFmtErr;break;case EINVMACZERO:showStr=errStr.macZeroErr;break;case EINVMACBROAD:showStr=errStr.macBroadErr;break;case EINVMACGROUP:showStr=errStr.macGroupErr;break;case ETABLEFULL:showStr=errStr.tableFullErr;break;case ETABLEEMPTY:showStr=errStr.tableEmptyErr;break;case EENTRYNOTEXIST:showStr=errStr.entryNoExistErr;break;case EENTRYEXIST:showStr=errStr.entryExistErr;break;case EINVINSTRUCT:showStr=errStr.instructErr;break;case ESYSTEM:showStr=errStr.systemErr;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return false}function parentCtrlSave(mode,index){var selIndex=parseInt(parentList[index].selValue);if(-1==selIndex){return false}var cmd="advanced pc -"+mode+("edit"==mode?" index:"+index:"")+" mac:"+hostList[selIndex].mac.toUpperCase();var errorno=$.instr(cmd).errorno;return errHandle(errorno)}function parentCtrlDelSel(index){var errorno,cmd,cmdPrefix="advanced pc -delete index:";index=index.split("-");for(var prop in index){cmd=cmdPrefix+index[prop];errorno=$.instr(cmd).errorno;if(false==errHandle(errorno)){return false}}return true}function parentCtrlDelAll(){var cmd="advanced pc -clr";var errorno=$.instr(cmd).errorno;return errHandle(errorno)}function getParentCtrlDev(){var index=0,listIndex=1,macVal,hostname;var mac;for(index in staList){macVal=staList[index].mac;if(("00-00-00-00-00-00"==macVal)||(0==macVal.length)){break}if((0==staList[index].online)||(1<staList[index].type)){continue}hostname=staList[index].name;if(0==hostname.length){hostname=label.anonymousHost}hostList[listIndex]={str:hostname+label.lBrackets+label.mac+label.colon+macVal.toUpperCase()+label.rBrackets,value:listIndex,mac:macVal.toUpperCase()};listIndex++}parentList=[];for(index in parentCtrl.list){macVal=parentCtrl.list[index].mac;if(("00-00-00-00-00-00"==macVal)||(""==macVal)){break}parentList[index]={selValue:-1};for(var innerIndex in hostList){mac=hostList[innerIndex].mac;if(mac!=undefined&&macVal.toUpperCase()==mac.toUpperCase()){parentList[index].selValue=hostList[innerIndex].value;break}}if(-1==parentList[index].selValue){var devIndex=hostList.length;hostList[devIndex]={str:label.mac+label.colon+macVal.toUpperCase(),value:devIndex,mac:macVal.toUpperCase()};parentList[index].selValue=devIndex}}}function onSave(){var errorno,schedule=dataCtl.getSelDate();var cmd="advanced pc -set time:"+schedule.join("-");setLoadingId("save");errorno=$.instr(cmd).errorno;return errHandle(errorno)}var dataGridPc=new DataGrid();var parentCtrl,staList,switchRadio;var schedule=$.instr("advanced pc -get").data;$.read(PARENT_CTL_DATA_ID+"#"+STARTTABLE_DATA_ID);parentCtrl=$.findBlock(PARENT_CTL_DATA_ID);staList=$.findBlock(STARTTABLE_DATA_ID).list;id("save").onclick=onSave;switchRadio=new Switch("switchCon",parentCtrl.enable,parentCtrlSwitchState);getParentCtrlDev();dataGridPc.init({id:"parentCtrlTbl",data:parentList,head:[{field:label.parentDev,width:318}],list:[{name:"selValue",type:"select",options:hostList,className:"gridSelectA",defaultValue:-1}],toolBar:{id:"parentCtrlUl",delSel:parentCtrlDelSel,save:parentCtrlSave,delAll:parentCtrlDelAll},cleanTip:label.parentCtrlDelAllNote,max:8});schedule=(""!=schedule)?schedule.split("-",7):[0,0,0,0,0,0,0];var dataCtl=new DateControl("pcTimeGrid",{dateArray:schedule})}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleB">
+		<label class="title"><%menuStr.parentControl%></label>
+		<div id="switchCon" class="switchCon switchConHs">
+			<i class="switchBg"></i>
+			<i class="switchBall"></i>
+		</div>
+		<i class="helpBtn" helpStr="parentControlHelp"></i>
+	</div>
+	<div class="pEptLogo"><%label.parentDevTip%></div>
+	<div class="blockTable blockParentCtrl">
+		<table id="parentCtrlTbl" class="dataGrid"></table>
+		<div id="parentCtrlUl" class="blockFuncA blockFuncTable">
+			<span gridType="add" class="add"><i class="subBtnLg"></i><label><%btn.add%></label></span>
+			<span gridType="delAll" class="delAll"><i class="subBtnLg"></i><label><%btn.deleteAll%></label></span>
+			<span gridType="delSel" class="delSel"><i class="subBtnLg"></i><label><%btn.deleteSel%></label></span>
+		</div>
+	</div>
+	<h2 class="pcCalenderTitle"><%label.childSchedule%></h2>
+	<div class="block">
+		<div id="pcTimeGrid"></div>
+		<p class="pcTimeDemo">
+			<span><%label.forbidTime%></span><i></i>
+		</p>
+		<div class="blockFuncA">
+			<span id="save" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+</div>

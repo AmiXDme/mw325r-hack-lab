@@ -1,0 +1,295 @@
+<style type="text/css">
+	#bEptMenu{
+		border-bottom:2px solid #FC5858;
+		font-size:0px;
+		font-weight:bold;
+		list-style-type:none;
+		margin:0 0 0 65px;
+		padding:44px 0 0 0;
+		width:730px;
+	}
+	#bEptMenu li{
+		display:inline-block;
+		padding-top:1px;
+		*display:inline;
+		*zoom:1;
+	}
+	#bEptHostMenuLi, #bEptGuestMenuLi {
+		width: 235px;
+	}
+	#bEptForbidMenuLi {
+		width: 255px;
+	}
+	li.bEptMenuLi span.des{
+		border-bottom:3px solid #FC5858;
+		color:#5E5E5E;
+		cursor:pointer;
+		display:inline-block;
+		height:43px;
+		_height:40px;
+		font-size:14px;
+	}
+	li.bEptMenuLi span.bEptMenuNum{
+		display:inline-block;
+		margin:-1px 0 0 8px;
+		vertical-align:top;
+		background:url(../images/circleLeft_me.png) no-repeat #FB5858;
+	}
+	li.bEptMenuLi span.numSpn{
+		display:inline-block;
+		line-height:21px;
+		color:#FFFFFF;
+		font-size:12px;
+		padding:0 7px 0 8px;
+		background:url(../images/circleRight_me.png) no-repeat top right;
+	}
+	ul.bEptLH{
+		border-bottom:1px solid #FEABAB;
+		display:block;
+		font-size:0;
+		height:40px;
+		line-height:40px;
+		list-style-type:none;
+		margin:0 0 0 65px;
+		padding:0;
+		width:730px;
+	}
+	ul.bEptLH li{
+		display:inline-block;
+		font-size:12px;
+		*display:inline;
+		*zoom:1;
+	}
+	ul.bEptLH label{
+		font-weight:bold;
+	}
+	ul li.bEptLHDInfo{
+		width:290px;
+	}
+	ul li.bEptLHDSpeeds{
+		text-align:center;
+		width:100px;
+	}
+	ul li.bEptLHDUpLimit{
+		text-align:center;
+		width:125px;
+	}
+	ul li.bEptLHDDownLimit{
+		text-align:center;
+		width:125px;
+	}
+	ul li.bEptLHDForbid{
+		text-align:center;
+		width:90px;
+	}
+	li.bEptLHDForbid span.localHostLbl{
+		background-color:#808080;
+		border-radius:6px;
+		color:#FFFFFF;
+		display:inline-block;
+		font-size:12px;
+		height:20px;
+		line-height:20px;
+		margin-top:30px;
+		text-align:center;
+		width:80px;
+	}
+	ul li.bEptLHDGInfo{
+		width:290px;
+	}
+	ul li.bEptLHDGSpeeds{
+		text-align:center;
+		width:240px;
+	}
+	ul li.bEptLHDGForbid{
+		text-align:center;
+		width:200px;
+	}
+	ul li.bEptLHDFInfo{
+		width:404px;
+	}
+	ul li.bEptLHDFUnForbid{
+		text-align:center;
+		width:326px;
+	}
+	ul.bEptList{
+		color:#808080;
+		font-size:0;
+		height:480px;
+		list-style-type:none;
+		margin:0 0 0 65px;
+		padding:0;
+		width:730px;
+	}
+	ul.bEptList li{
+		border-bottom:1px solid #FEABAB;
+		float:left;
+		height:80px;
+	}
+	i.bEptLogoImg{
+		float:left;
+		height:48px;
+		margin:16px 7px 16px 0;
+		width:48px;
+	}
+	p.bEptHostNameP{
+		float:left;
+		height:30px;
+		margin:15px 0 0;
+		overflow:hidden;
+		width:230px;
+	}
+	p.bEptHostNameP span{
+		color:#000000;
+		cursor:pointer;
+		font-size:12px;
+		font-weight:bold;
+		height:30px;
+		line-height:30px;
+		float:left;
+		overflow:hidden;
+		white-space:pre;
+		width:130px;
+	}
+	p.bEptHostNameP input{
+		background-color:#D9D9D9;
+		border:none;
+		color:#4C4C4C;
+		display:none;
+		font-size:12px;
+		height:17px;
+		float:left;
+		margin-top:6px;
+		padding:1px 0;
+		text-indent:2px;
+	}
+	@media screen and (-webkit-min-device-pixel-ratio:0)
+	{
+		p.bEptHostNameP input{
+			line-height:0px !important;
+		}
+	}
+	p.bEptHostNameP i {
+		background:url("../images/basic_me.png") no-repeat -176px -366px;
+		cursor:pointer;
+		display:inline-block;
+		height:21px;
+		float:right;
+		margin-top:4px;
+		width:22px;
+	}
+	p.bEptHostDetl{
+		float:left;
+		font-size:12px;
+		margin:0;
+		width:230px;
+	}
+	p.bEptForbidInfo{
+		width:300px !important;
+	}
+	p.bEptForbidInfo span{
+		font-weight:bold;
+	}
+	p.bEptHostDetl span.bEptIp {
+		float:left;
+		font-weight:bold;
+	}
+	p.bEptHostDetl span.bEptLinkType {
+		font-weight:bold;
+		float:right;
+	}
+	p.bEptHostSpeedT{
+		margin-top:20px;
+	}
+	p.bEptHostSpeedB{
+		margin-top:10px;
+	}
+	p.bEptHostSpeed i{
+		display:inline-block;
+		height:12px;
+		vertical-align:middle;
+		width:11px;
+	}
+	p.bEptHostSpeed span.bSpeedSpn{
+		font-size:12px;
+		font-weight:bold;
+		margin-left:2px;
+		vertical-align:middle;
+	}
+	i.bUSpeedImg{
+		background:url("../images/basic_me.png") no-repeat -18px -375px;
+	}
+	i.bDSpeedImg{
+		background:url("../images/basic_me.png") no-repeat scroll -5px -375px;
+	}
+	span.bEptLSSpan{
+		color:#808080;
+		font-weight:bold;
+		font-size:12px;
+		line-height:80px;
+		cursor:pointer;
+	}
+	li input.bEptLSInput{
+		background-color:#D9D9D9;
+		border:none;
+		color:#4C4C4C;
+		display:none;
+		font-size:12px;
+		height:17px;
+		text-indent:2px;
+		vertical-align:middle;
+		width:56px;
+	}
+	@media screen and (-webkit-min-device-pixel-ratio:0)
+	{
+		li input.bEptLSInput{
+			line-height:0px !important;
+		}
+	}
+	label.bEptLSDes{
+		display:none;
+		font-size:11px;
+		font-weight:bold;
+		line-height:78px;
+		margin-left:2px;
+		vertical-align:middle;
+	}
+	i.bEptLSImg{
+		cursor:pointer;
+		display:block;
+		height:37px;
+		margin:21px auto;
+		width:36px;
+	}
+	i.bEptUpLSImg{
+		background:url("../images/basic_me.png") no-repeat scroll -135px -346px;
+	}
+	i.bEptDownLSImg{
+		background:url("../images/basic_me.png") no-repeat scroll -94px -346px;
+	}
+	li i.bEptLSImgHandleC{
+		display:block;
+		height:35px;
+		margin:22px auto;
+		width:34px;
+	}
+</style>
+<script type="text/javascript">function init(){var epTypes={inet:0,wirelessH:1,wirelessG:2,block:1,unBlock:0,unLimit:0,offline:0,online:1};var epLinkType=[label.inetLink,label.wirelessLink,label.wirelessLink];var tmpId="bEptHostName";var refreshDataHandle;var beEdit=false;var bEptNameMaxLen=20;var bEptNameMax=16;var epStaList;var epMenuIndex=0;var localInfo;var wirelessEnableG;var cmdPrefix="main staMgt -add";var bMenuList=[{id:"bEptHost",className:"hostIcon",des:label.bHostEpt,cHandle:bMenuHostC,url:"../images/hostIcon.png",numObj:null,refresh:bMenuHostRefresh},{id:"bEptGuest",className:"guestIcon",des:label.bGuestEpt,cHandle:bMenuGuestC,url:"../images/guestIcon.png",numObj:null,refresh:bMenuGuestRefresh},{id:"bEptForbid",className:"forbidIcon",des:label.bForbidEpt,cHandle:bMenuForbidC,url:"../images/forbidenIcon.png",numObj:null,refresh:bMenuForbidRefresh}];function bEptFillName(){var item;for(var index in epStaList){item=epStaList[index];if("00-00-00-00-00-00"==item.mac){break}if(""==item.name){item.name=label.anonymousHost}}}function bEptNumSet(host,guest,forbid){var numSpn=$("li.bEptMenuLi span.numSpn");var len=numSpn.length;var linkNum=host;if(len==2){arguments[1]=arguments[2]}else{linkNum+=guest}bEquipLinkedNumSet(linkNum);for(var i=0;i<len;i++){numSpn[i].innerHTML=arguments[i]}}function bEptHostFilter(item){if((item.online==epTypes.online)&&(item.blocked==epTypes.unBlock)&&(item.type==epTypes.inet||item.type==epTypes.wirelessH)){return true}return false}function bEptGuestFilter(item){if((item.online==epTypes.online)&&(item.blocked==epTypes.unBlock)&&(item.type==epTypes.wirelessG)){return true}return false}function bEptForbidFilter(item){if(item.blocked==epTypes.block){if(false==wirelessEnableG&&item.type==epTypes.wirelessG){return false}return true}return false}function bEptLinkBandSearch(item){var bandArr=MacFactoryArr;var len=bandArr.length-1;var macItem,taItem=bandArr[len];var mac=(item.mac).substring(0,8).toUpperCase();for(var i=0;i<len;i++){macItem=bandArr[i];if((macItem.mac).indexOf(mac)>=0){taItem=macItem;break}}item.posX=taItem.posX+"px";item.posY=taItem.posY+"px"}function bEptFilterList(callBack){var resultList=[];var item,mac;var forbidNum=0;var hostNum=0;var guestNum=0;var localItem;for(var index in epStaList){item=epStaList[index];mac=item.mac;if(mac.length==0||mac=="00-00-00-00-00-00"){break}if(item.blocked==epTypes.unBlock){if(item.online==epTypes.online){if(item.type==epTypes.inet||item.type==epTypes.wirelessH){hostNum++}else{guestNum++}}}else{forbidNum++}if(callBack(item)==true){bEptLinkBandSearch(item);if(item.mac==localInfo){localItem=item}else{resultList.push(item)}}}resultList.sort(function(pre,next){var ipPreArr=pre.ip.split(".");var ipNextArr=next.ip.split(".");for(var i=0;i<4;i++){if(parseInt(ipPreArr[i],10)==parseInt(ipNextArr[i],10)){continue}if(parseInt(ipPreArr[i],10)>parseInt(ipNextArr[i],10)){return 1}else{return -1}}return 0});if(undefined!=localItem){resultList.unshift(localItem)}bEptNumSet(hostNum,guestNum,forbidNum);return resultList}function bEptNameInputB(item,input){var cmd,name=input.value;input.parentNode.id=tmpId;input.style.display="none";if(name!=item.name){cmd=cmdPrefix+" mac:"+item.mac+" name:"+encodeURL(name)+" upload:"+item.upLimit+" download:"+item.downLimit;if(epTypes.block==item.blocked){cmd+=" blocked"}result=$.instr(cmd);data=result.data;if(ENONE==result.errorno&&0!=data.length){data=data.substring(0,data.lastIndexOf("\r\n"));name=item.name=data}}name=htmlEscape(getStrInMax(name,bEptNameMaxLen));$("#"+tmpId+" span").css("display","inline-block").html(name);input.parentNode.id="";beEdit=false;refreshPage()}function bEptNamePencelC(){var span,width,input;this.parentNode.id=tmpId;span=$("#"+tmpId+" span");span.css("display","none");width=parseInt(span.css("width"));width=width>60?width:60;var input=$("#"+tmpId+" input");input.css("display","inline").css("width",width).focus();input[0].select();this.parentNode.id="";beEdit=true}function bEptHostDLC(){var input;this.parentNode.id=tmpId;$("#"+tmpId+" span").css("display","none");$("#"+tmpId+" i").css("display","none");input=$("#"+tmpId+" input");input.css("display","inline").focus();$("#"+tmpId+" label").css("display","inline-block");input[0].select();this.parentNode.id="";beEdit=true}function bEptHostDLInputB(item,input,name){var pencel,parent,span,value,cmd;parent=input.parentNode;parent.id=tmpId;input.style.display="none";$("#"+tmpId+" label").css("display","none");if(("upLimit"==name)&&(input.value*1024!=item.upLimit)){cmd=cmdPrefix+" mac:"+item.mac+" name:"+encodeURL(item.name)+" upload:"+(input.value*1024)+" download:"+item.downLimit;if(epTypes.block==item.blocked){cmd+=" blocked"}$.instr(cmd)}else{if(("downLimit"==name)&&(input.value*1024!=item.downLimit)){cmd=cmdPrefix+" mac:"+item.mac+" name:"+encodeURL(item.name)+" upload:"+item.upLimit+" download:"+(input.value*1024);if(epTypes.block==item.blocked){cmd+=" blocked"}$.instr(cmd)}}if(0==parseInt(input.value)||0==input.value.length){input.value=0;pencel=$("#"+tmpId+" i")[0];if(pencel==null){pencel=document.createElement("i");pencel.className="bEptLSImg";pencel.onclick=bEptHostDLC;parent.appendChild(pencel)}pencel.style.display="inline-block"}else{span=$("#"+tmpId+" span")[0];if(span==null){span=document.createElement("span");span.className="bEptLSSpan";span.onclick=bEptHostDLC;parent.appendChild(span)}span.style.display="inline-block";value=parseInt(input.value);span.innerHTML=value+label.kByteSpeedUnit;input.value=value}parent.id="";beEdit=false;refreshPage()}function bEptDetailFill(item,listUl,className,speedsClass,hostNameClass){var li,img,input,span,p,lbl;var upSpeed,downSpeed,name=item.name;li=document.createElement("li");li.className=className;listUl.appendChild(li);img=document.createElement("i");img.className="bEptLogoImg";img.style.background="url(../images/basic_me.png) no-repeat scroll "+item.posX+" "+item.posY;li.appendChild(img);p=document.createElement("p");p.className="bEptHostNameP "+hostNameClass;li.appendChild(p);span=document.createElement("span");span.innerHTML=htmlEscape(getStrInMax(name,bEptNameMaxLen));span.onclick=bEptNamePencelC;p.appendChild(span);input=document.createElement("input");input.value=name;input.maxLength=bEptNameMax;input.onblur=(function(item){return function(){bEptNameInputB(item,this)}})(item);input.onkeyup=(function(item){return function(event){event=event||window.event;if(event.keyCode==13){bEptNameInputB(item,this)}}})(item);p.appendChild(input);img=document.createElement("i");img.onclick=bEptNamePencelC;p.appendChild(img);p=document.createElement("p");p.className="bEptHostInfo bEptHostDetl";p.innerHTML="<span class='bEptIp'>IP "+item.ip+"</span><span class='bEptLinkType'>"+epLinkType[item.type]+"</span>";li.appendChild(p);li=document.createElement("li");li.className=speedsClass;upSpeed=netSpeedTrans(item.up);downSpeed=netSpeedTrans(item.down);li.innerHTML="<p class='bEptHostSpeed bEptHostSpeedT'><i class='bUSpeedImg'></i><span class='bSpeedSpn'>"+upSpeed+"</span></p><p class='bEptHostSpeed bEptHostSpeedB'><i class='bDSpeedImg'></i><span class='bSpeedSpn'>"+downSpeed+"</span></p>";listUl.appendChild(li)}function bHostListFill(bHostList){var li,img,input,span,lbl;var listUl=id("bEptList");var item,local;listUl.innerHTML="";for(var i=0,len=bHostList.length;i<len;i++){item=bHostList[i];bEptDetailFill(item,listUl,"bEptLHDInfo","bEptLHDSpeeds","bEptHostNamePH");li=document.createElement("li");li.className="bEptLHDUpLimit";listUl.appendChild(li);if(0==item.upLimit){img=document.createElement("i");img.className="bEptLSImg bEptUpLSImg";img.onclick=bEptHostDLC;li.appendChild(img)}else{span=document.createElement("span");span.className="bEptLSSpan";span.innerHTML=parseInt(item.upLimit/1024)+label.kByteSpeedUnit;span.onclick=bEptHostDLC;li.appendChild(span)}input=document.createElement("input");input.value=parseInt(item.upLimit/1024);input.className="bEptLSInput";input.maxLength=7;input.onblur=(function(item){return function(){bEptHostDLInputB(item,this,"upLimit")}})(item);input.onkeyup=(function(item){return function(event){event=event||window.event;if(event.keyCode==13){bEptHostDLInputB(item,this,"upLimit")}}})(item);li.appendChild(input);lbl=document.createElement("label");lbl.className="bEptLSDes";lbl.innerHTML=label.kByteSpeedUnit;li.appendChild(lbl);li=document.createElement("li");li.className="bEptLHDDownLimit";listUl.appendChild(li);if(0==item.downLimit){img=document.createElement("i");img.className="bEptLSImg bEptDownLSImg";img.onclick=bEptHostDLC;li.appendChild(img)}else{span=document.createElement("span");span.className="bEptLSSpan";span.innerHTML=parseInt(item.downLimit/1024)+label.kByteSpeedUnit;span.onclick=bEptHostDLC;li.appendChild(span)}input=document.createElement("input");input.value=parseInt(item.downLimit/1024);input.className="bEptLSInput";input.maxLength=7;input.onblur=(function(item){return function(){bEptHostDLInputB(item,this,"downLimit")}})(item);input.onkeyup=(function(item){return function(event){event=event||window.event;if(event.keyCode==13){bEptHostDLInputB(item,this,"downLimit")}}})(item);li.appendChild(input);lbl=document.createElement("label");lbl.className="bEptLSDes";lbl.innerHTML=label.kByteSpeedUnit;li.appendChild(lbl);li=document.createElement("li");li.className="bEptLHDForbid";img=document.createElement("i");img.className="bEptLSImgHandleC";if(0==i&&USER_GROUP_REMOTE!=$.group){img=document.createElement("span");img.innerHTML=label.bHost;img.className="localHostLbl"}else{img.style.background="url(../images/basic_me.png) no-repeat scroll -103px -252px";img.style.cursor="pointer";img.onclick=(function(item){return function(){var cmd=cmdPrefix+" mac:"+item.mac+" name:"+encodeURL(item.name)+" upload:"+item.upLimit+" download:"+item.downLimit+" blocked";$.instr(cmd);refreshPage()}})(item)}li.appendChild(img);listUl.appendChild(li)}}function bMenuHostRefresh(){bHostListFill(bEptFilterList(bEptHostFilter))}function bMenuHostC(){id("bEptLHHost").style.display="block";id("bEptLHGuest").style.display="none";id("bEptLHForbid").style.display="none";refreshPage()}function bGuestListFill(bGuestList){var li,img;var listUl=id("bEptList");var item;listUl.innerHTML="";for(var i=0,len=bGuestList.length;i<len;i++){item=bGuestList[i];bEptDetailFill(item,listUl,"bEptLHDGInfo","bEptLHDGSpeeds","bEptHostNamePG");li=document.createElement("li");li.className="bEptLHDGForbid";img=document.createElement("i");img.className="bEptLSImgHandleC";img.style.background="url(../images/basic_me.png) no-repeat scroll -103px -252px";img.style.cursor="pointer";img.onclick=(function(item){return function(){var cmd=cmdPrefix+" mac:"+item.mac+" name:"+encodeURL(item.name)+" upload:"+item.upLimit+" download:"+item.downLimit+" blocked";$.instr(cmd);refreshPage()}})(item);li.appendChild(img);listUl.appendChild(li)}}function bMenuGuestRefresh(){bGuestListFill(bEptFilterList(bEptGuestFilter))}function bMenuGuestC(){id("bEptLHHost").style.display="none";id("bEptLHGuest").style.display="block";id("bEptLHForbid").style.display="none";refreshPage()}function bForbidListFill(bForbidList){var li,img,input,span,p,lbl;var listUl=id("bEptList");var item,name;listUl.innerHTML="";for(var i=0,len=bForbidList.length;i<len;i++){item=bForbidList[i];name=item.name;li=document.createElement("li");li.className="bEptLHDFInfo";listUl.appendChild(li);img=document.createElement("i");img.className="bEptLogoImg";img.style.background="url(../images/basic_me.png) no-repeat scroll "+item.posX+" "+item.posY;li.appendChild(img);p=document.createElement("p");p.className="bEptHostNameP bEptForbidName";li.appendChild(p);span=document.createElement("span");span.innerHTML=htmlEscape(getStrInMax(name,bEptNameMaxLen));span.onclick=bEptNamePencelC;p.appendChild(span);input=document.createElement("input");input.value=name;input.maxLength=bEptNameMax;input.onblur=(function(item){return function(){bEptNameInputB(item,this)}})(item);input.onkeyup=(function(item){return function(event){event=event||window.event;if(event.keyCode==13){bEptNameInputB(item,this)}}})(item);p.appendChild(input);img=document.createElement("i");img.onclick=bEptNamePencelC;p.appendChild(img);p=document.createElement("p");p.className="bEptHostInfo bEptHostDetl bEptForbidInfo";p.innerHTML="<span>MAC "+item.mac.toUpperCase()+"</span>";li.appendChild(p);li=document.createElement("li");li.className="bEptLHDFUnForbid textAlignCenter";img=document.createElement("i");img.className="bEptLSImgHandleC";img.style.background="url(../images/basic_me.png) no-repeat scroll -103px -252px";img.style.cursor="pointer";img.onclick=(function(item){return function(){var cmd=cmdPrefix+" mac:"+item.mac+" name:"+encodeURL(item.name)+" upload:"+item.upLimit+" download:"+item.downLimit;$.instr(cmd);refreshPage()}})(item);li.appendChild(img);listUl.appendChild(li)}}function bMenuForbidRefresh(){bForbidListFill(bEptFilterList(bEptForbidFilter))}function bMenuForbidC(){id("bEptLHHost").style.display="none";id("bEptLHGuest").style.display="none";id("bEptLHForbid").style.display="block";refreshPage()}function bMenuCHandle(index){var liClt=$("li.bEptMenuLi span.des");epMenuIndex=index;liClt.css("borderBottom","3px solid #FFFFFF");liClt.css("color","#5E5E5E");liClt[index].style.borderBottom="3px solid #FC5858";liClt[index].style.color="#000000";bMenuList[index].cHandle(index)}function bMenuFilter(){wirelessEnableG=MBSSID_GUESTNET_DATA_ID&&$.findBlock(MBSSID_GUESTNET_DATA_ID).bEnable;if(wirelessEnableG==false){bMenuList[0].des=label.linkedEpt;bMenuList.splice(1,1)}}function bMenuInit(){var li,i,img,span,itemObj;var ul=id("bEptMenu");bMenuFilter();for(var item in bMenuList){itemObj=bMenuList[item];li=el("li");li.className="bEptMenuLi";li.id=itemObj.id+"MenuLi";li.onclick=(function(index){return function(){bMenuCHandle(index)}})(item);ul.appendChild(li);span=el("span");span.className="des";span.innerHTML=itemObj.des;li.appendChild(span);span=el("span");span.className="bEptMenuNum";i=el("span");i.className="numSpn";itemObj.numObj=i;span.appendChild(i);li.appendChild(span)}bMenuCHandle(epMenuIndex)}function refreshPage(){if(beEdit==false){clearTimeout(refreshDataHandle);$.readNonBlock(STARTTABLE_DATA_ID,function(){if(null==id(idStr)){return}bEptFillName();bMenuList[epMenuIndex].refresh();refreshDataHandle=$.setTimeout(refreshPage,1000)})}}function bEptGetLocalInfi(){var pos,result=$.getPeerMac();if(ENONE!=result.errorno||""==result.data){return}localInfo=result.data;pos=localInfo.indexOf("\r\n");if(pos>0){localInfo=localInfo.substring(0,pos)}}var idStr="bEptLHDInfo"+(new Date()).getTime();$("li.bEptLHDInfo")[0].id=idStr;$.read(MBSSID_GUESTNET_DATA_ID+"#"+WLAN_BASIC_DATA_ID);bEptGetLocalInfi();epStaList=$.findBlock(STARTTABLE_DATA_ID).list;bMenuInit();var listScroll=new NiceScroll("bEptList");listScroll.scrollTipOpacity(1);listScroll.init()}init();</script>
+<ul id="bEptMenu"></ul>
+<ul id="bEptLHHost" class="bEptLH">
+	<li class="bEptLHDInfo"><label><%label.bEptName%></label></li>
+	<li class="bEptLHDSpeeds"><label><%label.bNetSpeed%></label></li>
+	<li class="bEptLHDUpLimit"><label><%label.bLimitUpSpeed%></label></li>
+	<li class="bEptLHDDownLimit"><label><%label.bLimitDownSpeed%></label></li>
+	<li class="bEptLHDForbid"><label><%btn.disable%></label></li>
+</ul>
+<ul id="bEptLHGuest" class="bEptLH">
+	<li class="bEptLHDGInfo"><label><%label.bEptName%></label></li>
+	<li class="bEptLHDGSpeeds"><label><%label.bNetSpeed%></label></li>
+	<li class="bEptLHDGForbid"><label><%btn.disable%></label></li>
+</ul>
+<ul id="bEptLHForbid" class="bEptLH">
+	<li class="bEptLHDFInfo"><label><%label.bEptName%></label></li>
+	<li class="bEptLHDFUnForbid"><label><%btn.unforbid%></label></li>
+</ul>
+<ul id="bEptList" class="bEptList"></ul>

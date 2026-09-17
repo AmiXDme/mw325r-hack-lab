@@ -1,0 +1,84 @@
+<style type="text/css">
+	input.checkbox{
+		vertical-align:middle;
+	}
+</style>
+<script type="text/javascript">function init(){var wifiChannel=[{str:label.wirelessAuto,value:0},{str:"1",value:1},{str:"2",value:2},{str:"3",value:3},{str:"4",value:4},{str:"5",value:5},{str:"6",value:6},{str:"7",value:7},{str:"8",value:8},{str:"9",value:9},{str:"10",value:10},{str:"11",value:11},{str:"12",value:12},{str:"13",value:13}];var wifiMode=[{str:label.wlan11bgn,value:5},{str:label.wlan11n,value:3},{str:label.wlan11bg,value:4},{str:label.wlan11g,value:2},{str:label.wlan11b,value:1}];var wifiWidth=[{str:label.wirelessAuto,value:2},{str:"20 "+label.mHzUnit,value:1}];var wifiPower=[{str:label.wirelessTxPwrHigh,value:1},{str:label.wirelessTxPwrMid,value:2},{str:label.wirelessTxPwrLow,value:3}];var EINVSSIDNULL="EINVSSIDNULL";function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return true;case EINVSSIDLEN:showStr=errStr.wlanSsidLenErr;break;case EINVSSIDNULL:showStr=errStr.wlanSsidErr;break;case EPWDBLANK:showStr=errStr.wlanPwdNull;break;case EINVPSKLEN:showStr=errStr.wlanPwdLenValid;break;case EINVWLANPWD:showStr=errStr.wlanPwdInvalid;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return false}function wlanModeChange(mode){if(1==mode||2==mode||4==mode){wlanWidth.changeSel(1);wlanWidth.disable(true)}else{if(undefined==chanWidth){wlanWidth.changeSel(2)}wlanWidth.disable(false)}chanWidth=undefined}function securityCheck(){var checked=wlanSecurityDisable.checked;disableInput(wlanPwd,checked);if(false==checked){wlanPwd.select()}}function securityInit(){var secEnable=wlanMbssidData.bSecurityEnable;wlanPwd.value=wlanMbssidData.cPskSecret;wlanSecurityDisable.checked=(1==secEnable)?false:true;wlanSecurityDisable.onclick=securityCheck;disableInput(wlanPwd,wlanSecurityDisable.checked)}function wlanCfgSwitchState(state){var errNo=ENONE;if(state!=wlanMbssidData.bEnable){wlanMbssidData.bEnable=state;errNo=$.write($.toText(wlanMbssidData),$.block)}return errHandle(errNo)}function onSave(){var errNo;var secEnable=(wlanSecurityDisable.checked==true)?0:1;if(0==(ssid.value).length){return errHandle(EINVSSIDNULL,ssid)}if((1==secEnable)&&(ENONE!=(errNo=checkWlanPwd(wlanPwd.value)))){return errHandle(errNo,wlanPwd)}if(wlanApcData.bBridgeEnabled==1&&wlanMbssidData.bEnable==1&&curChannel!=channel.value){return showAlert(label.changeChannelAlert)}var ssidBrdValue=(ssidBrd.checked==true)?1:0;var apIsolateValue=(apIsolate.checked==true)?1:0;wlanMbssidData.cSsid=ssid.value;wlanMbssidData.bBcastSsid=ssidBrdValue;wlanBasicData.uChannel=channel.value;wlanMbssidData.bSecurityEnable=secEnable;wlanMbssidData.uPSKSecOpt=3;wlanMbssidData.uPSKEncryptType=3;wlanMbssidData.cPskSecret=(1==secEnable)?wlanPwd.value:wlanMbssidData.cPskSecret;wlanMbssidData.bSecCheck=(secEnable==1)?0:1;wlanBasicData.uBgnMode=wlanMode.value;wlanBasicData.uChannelWidth=wlanWidth.value;wlanAdvData.uPower=wlanPower.value;wlanAdvData.bIsolationEnabled=apIsolateValue;setLoadingId("save");errNo=$.write($.toText(wlanBasicData)+$.toText(wlanMbssidData),$.block);if(errNo!=ENONE){return errHandle(errNo)}}$.read(WLAN_BASIC_DATA_ID+"#"+MBSSID_MAIN_DATA_ID);var wlanBasicData=$.findBlock(WLAN_BASIC_DATA_ID);var wlanMbssidData=$.findBlock(MBSSID_MAIN_DATA_ID);var wlanAdvData,wlanApcData=wlanBasicData.apc;var curChannel=wlanBasicData.uChannel;wlanAdvData=wlanBasicData.adv;if($.local==true){wlanBasicData={bEnabled:"1",uApMode:"1",uRegionIndex:"1",uChannel:"0",uBgnMode:"5",uChannelWidth:"1",adv:{uBeaconInterval:"100",uPower:"1",bWMEEnabled:"1",bIsolationEnabled:"0"}};wlanMbssidData={bEnable:"1",bBcastSsid:"1",cSsid:"TPLINK_xxxx",bSecurityEnable:"0",uAuthType:"3",uPSKSecOpt:"3",uPSKEncryptType:"3",cPskSecret:"12345670"};wlanAdvData=wlanBasicData.adv}var ssid=id("ssid");var ssidBrd=id("ssidBrd");var wlanWidth=id("wlanWidth");var channel=id("channel");var wlanMode=id("wlanMode");var wlanPwd=id("wlanPwd");var wlanSecurityDisable=id("securityDisable");var wlanPower=id("wlanPower");var apIsolate=id("apIsolate");ssid.value=wlanMbssidData.cSsid;ssidBrd.checked=(wlanMbssidData.bBcastSsid==1)?true:false;new Switch("switchCon",wlanMbssidData.bEnable,wlanCfgSwitchState);if(wlanBasicData.uRegionIndex==60){wifiChannel.pop();wifiChannel.pop()}selectInit("channel",wifiChannel,curChannel);securityInit();selectInit("wlanMode",wifiMode,wlanBasicData.uBgnMode,wlanModeChange);var chanWidth=wlanBasicData.uChannelWidth;selectInit("wlanWidth",wifiWidth,chanWidth);wlanModeChange(wlanBasicData.uBgnMode);selectInit("wlanPower",wifiPower,wlanAdvData.uPower);apIsolate.checked=(wlanAdvData.bIsolationEnabled==1)?true:false;id("save").onclick=onSave}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="hsHelp"></div>
+	<div class="title titleA">
+		<label class="title"><%menuStr.wifiHost%></label>
+		<div id="switchCon" class="switchCon switchConHs">
+			<i class="switchBg"></i>
+			<i class="switchBall"></i>
+		</div>
+		<i class="helpBtn" helpStr="wlanNetworkHelp"></i>
+	</div>
+	<div class="block">
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label for="ssid"><%label.wirelessName%><i></i></label><input id="ssid" maxLength="32" /><i class="tip"></i>
+			</li>
+			<li class="wlanCheckR">
+				<input id="ssidBrd" class="checkbox" type="checkbox" />
+				<label for="ssidBrd" class="noteLbl"><%label.wirelessSsidBrd%></label>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label for="wlanPwd"><%label.wirelessPwd%><i></i></label><input id="wlanPwd" maxLength="63" /><i class="tip"></i>
+			</li>
+			<li class="wlanCheckR">
+				<input id="securityDisable" class="checkbox" type="checkbox" />
+				<label for="securityDisable" class="noteLbl"><%label.guestNetNoPwd%></label>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label class="inputLiLbl"><%label.wirelessChannel%><i></i></label>
+				<span class="highSetSelect">
+					<span id="channel" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label class="inputLiLbl"><%label.wirelessMode%><i></i></label>
+				<span class="highSetSelect">
+					<span id="wlanMode" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label class="inputLiLbl"><%label.wirelessWidth%><i></i></label>
+				<span class="highSetSelect">
+					<span id="wlanWidth" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label class="inputLiLbl"><%label.wirelessTxPwr%><i></i></label>
+				<span class="highSetSelect">
+					<span id="wlanPower" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<ul class="gridLine">
+			<input id="apIsolate" class="checkbox" type="checkbox" />
+			<label for="apIsolate" class="noteLbl"><%label.wirelessApIsolate%></label>
+		</ul>
+		<div class="blockFuncA">
+			<span id="save" class="subBtn subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+</div>

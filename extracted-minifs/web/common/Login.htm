@@ -1,0 +1,158 @@
+<style type="text/css">
+	div.lgHead{
+		height:90px;
+		background:url(../images/logo_me.png) no-repeat 0 30px;
+		margin:0 auto;
+		width:1000px;
+	}
+	span.hardwareinfo{
+		display:inline-block;
+		font-size:16px;
+		width:120px;
+		height:90px;
+		margin-left:193px;
+		color:#ffffff;
+		line-height:94px;
+	}
+	div.lgCon{
+		width:675px;
+		margin:0px auto;
+	}
+	li.lgBom{
+		font-size:0px;
+	}
+	li.lgBom li.inputLi{
+		background-color:#FFFFFF;
+		border:medium none;
+		border-radius:3px;
+		height:46px;
+		line-height:46px;
+		margin-left:162.5px;
+		vertical-align:middle;
+		width:350px;
+	}
+	li.lgBom li.inputLi label{
+		width: 175px;
+	}
+	li.lgBom li.inputLi input {
+		width: 121px;
+		margin-left: 15px;
+	}
+	li.lgBom li.note{
+		margin-left:6px;
+		vertical-align:middle;
+		visibility:hidden;
+		*zoom:1;
+	}
+	li.note i.arrowL{
+		border-top:3px solid #FF6060;
+		border-right:5px solid #FFFA76;
+		border-bottom:3px solid #FF6060;
+		border-left:0;
+		font-size:0px;
+		overflow:hidden;
+		vertical-align:middle;
+		*zoom:1;
+	}
+	li.note div.loginNoteCon{
+		background-color:#FFFA76;
+		border-radius:3px;
+		display:inline-block;
+		*display:inline;
+		*zoom:1;
+		font-size:12px;
+		font-weight:bold;
+		vertical-align:middle;
+		width:370px;
+	}
+	div.loginNoteCon p#loginError{
+		padding:0 10px;
+	}
+	div.loginHelp{
+		font-size:0;
+		margin:12px 0 12px 165.5px;
+	}
+	i.loginHelp{
+		background:url("../images/wzd_me.png") no-repeat scroll -257px -109px;
+		cursor:pointer;
+		display:inline-block;
+		height:20px;
+		margin-left:4px;
+		vertical-align:middle;
+		width:20px;
+	}
+	span.loginHelp{
+		color:#B21F1F;
+		cursor:pointer;
+		font-size:12px;
+		font-weight:bold;
+		margin-left:4px;
+		vertical-align:middle;
+	}
+	#loginFeg{
+		visibility:hidden;
+	}
+	#loginFeg i{
+		border-bottom:4px solid #FFFA76;
+		border-left:4px solid #FF6060;
+		border-right:4px solid #FF6060;
+		border-top:0;
+		display:block;
+		height:0;
+		margin-left:10px;
+		width:0;
+	}
+	#loginFeg p{
+		background-color:#FFFA76;
+		border-radius:3px;
+		font-size:12px;
+		font-weight:bold;
+		padding:7px 10px;
+		width:324px;
+	}
+	#CoverP{
+		padding:0px;
+		text-align:center;
+		color:#FFFFFF;
+		font-weight:bold;
+		font-size:16px;
+		position:absolute;
+		width:100%;
+		z-index:1011;
+	}
+	li.lgBtns{
+		padding-top:0px;
+	}
+</style>
+<script type="text/javascript">function init(){var lgObj={max:7200,cnt:10,minTipCnt:3,timeout:1000};function lgShowErrorCon(){setStyle(id("lgPwdNote"),{visibility:"visible"});disInputTip($("#lgPwd ~ i.tip")[0],"error")}function lgTimerCheck(){lgObj.max--;if(lgObj.max==0){var lgPwd=id("lgPwd");lgObj.max=7200;lgPwd.disabled=false;lgPwd.focus();id("loginSub").disabled=false;hideCover(function(cover){document.body.removeChild(id("CoverP"))});return}$.setTimeout(arguments.callee,lgObj.timeout)}function showLgError(code){var CoverP;var cover,logTimes;var lgPwd=id("lgPwd");var lineHeight="23px";var oneLine="46px";var loginError=id("loginError");switch(code){case HTTP_CLIENT_FULL:loginError.innerHTML=label.loginFull;lgShowErrorCon();break;case HTTP_CLIENT_LOCK:lgPwd.disabled=true;id("loginSub").disabled=true;showCover(function(cover){CoverP=document.createElement("p");CoverP.innerHTML=label.loginLock;CoverP.id="CoverP";document.body.insertBefore(CoverP,document.body.childNodes[0]);lgPageResize()});$.setTimeout(lgTimerCheck,lgObj.timeout);break;case HTTP_CLIENT_TIMEOUT:loginError.innerHTML=label.loginTimeout;lineHeight=oneLine;lgShowErrorCon();break;case HTTP_CLIENT_PSWIlegal:loginError.innerHTML=label.loginPwdErr;lineHeight=oneLine;lgShowErrorCon();break;case HTTP_CLIENT_PSWERR:case HTTP_CLIENT_INVALID:logTimes=(authInfo[2]==undefined?lgObj.cnt:lgObj.cnt-authInfo[2]);if(lgObj.cnt==logTimes){break}if(logTimes<=lgObj.minTipCnt){loginError.innerHTML=label.loginErrorTipH+logTimes+label.loginErrorTipT}else{loginError.innerHTML=label.loginPwdErr;lineHeight=oneLine}lgShowErrorCon();break;case HTTP_CLIENT_NORMAL:default:break}loginError.style.lineHeight=lineHeight;setDomCursorPos(lgPwd,lgPwd.value.length)}function lgPageResize(){var minHeight=400;var pageHeight=document.documentElement.clientHeight;var lgCon=$("div.lgCon");pageHeight=pageHeight>minHeight?pageHeight:minHeight;pageHeight=parseInt(pageHeight*0.235);lgCon.css("marginTop",pageHeight);$("#CoverP").css("marginTop",pageHeight-120+parseInt(lgCon.css("height")))}function showLoginHelp(){var loginFeg=id("loginFeg");if(loginFeg.style.visibility=="visible"){loginFeg.style.visibility="hidden"}else{loginFeg.style.visibility="visible"}}function lgDoSub(){var lgPwd=id("lgPwd"),sessionValue="";var value=lgPwd.value,result,pos,errorCode;$.rsf(function(){result=$.auth($.orgAuthPwd(value));if(result.errorno==ENONE){unloadLogin();lgPwd.value=""}else{showLgError(parseInt(authInfo[1]))}})}function lgChkPswVal(szValue){return(/^[\x21-\x7e]+$/.test(szValue))}function loginHelpInit(){$("i.loginHelp")[0].onclick=showLoginHelp;$("span.loginHelp")[0].onclick=showLoginHelp}function pageSet(){var lgPwd=id("lgPwd");var loginSub=id("loginSub");lgPageResize();loginSub.onclick=lgDoSub;lgPwd.value="";lgPwd.onkeyup=function(event){event=event||window.event;if(event.keyCode==13){return lgDoSub()}};lgPwd.onkeydown=function(event){setStyle(id("lgPwdNote"),{visibility:"hidden"});disInputTip($("#lgPwd ~ i.tip")[0],"null")};window.onresize=function(){lgPageResize()}}showLgError(parseInt(authInfo[1]));pageSet();loginHelpInit()}init();</script>
+<div class="lgHead"><span class="hardwareinfo"><label><%titleStr.hardwareinfo%></label></span></div>
+<div class="lgCon">
+	<ul>
+		<li class="lgBom">
+			<ul class="inputUl" style="width: 900px;">
+				<li class="inputLi">
+					<label for="lgPwd"><%label.loginPwd%></label>
+					<input id="lgPwd" type="password" maxlength="15" />
+					<i class="tip"></i>
+				</li>
+				<li id="lgPwdNote" class="note">
+					<i class="arrowL"></i>
+					<div class="loginNoteCon">
+						<p id="loginError"></p>
+					</div>
+				</li>
+			</ul>
+			<div class="loginHelp">
+				<i class="loginHelp"></i>
+				<span class="loginHelp"><%label.loginPwdLost%></span>
+				<div id="loginFeg">
+					<i class=""></i>
+					<p class=""><%label.loginPwdLsTip%><%label.loginPwdReset%></p>
+				</div>
+			</div>
+		</li>
+		<li class="lgBtns">
+			<a id="loginSub" href="javascript:void(0)"><i class="btnR"></i></a>
+		</li>
+	</ul>
+</div>

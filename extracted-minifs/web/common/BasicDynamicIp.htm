@@ -1,0 +1,44 @@
+<style type="text/css">
+	#bNwDycIp{
+		font-size:0px;
+		list-style-type:none;
+		margin:0 0 0 175px;
+		padding:0;
+	}
+	#bNwDycIp li{
+		border-bottom:1px solid #FF6060;
+		color:#FF6060;
+		height:30px;
+		line-height:30px;
+		margin-bottom:20px;
+		width:500px;
+	}
+	#bNwDycIp li label{
+		display:inline-block;
+		font-size:12px;
+		text-align:right;
+		vertical-align:middle;
+		width:227px;
+	}
+	#bNwDycIp li span{
+		display:inline-block;
+		font-size:12px;
+		padding-left:53px;
+		vertical-align:middle;
+	}
+</style>
+<script type="text/javascript">function init(){var updateTimerHandle;function updateStatus(){if(LINK_TYPE_DHCP==parseInt(link.linkType)){$.readNonBlock(LINK_STATUS_DATA_ID,function(){var status=$.findBlock(LINK_STATUS_DATA_ID);var bNwNote=id("bNwNote");var vis="hidden";id("ip").innerHTML="0.0.0.0";id("mask").innerHTML="0.0.0.0";id("gateway").innerHTML="0.0.0.0";id("dns").innerHTML="0.0.0.0 , 0.0.0.0";bEptNetWorkSet(status.status,linkType[LINK_TYPE_DHCP]);switch(parseInt(status.status)){case LINK_UP:var dnsStr="";id("ip").innerHTML=status.ip;id("mask").innerHTML=status.mask;id("gateway").innerHTML=status.gateway;dnsStr=status.dns[0]+" , "+status.dns[1];if("0.0.0.0"==status.dns[0]&&"0.0.0.0"==status.dns[1]){dnsStr+=(" "+label.dnsException)}id("dns").innerHTML=dnsStr;break;case LINK_DOWN:if(status.code>=LINK_CODE_UNKNOWN){bNwNote.innerHTML=linkCode[status.code];vis="visible"}break;default:break}$("div.bNwConnectS").css("visibility",vis);$.setTimeout(updateStatus,2000)})}}var link=$.findBlock(LINK_DATA_ID);id("saveImg").onclick=function(){var errNo=ENONE;if(LINK_TYPE_DHCP==link.linkType){errNo=$.instr("wan -linkUp").errorno;return}link.linkType=LINK_TYPE_DHCP;setLoadingId("saveImg",true);errNo=$.write($.toText(link),$.block);if(ENONE!=errNo){$.read(LINK_DATA_ID)}else{updateStatus()}};$("div.bFunc")[0].style.visibility="visible";updateStatus()}init();</script>
+<ul id="bNwDycIp">
+	<li>
+		<label><%label.ipAddr%></label><i></i><span id="ip">0.0.0.0</span>
+	</li>
+	<li class="bNwSubDycIp">
+		<label><%label.gateway%></label><i></i><span id="gateway">0.0.0.0</span>
+	</li>
+	<li class="bNwSubDycIp">
+		<label><%label.mask%></label><i></i><span id="mask">0.0.0.0</span>
+	</li>
+	<li class="bNwSubDycIp">
+		<label><%label.dns%></label><i></i><span id="dns">0.0.0.0 , 0.0.0.0</span>
+	</li>
+</ul>

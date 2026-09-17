@@ -1,0 +1,55 @@
+<style type="text/css">
+	#WDSWwitchCon{
+		visibility:hidden;
+	}
+	#hsSwitchState{
+		visibility:hidden;
+	}
+	p.WDSTitle{
+		background-color:#FF6060;
+		color:#FFFFFF;
+		font-size:12px;
+		font-weight:bold;
+		line-height:32px;
+		*height:32px;
+		position:relative;
+		text-align:center !important;
+	}
+	span.WDSLinkRetrySp{
+		height:17px;
+		line-height:21px;
+		cursor:pointer;
+		display:inline-block;
+		border-bottom:1px solid #FFFFFF;
+	}
+	div.WDSBlock{
+		background-color:#FAFAFA;
+		border:1px solid #CCCCCC;
+		border-radius:4px;
+		margin:13px auto 0;
+		overflow:hidden;
+		width:674px;
+	}
+	div.blockFuncWDS{
+		margin-top:30px !important;
+	}
+	div.handleRelConWds{
+		right:0 !important;
+	}
+</style>
+<script type="text/javascript">function errHandle(errNo,objOrId){var showStr="";var EINVSSIDNULL=10000;switch(errNo){case ENONE:return true;case EINVSSIDLEN:showStr=errStr.wlanSsidLenErr;break;case EINVSSIDNULL:showStr=errStr.wlanSsidErr;break;case EINVPSKAUTH:showStr=errStr.wlanSecNotSupport;break;case EPWDBLANK:showStr=errStr.wlanPwdNull;break;case EINVPSKLEN:showStr=errStr.wlanPwdLenValid;break;case EINVWLANPWD:showStr=errStr.wlanPwdInvalid;break;case EINVIP:showStr=errStr.ipAddrErr;break;case EINVIPFMT:showStr=errStr.ipAddrFmtErr;break;case EINVGROUPIP:showStr=errStr.ipAddrGroupErr;break;case EINVLOOPIP:showStr=errStr.ipAddrLoopErr;break;case EINVMACFMT:showStr=errStr.macFmtErr;break;case EINVMACZERO:showStr=errStr.macZeroErr;break;case EINVMACBROAD:showStr=errStr.macBroadErr;break;case EINVMACGROUP:showStr=errStr.macGroupErr;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return false}var waitForWlanEffect=0;var isSsidChanged=false;var originalLanIp;var isLanIpChanged=false;var backFromNextPage=false;var dhcpsResult=0;var lanIpResult=0;var MAX_CONNECTING_TIME=12;function init(){$.read(WLAN_BASIC_DATA_ID+"#"+MBSSID_MAIN_DATA_ID+"#"+DHCPS_DATA_ID+"#"+LAN_DATA_ID+"#"+LCLPORT_DATA_ID+"#"+LINK_STATUS_DATA_ID+"#"+TPDOMAIN_DATA_ID);var wlanBasicData=$.findBlock(WLAN_BASIC_DATA_ID);var wlanApcData=wlanBasicData.apc;var lan=$.findBlock(LAN_DATA_ID);originalLanIp=lan.ip;if(wlanApcData.cBridgedSsid==""){loadPage("WlanWDSCfgFirst.htm","WDSCon")}else{loadPage("WlanWDSCfgEnd.htm","WDSCon")}}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="hsHelp"></div>
+	<div class="title titleB">
+		<label class="title"><%menuStr.wifiWDS%></label>
+		<div id="WDSWwitchCon" class="switchCon switchConHs">
+			<i class="switchBg"></i>
+			<i class="switchBall"></i>
+		</div>
+		<div id="netSetState" class="handleRelCon handleRelConWds">
+			<i class="state"></i>
+			<span class="state"></span>
+		</div>
+	</div>
+	<div id="WDSCon" class="block"></div>
+</div>

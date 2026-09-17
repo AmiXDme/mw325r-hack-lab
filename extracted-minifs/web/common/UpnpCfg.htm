@@ -1,0 +1,17 @@
+<script type="text/javascript">function init(){function bSwitchState(state){var errNo=ENONE;var igd=$.findBlock(NAPT_IGD_DATA_ID);if(igd.igdEnable==state){return}igd.igdEnable=(state==0)?0:1;errNo=$.write($.toText(igd),$.block);if(ENONE!=errNo){showAlert(errStr.unknown+label.colon+errNo)}upnpRefresh()}function upnpRefresh(){var upnpLeaseData=$.readEx(NAPT_IGD_MAPPING_DATA_ID);dataGridLs.refresh();return true}function upnpLeaseInit(){var upnpLeaseData=$.readEx(NAPT_IGD_MAPPING_DATA_ID);dataGridLs=new DataGrid();dataGridLs.init({id:"upnpLease",data:upnpLeaseData.list,hasSelBox:false,edit:false,max:64,head:[{field:label.appDesc,width:150},{field:label.extPort,width:70},{field:label.ptc,width:70},{field:label.intPort,width:70},{field:label.ipAddr,width:120},{field:label.curStatus,width:70}],list:[{edit:false,name:"desc"},{edit:false,name:"extPort"},{edit:false,name:"ptc",type:"strSelect",options:[{str:label.tcp,value:6},{str:label.udp,value:17}]},{edit:false,name:"intPort"},{edit:false,name:"client",type:"ip"},{edit:false,name:"enabled",type:"strSelect",options:[{str:statusStr.notEnabled},{str:statusStr.isEnabled}]}],toolBar:{id:"upnpLsUl",refresh:upnpRefresh}})}var dataGridLs;var igd=$.readEx(NAPT_IGD_DATA_ID);new Switch("switchCon",igd.igdEnable,bSwitchState);upnpLeaseInit()}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleB">
+		<label class="title"><%menuStr.upnpSet%></label>
+		<div id="switchCon" class="switchCon switchConHs">
+			<i class="switchBg"></i>
+			<i class="switchBall"></i>
+		</div>
+		<i class="helpBtn" helpStr="UpnpCfgHelp"></i>
+	</div>
+	<div class="blockTable">
+		<table id="upnpLease" class="dataGrid"></table>
+		<div id="upnpLsUl" class="blockFuncA blockFuncTable">
+			<span gridType="refresh" class="refresh"><i class="subBtnLg"></i><label><%btn.refresh%></label></span>
+		</div>
+	</div>
+</div>

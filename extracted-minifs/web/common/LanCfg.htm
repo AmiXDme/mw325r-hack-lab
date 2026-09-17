@@ -1,0 +1,69 @@
+<style type="text/css">
+	#lanManualIp{
+		display:none;
+	}
+	#lanAutoIp{
+		display:none;
+	}
+	#hsConf {
+		height: 210px;
+	}
+	#hsConf p.detail {
+		height: 110px;
+		margin-top: 20px;
+	}
+</style>
+<script type="text/javascript">function init(){var preMode;var AUTO=0;var MANUAL=1;var lanOptions=[{str:label.lanIpAuto,value:AUTO},{str:label.lanIpManual,value:MANUAL}];var LAN_DETECT_TIME=1000;var LAN_DETECT_WAIT_TIME=120000;var lanDetectTimeHd;var lanDetectSuccess=false;var lanLoadingTimeHd;var lclPort;var lan,system,domain;var isDomain;function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return false;case EINVNET:showStr=errStr.ipAddrNetErr;break;case EINVIP:showStr=errStr.ipAddrErr;break;case EINVIPFMT:showStr=errStr.ipAddrFmtErr;break;case EINVGROUPIP:showStr=errStr.ipAddrGroupErr;break;case EINVLOOPIP:showStr=errStr.ipAddrLoopErr;break;case EINVMASK:showStr=errStr.maskErr;break;case EINVNETID:showStr=errStr.ipAddrNetIdErr;break;case EINVHOSTID:showStr=errStr.ipAddrHostIdErr;break;case EINVIPMASKPAIR:showStr=errStr.ipAddrMaskNotMatch;break;case ECOMFLICTNET:showStr=errStr.ipAddrLanWanConflict;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return true}function lanSelectChange(type){id("lanManualIp").style.display=(type==AUTO?"none":"block");id("lanAutoIp").style.display=(type==AUTO?"block":"none")}function lanShowIpMask(){id("lanIpLbl").innerHTML=lan.ip;id("lanMaskLbl").innerHTML=lan.mask;id("lanIpAddr").value=lan.ip;id("maskAddrInput").value=lan.mask}function lanCloseLoading(){clearTimeout(lanDetectTimeHd);clearTimeout(lanLoadingTimeHd);lanDetectTimeHd=null;lanLoadingTimeHd=null}function lanCfgChgReload(){if(false==isDomain){window.location.href="http://"+lan.ip+":"+lclPort.port}else{window.location.reload()}}function lanDetectHandle(){if(false==$.result.timeout&&false==lanDetectSuccess){lanDetectSuccess=true;lanCloseLoading();lanCfgChgReload()}}function lanDetecting(){$.detect(lanDetectHandle);lanDetectTimeHd=$.setTimeout(arguments.callee,LAN_DETECT_TIME)}function saveHandle(){var errNo=ENONE;var lanIpAddr,maskAddrInput;var lanIpLbl,lanMaskLbl;errNo=$.write($.toText(lan),$.block);if(errHandle(errNo)){$.read(LAN_DATA_ID);return}lanIpAddr=id("lanIpAddr").value;maskAddrInput=id("maskAddrInput").value;lanIpLbl=id("lanIpLbl").innerHTML;lanMaskLbl=id("lanMaskLbl").innerHTML;if(MANUAL==preMode&&AUTO==lan.mode&&lan.ip==lanIpAddr&&lan.mask==maskAddrInput){preMode=AUTO;id("lanIpLbl").innerHTML=lanIpAddr;id("lanMaskLbl").innerHTML=maskAddrInput;return}else{if(AUTO==preMode&&MANUAL==lan.mode&&lan.ip==lanIpLbl&&lan.mask==lanMaskLbl){preMode=MANUAL;id("lanIpLbl").innerHTML="0.0.0.0";id("lanMaskLbl").innerHTML="0.0.0.0";return}}if(USER_GROUP_REMOTE!=$.group){lclPort=$.findBlock(LCLPORT_DATA_ID);$.changeDomain(lan.ip);showLoading(label.lanCfgChgTip,lanCloseLoading);lanLoadingTimeHd=$.setTimeout(lanCfgChgReload,LAN_DETECT_WAIT_TIME);lanDetectSuccess=false;$.setTimeout(function(){lanDetecting()},LAN_DETECT_TIME)}}function onSave(){var lanIpAddrVal,maskAddrInputVal;if(AUTO==id("lanSel").value){if(AUTO!=lan.mode){showConfirm(label.lanConfChgConfirm,function(choose){if(true!=choose){return}lan.mode=AUTO;setLoadingId("save");closeAlert();saveHandle()})}return}lanIpAddrVal=id("lanIpAddr").value;maskAddrInputVal=id("maskAddrInput").value;if(errHandle(checkIp(lanIpAddrVal),"lanIpAddr")||errHandle(checkMask(maskAddrInputVal),"maskAddrInput")||errHandle(checkIpMask(lanIpAddrVal,maskAddrInputVal),"maskAddrInput")){return}if(lan.ip!=lanIpAddrVal||lan.mask!=maskAddrInputVal||lan.mode!=MANUAL){showConfirm(label.lanConfChgConfirm,function(choose){if(true!=choose){return}lan.ip=lanIpAddrVal;lan.mask=maskAddrInputVal;lan.mode=MANUAL;setLoadingId("save");closeAlert();saveHandle()})}}$.read(LAN_DATA_ID+"#"+SYSTEM_DATA_ID+"#"+TPDOMAIN_DATA_ID+"#"+LCLPORT_DATA_ID+"#"+LINK_STATUS_DATA_ID);lan=$.findBlock(LAN_DATA_ID);system=$.findBlock(SYSTEM_DATA_ID);domain=$.findBlock(TPDOMAIN_DATA_ID);isDomain=((location.href.toString()).indexOf(domain.name)>=0);preMode=lan.mode;selectInit("lanSel",lanOptions,preMode,lanSelectChange);lanSelectChange(preMode);id("mac").innerHTML=(system.mac[0]||"00-00-00-00-00-00").toUpperCase();lanShowIpMask();id("save").onclick=onSave}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleA">
+		<label class="title"><%menuStr.lanSet%></label>
+		<i class="helpBtn" helpStr="lanHelp"></i>
+	</div>
+	<div class="block">
+		<ul class="hsInputUlDes">
+			<li class="hsInputLiDes">
+				<label class="desLbl" for="mac"><%label.mac%><i></i></label>
+				<label id="mac" class="noteLbl"></label>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label class="inputLiLbl"><%label.lanIpSetting%><i></i></label>
+				<span class="highSetSelect">
+					<span id="lanSel" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<a id="lanManualIp">
+			<ul class="hsInputUl">
+				<li class="hsInputLi">
+					<label for="lanIpAddr"><%label.ipAddr%><i></i></label><input id="lanIpAddr" maxLength="15" type="text" />
+				</li>
+			</ul>
+			<ul class="hsInputUl">
+				<li class="hsInputLi">
+					<label for="maskAddrInput"><%label.mask%><i></i></label><input id="maskAddrInput" maxLength="15" type="text" />
+				</li>
+			</ul>
+		</a>
+		<a id="lanAutoIp">
+			<ul class="hsInputUlDes">
+				<li class="hsInputLiDes">
+					<label class="desLbl"><%label.ipAddr%><i></i></label>
+					<label id="lanIpLbl" class="noteLbl">0.0.0.0</label>
+				</li>
+			</ul>
+			<ul class="hsInputUlDes">
+				<li class="hsInputLiDes">
+					<label class="desLbl"><%label.mask%><i></i></label>
+					<label id="lanMaskLbl" class="noteLbl">0.0.0.0</label>
+				</li>
+			</ul>
+		</a>
+		<div class="blockFuncA">
+			<span id="save" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,60 @@
+<style type="text/css">
+	p.sysLogEnMailP{
+		height:24px;
+		line-height:24px;
+		color:#737373;
+		padding-left:15px;
+		margin-top:15px;
+		text-align:left;
+	}
+	input.sysLogRadio{
+		margin-left:40px;
+		margin-right:5px;
+		vertical-align:middle;
+	}
+	label.sysLogDesLbl{
+		width:157px;
+		font-size:12px;
+		color:#737373;
+		margin-right:3px;
+		display:inline-block;
+		vertical-align:middle;
+	}
+	div.sysLogSubTitle{
+		margin-top:24px;
+		text-indent:8px;
+		font-size:0.1px;
+		border-bottom:1px solid #EBEBEB;
+		padding-bottom:3px;
+		position:relative;
+		*zoom:1;
+	}
+	div.sysLogSubTitle label.sysLogSubTitle{
+		color: #737373;
+		font-size:15px;
+		line-height:26px;
+		vertical-align:middle;
+		text-align:left;
+	}
+	table.dataGrid td.sysLogTd{
+		text-align:left;
+		padding:3px 0px 3px 20px;
+		word-break:break-all;
+		word-wrap:break-word;
+		white-space:normal;
+	}
+</style>
+<script type="text/javascript">function init(){var showLog={num:"",list:[]};function logDelAll(){var cml="systool syslog -clean";var cmlReply=$.instr(cml);if(cmlReply.errorno!=ENONE){showAlert("cmd error");return false}return true}function logInit(){var sysLog=$.readEx(SYSTEM_LOG_DATA_ID);var excLog=$.readEx(EXCEPT_LOG_DATA_ID);var sysLogNum=parseInt(sysLog.num,10);var excLogNum=parseInt(excLog.num,10);var date=new Date();var tmpItem,showItem;showLog.num=sysLogNum+excLogNum;for(var i=0;i<excLogNum;i++){tmpItem=excLog.list[i];if(undefined==tmpItem){break}else{showItem=(showLog.list[i]={});showItem.num=(i+1).toString();showItem.level="EXCEPTION";showItem.msg=tmpItem.msg}}for(var j=0;j<sysLogNum;j++){tmpItem=sysLog.list[j];if(undefined==tmpItem){break}else{showItem=(showLog.list[i+j]={});showItem.num=(i+j+1).toString();switch(parseInt(tmpItem.level)){case 0:showItem.level="EXCEPTION";break;case 1:showItem.level="ERROR";break;case 2:showItem.level="WARNING";break;case 3:showItem.level="INFO";break;default:showItem.level="DEBUG"}date.setHours(tmpItem.hours,tmpItem.mins,tmpItem.secs,tmpItem.msecs);showItem.msg=tmpItem.days+"days, "+date.toTimeString().substring(0,8)+", "+tmpItem.msg}}return true}logInit();dataGridLs=new DataGrid();dataGridLs.init({id:"logTbl",data:showLog.list,hasSelBox:false,edit:false,max:400,paging:{num:16},head:[{field:label.logIndex,width:7},{field:label.logType,width:15},{field:label.logCont,width:78}],list:[{edit:false,name:"num",type:"str"},{edit:false,name:"level",type:"str",maxSize:18},{edit:false,name:"msg",type:"str",maxSize:260,className:"sysLogTd",igHTMLEscape:true}],toolBar:{id:"logUl",refresh:logInit,saveAll:logSave,delAll:logDelAll}})}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleB">
+		<label class="title"><%menuStr.syslog%></label>
+	</div>
+	<div class="blockTable">
+		<table id="logTbl" class="dataGrid"></table>
+		<div id="logUl" class="blockFuncA blockFuncTable">
+			<span gridType="refresh" class="refresh"><i class="subBtnLg"></i><label><%btn.refresh%></label></span>			
+			<span gridType="saveAll" class="add"><i class="subBtnLg"></i><label><%btn.saveAllLog%></label></span>
+			<span gridType="delAll" class="delAll"><i class="subBtnLg"></i><label><%btn.cleanAllLog%></label></span>
+		</div>
+	</div>
+</div>

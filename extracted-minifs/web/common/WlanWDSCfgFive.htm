@@ -1,0 +1,49 @@
+<style type="text/css">
+	div.WDSFiBlock{
+		height:310px;
+	}
+	p.WDSFiTitle{
+		font-size:12px;
+		font-weight:bold;
+		text-align:left;
+	}
+	p.WDSFiTitleTop{
+		margin:35px 0 12px 100px;
+	}
+	p.WDSFiTitleBom{
+		margin:20px 0 12px 100px;
+	}
+	p.WDSFiDetail{
+		line-height:21px;
+		margin-left:100px;
+		text-align:left;
+		white-space:pre;
+	}
+	p.WDSFiLine{
+		font-size:0px;
+		padding:0px;
+		line-height:0px;
+		margin:20px 0;
+		border-bottom:1px solid #CCCCCC;
+	}
+	p.WDSFiLineS{
+		margin-top:21px !important;
+	}
+</style>
+<script type="text/javascript">function init(){id("WDSCon").style.visibility="visible";var wlanMBssidData=$.findBlock(MBSSID_MAIN_DATA_ID);var wlanBasicData=$.findBlock(WLAN_BASIC_DATA_ID);var wlanApcData=wlanBasicData.apc;var lan=$.findBlock(LAN_DATA_ID);var dhcps=$.findBlock(DHCPS_DATA_ID);function lanCloseLoading(){clearTimeout(lanDetectTimeHd);clearTimeout(lanLoadingTimeHd);lanDetectTimeHd=null;lanLoadingTimeHd=null}function lanCfgChgReload(){if(false==isDomain&&((location.href.toString()).indexOf(status.ip)==-1)){window.location.href="http://"+lan.ip+":"+lclPort.port}else{window.location.reload()}}function lanDetectHandle(){if(false==$.result.timeout&&false==lanDetectSuccess){lanDetectSuccess=true;lanCloseLoading();lanCfgChgReload()}}function lanDetecting(){$.detect(lanDetectHandle);lanDetectTimeHd=$.setTimeout(arguments.callee,LAN_DETECT_TIME)}id("next").onclick=function(){var errNo=$.write($.toText(lan)+$.toText(dhcps)+$.toText(wlanMBssidData)+$.toText(wlanBasicData),$.block);if(errNo!=ENONE){return errHandle(errNo)}if(true==isLanIpChanged){$.changeDomain(lan.ip);showLoading(label.lanCfgChgTip,lanCloseLoading);lanLoadingTimeHd=$.setTimeout(lanCfgChgReload,LAN_DETECT_WAIT_TIME);lanDetecting()}else{loadPage("WlanWDSCfgEnd.htm","WDSCon")}};id("pre").onclick=function(){if(1==lanIpResult){backFromNextPage=true;loadPage("WlanWDSCfgFour.htm","WDSCon")}else{loadPage("WlanWDSCfgThird.htm","WDSCon")}};var checking=true;var DETECT_DETECTED=2;var lclPort=$.findBlock(LCLPORT_DATA_ID);var status=$.findBlock(LINK_STATUS_DATA_ID);var LAN_DETECT_TIME=1000;var LAN_DETECT_WAIT_TIME=120000;var lanDetectTimeHd;var lanDetectSuccess=false;var lanLoadingTimeHd;var domain=$.findBlock(TPDOMAIN_DATA_ID);var isDomain=((location.href.toString()).indexOf(domain.name)>=0);id("wdsSsid").innerHTML=htmlEscape(wlanApcData.cBridgedSsid);if(1==wlanApcData.uSecurityType){id("wdsPwd").innerHTML=label.wirelessNoSecurity}else{id("wdsPwd").innerHTML=htmlEscape(wlanApcData.cPassWD)}id("wlanSsid").innerHTML=htmlEscape(wlanMBssidData.cSsid);if(1==wlanMBssidData.bSecurityEnable){id("wlanPwd").innerHTML=htmlEscape(wlanMBssidData.cPskSecret)}else{id("wlanPwd").innerHTML=label.wirelessNoSecurity}id("lanIpAddr").innerHTML=lan.ip;if(0==dhcpsResult){id("wlanDhcpState").innerHTML=label.WDSDHCPOn;dhcps.enable=1}else{id("wlanDhcpState").innerHTML=label.WDSDHCPOff;dhcps.enable=0}}init();</script>
+<div class="WDSBlock WDSFiBlock">
+	<p class="WDSTitle"><%label.WDSNetInfo%></p>
+	<p class="WDSFiTitle WDSFiTitleTop"><%label.WDSHost%></p>
+	<p class="WDSFiDetail"><%label.wirelessNa%><%label.colon%><span id="wdsSsid"></span></p>
+	<p class="WDSFiDetail"><%label.wirelessPwd%><%label.colon%><span id="wdsPwd"></span></p>
+	<p class="WDSFiLine"></p>
+	<p class="WDSFiTitle WDSFiTitleBom"><%label.WDSTHRouter%></p>
+	<p class="WDSFiDetail"><%label.wirelessNa%><%label.colon%><span id="wlanSsid"></span></p>
+	<p class="WDSFiDetail"><%label.wirelessPwd%><%label.colon%><span id="wlanPwd"></span></p>
+	<p class="WDSFiDetail"><%menuStr.DHCPServer%><%label.colon%><span id="wlanDhcpState"></span></p>
+	<p class="WDSFiDetail"><%label.lanIPAddr%><%label.colon%><span id="lanIpAddr"></span></p>
+</div>
+<div class="blockFuncA blockFuncWDS">
+	<span id="pre" class="wdsPre"><i class="subBtnLg"></i><label><%btn.preStep%></label></span>
+	<span id="next" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.finish%></label></span>
+</div>

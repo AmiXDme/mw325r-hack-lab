@@ -1,0 +1,54 @@
+<style type="text/css">
+li.hsInputLi label {
+	width: 150px !important;
+}
+span.highSetSelect {
+	width: 350px;
+}
+span.highSetSelect span.select {
+	width: 320px;
+}
+span.highSetSelect span.value {
+	width: 280px;
+}
+#netSetState {
+	right: -9px !important;
+}
+</style>
+<script type="text/javascript">function init(){var timeZoneArray=[{str:label.tzEniwetok,value:0},{str:label.tzMidwayIsland,value:60},{str:label.tzHawaii,value:120},{str:label.tzAlaska,value:180},{str:label.tzPacificTime,value:240},{str:label.tzMountainTime,value:300},{str:label.tzCentralTime,value:360},{str:label.tzEastTime,value:420},{str:label.tzAtlanticTime,value:480},{str:label.tzNewFoundLand,value:510},{str:label.tzBrasilia,value:540},{str:label.tzMidAtlantic,value:600},{str:label.tzCapeVerder,value:660},{str:label.tzGreenwichMeanTime,value:720},{str:label.tzAmsterdam,value:780},{str:label.tzCairo,value:840},{str:label.tzBaghdad,value:900},{str:label.tzTehran,value:930},{str:label.tzAbuDhabi,value:960},{str:label.tzKabul,value:990},{str:label.tzYekaterinburg,value:1020},{str:label.tzMadras,value:1050},{str:label.tzKathmandu,value:1065},{str:label.tzAlmaAta,value:1080},{str:label.tzRangoon,value:1110},{str:label.tzBangkok,value:1140},{str:label.tzBeijing,value:1200},{str:label.tzTokyo,value:1260},{str:label.tzAdelaide,value:1290},{str:label.tzBrisbane,value:1320},{str:label.tzMagadan,value:1380},{str:label.tzFiji,value:1440},{str:label.tzNukualofa,value:1500}];function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return false;case ESYSTEM:showStr=errStr.systemErr;break;case ENOLINK:showStr=errStr.wanLinkDown;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return true}function onSave(){var errNo=ENONE,curTime=$.readEx(SNTPC_TIME_DATA_ID),sntpConfig=$.readEx(SNTPC_CONFIG_DATA_ID);var timeZone=id("sntptimezone").value;if(sntpConfig.timeZone==(parseInt(timeZone)-720)){return}curTime.sntpcSuccess=true;sntpConfig.timeZone=parseInt(timeZone)-720;setLoadingId("save");errNo=$.write($.toText(sntpConfig),$.block);if(errHandle(errNo)){$.read(SNTPC_TIME_DATA_ID+"#"+SNTPC_CONFIG_DATA_ID);return}else{getSntpTime()}}function getSntpStatus(){$.instr("systool sntpc -getGmtStatus",function(cmlReply){if(cmlReply.errorno!=ENONE){hsStatSet("error",statusStr.getFailed);refreshAble=false;dataTimeCfgInit();closeLoading();return}switch(parseInt(cmlReply.data)){case 0:case 1:hsStatSet("link",statusStr.getting);refreshAble=false;break;case 2:hsStatSet("error",statusStr.getFailed);dataTimeCfgInit();closeLoading();refreshAble=true;dataTimeRefresh();return;case 3:hsStatSet("correct",statusStr.getSuccess);dataTimeCfgInit();closeLoading();refreshAble=true;dataTimeRefresh();return}$.setTimeout(getSntpStatus,1000)})}function getSntpTime(){showLoading(statusStr.getting);getSntpStatus()}function dateFormat(y,m,d){if(regionIndex==60){return d+"/"+m+"/"+y}else{return y+"-"+m+"-"+d}}function dataTimeRefresh(){if(true==refreshAble){clearTimeout(dataTimeRefreshHandle);$.readNonBlock(SNTPC_TIME_DATA_ID,function(){var curTime=$.findBlock(SNTPC_TIME_DATA_ID);var dateTime=new Date();dateTime.setHours(curTime.hour,curTime.minute,curTime.second,0);date.innerHTML=dateFormat(curTime.year,curTime.month,curTime.day);time.innerHTML=dateTime.toTimeString().substring(0,8);dataTimeRefreshHandle=$.setTimeout(dataTimeRefresh,1000)})}}function dataTimeCfgInit(){var curTime;var sntpConfig;var dateTime=new Date();$.read(SNTPC_CONFIG_DATA_ID+"#"+SNTPC_TIME_DATA_ID);sntpConfig=$.findBlock(SNTPC_CONFIG_DATA_ID);curTime=$.findBlock(SNTPC_TIME_DATA_ID);dateTime.setHours(curTime.hour,curTime.minute,curTime.second,0);date.innerHTML=dateFormat(curTime.year,curTime.month,curTime.day);time.innerHTML=dateTime.toTimeString().substring(0,8);sntpConfig.timeZone=(sntpConfig.timeZone.length==0?0:sntpConfig.timeZone);selectInit("sntptimezone",timeZoneArray,(parseInt(sntpConfig.timeZone)+720),undefined,50)}var date=id("date");var time=id("time");var refreshAble=true;var dataTimeRefreshHandle;var wlanBasic=$.readEx(WLAN_BASIC_DATA_ID);var regionIndex=wlanBasic.uRegionIndex;id("save").onclick=onSave;dataTimeCfgInit();dataTimeRefreshHandle=$.setTimeout(dataTimeRefresh,1000)}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleA">
+		<label class="title"><%menuStr.sntp%></label>
+		<div id="netSetState" class="handleRelCon timeRel">
+			<i class="state"></i>
+			<span class="state"></span>
+		</div>
+	</div>
+	<div class="block">
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label class="inputLiLbl"><%label.timezone%><i></i></label>
+				<span class="highSetSelect">
+					<span id="sntptimezone" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<ul class="hsInputUlDes">
+			<li class="hsInputLiDes">
+				<label class="desLbl"><%label.date%><i></i></label>
+				<label id="date" class="noteLbl">0.0.0.0</label>
+			</li>
+		</ul>
+		<ul class="hsInputUlDes">
+			<li class="hsInputLiDes">
+				<label class="desLbl"><%label.time%><i></i></label>
+				<label id="time" class="noteLbl">0.0.0.0</label>
+			</li>
+		</ul>
+		<div class="blockFuncA">
+			<span id="save" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+</div>

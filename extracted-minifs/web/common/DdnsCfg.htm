@@ -1,0 +1,324 @@
+<style type="text/css">
+#registerLink {
+	color: #FF6060;
+	position: relative;
+	top: -43px;
+	left: 650px;
+}
+#ddnsClientUl {
+	margin-top: -18px;
+}
+</style>
+<script>
+function init()
+{
+	var DDNS_CLIENT_DISABLE				= 0;
+	var DDNS_CLIENT_ENABLE				= 1;
+
+	var DDNS_PROVIDER_NOIP				= 0;
+	var DDNS_PROVIDER_DYNDNS			= 1;
+
+	var DDNS_STATE_NOT_LAUNCH			= 0;
+	var DDNS_STATE_START				= 1;
+	var DDNS_STATE_SEND_DNS_QUERY		= 2;
+	var DDNS_STATE_READ_DNS_RESPONSE	= 3;
+	var DDNS_STATE_TCP_CONNECTION		= 4;
+	var DDNS_STATE_SEND_HTTP_REQUEST	= 5;
+	var DDNS_STATE_READ_HTTP_REPLY		= 6;
+	var DDNS_STATE_SUCCESS_GOOD			= 7;
+	var DDNS_STATE_SUCCESS_NOCHG		= 8;
+	var DDNS_STATE_FAIL_NOHOST			= 9;
+	var DDNS_STATE_FAIL_BADAUTH			= 10;
+	var DDNS_STATE_FAIL_BADAGENT		= 11;
+	var DDNS_STATE_FAIL_NOT_DONATOR		= 12;
+	var DDNS_STATE_FAIL_ABUSE			= 13;
+	var DDNS_STATE_FAIL_911				= 14;
+	var DDNS_STATE_FAIL_NOTFQDN			= 15;
+	var DDNS_STATE_FAIL_NUMHOST			= 16;
+	var DDNS_STATE_FAIL_DNSERR			= 17;
+	var DDNS_STATE_FAIL_CONNECT_ERROR	= 18;
+	var DDNS_STATE_FAIL_UNKNOWN			= 19;
+
+	var REG_URL_DYNDNS					= "http://www.dyndns.com";
+	var REG_URL_NOIP					= "http://www.noip.com";
+
+	var ddnsEnalbeOptionList = [
+		{str: label.optionEnable,		value: DDNS_CLIENT_ENABLE},
+		{str: label.optionDisable,		value: DDNS_CLIENT_DISABLE}
+	];
+
+	var providerList = [
+		{str: label.noIp,				value: DDNS_PROVIDER_NOIP},
+		{str: label.dynDns,				value: DDNS_PROVIDER_DYNDNS}
+	];
+
+	function providerChange(type)
+	{
+		id("ddnsEnable").changeSel(ddnsData.serviceList[parseInt(type)].enable);
+	}
+
+	function ddnsEnableSwitch(option)
+	{
+		var regUrl = "#";
+		var provider = id("provider").value;
+
+		if (DDNS_PROVIDER_NOIP == provider)
+		{
+			regUrl = REG_URL_NOIP;
+		}
+		else if (DDNS_PROVIDER_DYNDNS == provider)
+		{
+			regUrl = REG_URL_DYNDNS;
+		}
+
+		displayProvider(provider, regUrl);
+		switch (parseInt(option))
+		{
+		case DDNS_CLIENT_DISABLE:
+			$("#providerConfigBlock").hide();
+			break;
+		case DDNS_CLIENT_ENABLE:
+			$("#providerConfigBlock").show();
+			break;
+		default:
+			break;
+		}
+	}
+
+	function displayProvider(provider, regUrl)
+	{
+		id("usrName").value = ddnsData.serviceList[provider].username;
+		id("pwd").value = ddnsData.serviceList[provider].password;;
+		id("domainName").value = ddnsData.serviceList[provider].domainName;
+
+		$("#registerLink").attr("href", regUrl);
+
+		if (ddnsData.mode == provider)
+		{
+			$("#state").show();
+			checkStatus();
+		}
+		else
+		{
+			$("#state").hide();
+			stopCheckStatus();
+		}
+	}
+
+	function configChanged(newDdns)
+	{
+		var oldDdns= $.findBlock(DDNS_DATA_ID);
+		var provider = newDdns.mode;
+		if (oldDdns.mode == provider && 
+					oldDdns.serviceList[provider].enable == newDdns.serviceList[provider].enable &&
+					oldDdns.serviceList[provider].domainName == newDdns.serviceList[provider].domainName &&
+					oldDdns.serviceList[provider].password == newDdns.serviceList[provider].password &&
+					oldDdns.serviceList[provider].username == newDdns.serviceList[provider].username)
+		{
+			return false;
+		}
+		return true;
+	}
+
+	function errHandle(errNo, objOrId)
+	{
+		if (errNo != ENONE)
+		{
+			showAlert(errStr.unknown + errNo, objOrId);
+			return true;
+		}
+		return false;
+	}
+
+	function alertBlank(value, id, warning)
+	{
+		if (0 == value.length)
+		{
+			showAlert(warning, id);
+			return true;
+		}
+		return false;
+	}
+
+	function save()
+	{
+		var provider = id("provider").value;
+		var enable = id("ddnsEnable").value;
+		var domain = id("domainName").value;
+		var user = id("usrName").value;
+		var pwd = id("pwd").value;
+
+		var newDdnsData = cloneObject(ddnsData);
+		newDdnsData.mode = provider;
+
+		newDdnsData.serviceList[provider].enable = enable;
+
+		if (DDNS_CLIENT_ENABLE == enable)
+		{
+			if (alertBlank(user, "usrName", label.accPwdNullTip) || 
+					alertBlank(pwd, "pwd", label.accPwdNullTip) ||
+					alertBlank(domain, "domainName", label.domainNullTip))
+			{
+				return;
+			}
+
+			if (ENONE != checkDomain(domain))
+			{
+				showAlert(errStr.domainErr, "domainName");
+				return;
+			}
+			newDdnsData.serviceList[provider].domainName		= domain;
+			newDdnsData.serviceList[provider].password			= pwd;
+			newDdnsData.serviceList[provider].username			= user;
+		}
+
+		if (!configChanged(newDdnsData))
+		{
+			/*
+			 * update manually.
+			 */
+
+			$.instr("advanced ddns -configChanged ddnsId:" + provider);
+			return;
+		}
+
+		closeAlert();
+		setLoadingId("ddnsSave");
+
+		if ( !errHandle($.write($.toText(newDdnsData), $.block)) )
+		{
+			$.instr("advanced ddns -configChanged ddnsId:" + provider);
+			$.read(DDNS_DATA_ID);
+			$("#state").show();
+			checkStatus();
+		}
+	}
+
+	function updateStatus()
+	{
+		$.readNonBlock(DDNS_STATUS_DATA_ID, function() {
+			var statusList = $.findBlock(DDNS_STATUS_DATA_ID).status;
+			switch(parseInt(statusList[ddnsData.mode]))
+			{
+			case DDNS_STATE_NOT_LAUNCH:
+				hsStatSet("error",		ddnsLinkStatus[DDNS_LINK_STATUS_NOLAUNCHING]);
+				break;
+			case DDNS_STATE_START:
+			case DDNS_STATE_SEND_DNS_QUERY:
+			case DDNS_STATE_READ_DNS_RESPONSE:
+			case DDNS_STATE_TCP_CONNECTION:
+			case DDNS_STATE_SEND_HTTP_REQUEST:
+			case DDNS_STATE_READ_HTTP_REPLY:
+				hsStatSet("link",		ddnsLinkStatus[DDNS_LINK_STATUS_CONNECTING]);
+				break;
+			case DDNS_STATE_SUCCESS_GOOD:
+			case DDNS_STATE_SUCCESS_NOCHG:
+				hsStatSet("correct",	ddnsLinkStatus[DDNS_LINK_STATUS_CONNECTED]);
+				break;
+			case DDNS_STATE_FAIL_BADAUTH:
+				hsStatSet("error",		ddnsLinkStatus[DDNS_LINK_STATUS_AUTHFAIL]);
+				break;
+			case DDNS_STATE_FAIL_NOHOST:
+			case DDNS_STATE_FAIL_DNSERR:
+				hsStatSet("error",		ddnsLinkStatus[DDNS_LINK_STATUS_DOMAINERROR]);
+				break;
+			case DDNS_STATE_FAIL_NUMHOST:
+			case DDNS_STATE_FAIL_BADAGENT:
+			case DDNS_STATE_FAIL_NOT_DONATOR:
+			case DDNS_STATE_FAIL_ABUSE:
+			case DDNS_STATE_FAIL_911:
+			case DDNS_STATE_FAIL_NOTFQDN:
+			case DDNS_STATE_FAIL_CONNECT_ERROR:
+			case DDNS_STATE_FAIL_UNKNOWN:
+			default:
+				hsStatSet("error",		ddnsLinkStatus[DDNS_LINK_STATUS_FAILED]);
+				break;
+			}
+		});
+	}
+
+	var statusTimer = null;
+	function checkStatus()
+	{
+		updateStatus();
+		statusTimer = $.setTimeout(checkStatus, 2000);
+	}
+
+	function stopCheckStatus()
+	{
+		if (statusTimer != null)
+		{
+			clearTimeout(statusTimer);
+			statusTimer = null;
+		}
+	}
+
+	$.read(DDNS_DATA_ID);
+	var ddnsData = $.findBlock(DDNS_DATA_ID);
+
+	selectInit("provider", providerList, ddnsData.mode, providerChange);
+	selectInit("ddnsEnable", ddnsEnalbeOptionList, ddnsData.serviceList[ddnsData.mode].enable, ddnsEnableSwitch);
+	id("ddnsSave").onclick = save;
+
+	providerChange(ddnsData.mode);
+}
+
+init();
+
+</script>
+
+
+<div id="hcCo" class="hcCo">
+	<div class="hsHelp"></div>
+	<div id="dnstitlea"class="title titleA">
+		<label class="title"><%label.phDdns%></label>
+		<div id="state" class="handleRelCon">
+			<i class="state"></i>
+			<span class="state"></span>
+		</div>
+		<i class="helpBtn" helpStr="DdnsHelp"></i>
+	</div>
+	<div class="block">
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label><%label.serviceProvider%><i></i></label>
+				<span class="highSetSelect">
+					<span id="provider" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<a id="registerLink" target="_blank" href="www.noip.com" ><%label.regNewAccount%></a>
+		<ul class="hsInputUl" id="ddnsClientUl">
+			<li class="hsInputLi">
+				<label><%label.enableDdnsClient%><i></i></label>
+				<span class="highSetSelect">
+					<span id="ddnsEnable" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<div id="providerConfigBlock">
+			<ul class="hsInputUl">
+				<li class="hsInputLi">
+					<label><%label.userName%><i></i></label><input id="usrName" maxLength="128" type="text" />
+				</li>
+			</ul>
+			<ul class="hsInputUl">
+				<li class="hsInputLi">
+					<label><%label.password%><i></i></label><input id="pwd" maxLength="128" type="password" />
+				</li>
+			</ul>
+			<ul class="hsInputUl">
+				<li class="hsInputLi">
+					<label><%label.domainName%><i></i></label><input id="domainName" maxLength="256" type="text"/>
+				</li>
+			</ul>
+		</div>
+		<div class="blockFuncA">
+			<span id="ddnsSave" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+</div>

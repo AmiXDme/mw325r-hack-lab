@@ -1,0 +1,33 @@
+<style type="text/css">
+	input.radioA{
+		margin-right:3px;
+		vertical-align:middle;
+	}
+</style>
+<script type="text/javascript">function init(){function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return false;case EINVMACFMT:showStr=errStr.macFmtErr;break;case EINVMACZERO:showStr=errStr.macZeroErr;break;case EINVMACBROAD:showStr=errStr.macBroadErr;break;case EINVMACGROUP:showStr=errStr.macGroupErr;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return true}function calcValidWanMac(macAddr){var macVal,mac=macAddr.toLowerCase().split("-");for(var i=5;i>2;i--){macVal=parseInt(mac[i],16)+1;if(256>macVal){mac[i]=(16>macVal?"0":"")+macVal.toString(16);break}mac[i]="00"}return mac.join("-")}function getSubmitMac(){var mac="";if(macRadios[0].checked){mac=id("mac").innerHTML;system.wanMacType=0}else{if(macRadios[1].checked){mac=id("pcMac").innerHTML;system.wanMacType=1}else{if(macRadios[2].checked){mac=customMac.value;system.wanMacType=2}}}return mac.toLowerCase()}function onSave(){var errNo=ENONE;var macVal=getSubmitMac();var macInput;if(true==macRadios[2].checked){macInput=customMac}if(errHandle(checkMac(macVal),macInput)){return}if(system.mac[0].toUpperCase()==macVal.toUpperCase()){showAlert(errStr.wanMacLanConflict,macInput);return}if(system.mac[1].toUpperCase()!=macVal.toUpperCase()){macVal=macVal.toUpperCase();if(undefined!=macInput){macInput.value=macVal}system.mac[1]=macVal;setLoadingId("save");errNo=$.write($.toText(system),$.block);if(errHandle(errNo)){$.read(SYSTEM_DATA_ID);return}closeAlert()}}function onMacRadioClick(event){var evt=event||window.event;var target=evt.target||evt.srcElement;var isRCustomMac=(target.id=="rCustomMac");disableInput(customMac,!isRCustomMac);if(true==isRCustomMac){customMac.select()}}var system=$.readEx(SYSTEM_DATA_ID);var defaultMac=calcValidWanMac(system.mac[0]||"00-11-22-33-44-55");var currPcMac=getCurrPcMac();var macRadios=document.getElementsByName("macSet");var customMac=id("customMac");id("mac").innerHTML=defaultMac.toUpperCase();id("pcMac").innerHTML=currPcMac.toUpperCase();id("save").onclick=onSave;if(USER_GROUP_REMOTE==$.group){id("pcMacUl").style.display="none"}disableInput(customMac,true);for(var i=0,len=macRadios.length;i<len;i++){macRadios[i].onclick=onMacRadioClick}switch(system.mac[1]){case defaultMac:macRadios[0].checked=true;break;case currPcMac:macRadios[1].checked=true;break;default:macRadios[2].checked=true;customMac.value=(system.mac[1]||"").toUpperCase();disableInput(customMac,false);break}}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleA">
+		<label class="title"><%menuStr.macSet%></label>
+		<i class="helpBtn" helpStr="macCloneHelp"></i>
+	</div>
+	<div class="block">
+		<ul class="gridLine gridLineA">
+			<input class="radioA" type="radio" name="macSet" id="rMac" />
+			<label class="noteLbl" for="rMac"><%label.routerMac%><%label.colon%></label>
+			<label id="mac" for="rMac" class="noteLbl"></label>
+		</ul>
+		<ul id="pcMacUl" class="gridLine gridLineA">
+			<input class="radioA" type="radio" name="macSet" id="rPcMac" />
+			<label class="noteLbl" for="rPcMac"><%label.cloneMac%><%label.colon%></label>
+			<label id="pcMac" for="rPcMac" class="noteLbl"></label>
+		</ul>
+		<ul class="gridLine gridLineA">
+			<input class="radioA" type="radio" name="macSet" id="rCustomMac" />
+			<label class="noteLbl" for="rCustomMac"><%label.customMac%><%label.colon%></label>
+			<li class="textConA textCon"><input id="customMac" class="textA text imeModeN" maxLength="17" /><i class="tip"></i></li>
+		</ul>
+		<div class="blockFuncA">
+			<span id="save" class="subBtn subBtnR subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+</div>

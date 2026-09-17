@@ -1,0 +1,19 @@
+<script type="text/javascript">var options=[{str:label.staticIp,value:LINK_TYPE_STATIC_IP},{str:label.dhcp,value:LINK_TYPE_DHCP},{str:label.pppoe,value:LINK_TYPE_PPPOE},{str:label.l2tp,value:LINK_TYPE_L2TP},{str:label.pptp,value:LINK_TYPE_PPTP}];var wzdWirelessChanged=false;var isFrWzd=true;var wanTypes=[];var wzdMbssidBackup={};wanTypes[LINK_TYPE_PPPOE]="WizardPPPoE.htm";wanTypes[LINK_TYPE_DHCP]="WizardDynamicIp.htm";wanTypes[LINK_TYPE_STATIC_IP]="WizardStaticIp.htm";wanTypes[LINK_TYPE_PPTP]="WizardPptp.htm";wanTypes[LINK_TYPE_L2TP]="WizardL2tp.htm";function wzdConSet(styles){setStyle(id("wizardCon"),styles)}function wzdStop(){$.readNonBlock(SYSTEM_DATA_ID,function(){var system=$.findBlock(SYSTEM_DATA_ID);system.setWzd=1;$.writeNonBlock($.toText(system),$.block,function(){loadBasic("Basic.htm","Con",doNothing)})})}function wzdStopSet(){$("span.wizardSkip").bind("click",wzdStop)}function netWorkModeChange(value){loadPage(wanTypes[value],"wizardCon",doNothing)}function init(){var mbssid=$.findBlock(MBSSID_MAIN_DATA_ID);$.read(PPPOE_DATA_ID+"#"+STATIC_IP_DATA_ID+"#"+PPTP_DATA_ID+"#"+L2TP_DATA_ID+"#"+MBSSID_MAIN_DATA_ID+"#"+LAN_DATA_ID);for(var propty in mbssid){wzdMbssidBackup[propty]=mbssid[propty]}loadPage("WizardPPPoE.htm","wizardCon",doNothing)}var supportList=locale.languageList();selectInit("language",supportList,CURRLANG,function(lanType){localStorage.setItem("language","quicksetup");locale.set(lanType)});if(supportList.length<=1){$("#languageSel").hide()}init();</script>
+<div class="wizardContent">
+	<div id="head" class="wizardLogo">
+		<span class="hardwareinfo">
+			<label><%titleStr.hardwareinfo%></label>
+		</span>
+		<ul id="languageSel" class="language hsInputUl">
+			<li class="hsInputLi">
+				
+				<span class="highSetSelect">
+					<span id="language" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+	</div>
+	<div id="wizardCon" class="wizardCon"></div>
+</div>

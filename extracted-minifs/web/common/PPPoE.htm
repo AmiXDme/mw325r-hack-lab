@@ -1,0 +1,244 @@
+<style type="text/css">
+	#pppoeSolution{
+		background:url(../images/wzd_me.png) no-repeat scroll -282px -148px;
+		cursor:pointer;
+		display:inline-block;
+		height:17px;
+		margin-left:2px;
+		vertical-align:middle;
+		width:17px;
+	}
+	li.wanLinkLi{
+		margin-left:78px;
+	}
+	li.hsInputLiB{
+		height:39px;
+	}
+	span.selectB{
+		cursor:pointer;
+		display:inline-block;
+		height:39px;
+		line-height:39px;
+		margin-left:25px;
+		vertical-align:middle;
+		width:327px;
+	}
+	span.hsValueB{
+		width:310px;
+	}
+	label.offtimeMin{
+		color:#000000;
+		font-size:12px;
+		margin-left:4px;
+	}
+	#pppoemtu{
+		width:207px;
+	}
+
+	ul.gridLineRadio {
+		margin-left: 135px;
+		margin-bottom: 20px;
+	}
+	ul.gridLineRadio input, ul.gridLineRadio label {
+		vertical-align: middle;
+	}
+	#advBlock li.hsInputLi label {
+		width: 290px !important;
+	}
+	#scGridLine {
+	   width: 825px;
+	   margin-left: 0px;
+	   text-align: center;
+	}
+</style>
+<script type="text/javascript">function init(){var linkOptions=[{str:label.demand,value:0},{str:label.auto,value:1},{str:label.manual,value:3}];var updateTimerHandle;var SND_CONN_NON=0;var SND_CONN_DYN=1;var SND_CONN_STC=2;$("#shareSessionNote").hide();function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return false;case EOUTOFRANGE:showStr=errStr.outOfRange;break;case EINVMTU:showStr=errStr.pppoeMtuErr;break;case EINVNET:showStr=errStr.ipAddrNetErr;break;case EINVIP:showStr=errStr.ipAddrErr;break;case EINVIPFMT:showStr=errStr.ipAddrFmtErr;break;case EINVGROUPIP:showStr=errStr.ipAddrGroupErr;break;case EINVLOOPIP:showStr=errStr.ipAddrLoopErr;break;case EINVMASK:showStr=errStr.maskErr;break;case EINVNETID:showStr=errStr.ipAddrNetIdErr;break;case EINVHOSTID:showStr=errStr.ipAddrHostIdErr;break;case ECOMFLICTNET:showStr=errStr.ispIpLanConflict;break;case EINVFDNSVR:showStr=errStr.primDnsErr;break;case EINVSDNSVR:showStr=errStr.seDnsErr;break;case EINVTIME:showStr=errStr.pppoeOffTimeErr;break;case ENOLINK:showStr=errStr.wanLinkDown;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return true}function checkLanConflict(ipVal,maskVal){var lan=$.readEx(LAN_DATA_ID);var lanIp=transIp(lan.ip),lanMask=transIp(lan.mask);var ip=transIp(ipVal);if(maskVal==null||maskVal==undefined){mask=lanMask}else{mask=transIp(maskVal)}return(0==((lanIp^ip)&lanMask&mask))?ECOMFLICTNET:ENONE}function checkPrimDns(value){if(lan.ip==value){return EINVFDNSVR}return ENONE!=checkIp(value)?EINVFDNSVR:ENONE}function checkSeDns(value){if(""==value||"0.0.0.0"==value){id("dns1").value="0.0.0.0";return ENONE}if(lan.ip==value){return EINVSDNSVR}return ENONE!=checkIp(value)?EINVSDNSVR:ENONE}function checkOffTime(value,max,min){if((false==checkNum(value))||(false==checkNumRange(parseInt(value),max,min))){return EINVTIME}return ENONE}function linkUp(){errHandle($.instr("wan -linkUp").errorno);updateStatus()}function linkDown(){if(LINK_TYPE_PPPOE==link.linkType){errHandle($.instr("wan -linkDown").errorno);updateStatus()}}function updateStatus(){clearTimeout(updateTimerHandle);$.readNonBlock(LINK_STATUS_DATA_ID,function(){var status=$.findBlock(LINK_STATUS_DATA_ID);var dis="none",advPPPoeHelp=id("pppoeSolution");var code=parseInt(status.code);var ipAddr=id("ip");var dnsAddr=id("dns");ipAddr.innerHTML="0.0.0.0";dnsAddr.innerHTML="0.0.0.0, 0.0.0.0";switch(parseInt(status.status)){case LINK_DOWN:disableBtn("disconnect",true,"delAll","delAllUn");if((LINK_CODE_MANUAL!=code)&&(LINK_CODE_NORMAL!=code)){dis="inline-block";switch(code){case LINK_CODE_NOECHO:helpBind(advPPPoeHelp,"PPPoEServerDeadHelp");break;case LINK_CODE_AUTH_ERR:helpBind(advPPPoeHelp,"PPPoENPErrHelp");break;case LINK_CODE_UNKNOWN:case LINK_CODE_DENY:case LINK_CODE_SRVDOWN:case LINK_CODE_OPT_UNSUPPORT:case LINK_CODE_AUTH_UNSUPPORT:helpBind(advPPPoeHelp,"PPPoEOtherErrHelp");break;case LINK_CODE_PHYDOWN:default:advPPPoeHelp.onclick=null;dis="none";break}hsStatSet("error",linkCode[code]);break}hsStatSet("error",linkStatus[LINK_DOWN]);break;case LINK_UP:disableBtn("disconnect",false,"delAllUn","delAll",linkDown);hsStatSet("correct",linkStatus[LINK_UP]);var dnsStr="";dnsStr=status.dns[0]+", "+status.dns[1];if("0.0.0.0"==status.dns[0]&&"0.0.0.0"==status.dns[1]){dnsStr+=(" "+label.dnsException)}dnsAddr.innerHTML=dnsStr;ipAddr.innerHTML=status.ip;break;case LINKING_DOWN:disableBtn("disconnect",true,"delAll","delAllUn");hsStatSet("link",linkStatus[LINKING_DOWN]);break;case LINKING_UP:disableBtn("disconnect",false,"delAllUn","delAll",linkDown);hsStatSet("link",linkStatus[LINKING_UP]);break;default:break}if(SND_CONN_DYN==parseInt(pppoe.sndConnType)){id("dynIp").innerHTML=status.dualIp;id("dynMask").innerHTML=status.dualMask}advPPPoeHelp.style.display=dis;updateTimerHandle=$.setTimeout(updateTimer,2000)})}function updateTimer(){if(LINK_TYPE_PPPOE==parseInt(link.linkType)){updateStatus()}}function doFixedIpSet(){disableInput(id("ispIp"),!id("fixedIp").checked)}function doManualDnsSet(){var disabled=!id("manualDns").checked;disableInput(id("dns0"),disabled);disableInput(id("dns1"),disabled)}function doLinkTypeSet(type){switch(parseInt(type)){case 0:case 3:id("ulOffTime").style.display="block";break;default:id("ulOffTime").style.display="none";break}}function commitData(saveSndConnection,saveLinkMode,saveAdvance,loadingId){var errNo=ENONE;var nameVal=id("name").value,pswVal=id("psw").value;pppoe.name=nameVal;pppoe.paswd=pswVal;if(true==saveSndConnection){if(id("sndSwitchStc").checked){pppoe.sndConnType=SND_CONN_STC;pppoe.staticSndIp=id("stcIp").value;pppoe.staticSndMask=id("stcMask").value}else{if(id("sndSwitchDyn").checked){pppoe.sndConnType=SND_CONN_DYN}else{pppoe.sndConnType=SND_CONN_NON}}}if(true==saveLinkMode){var connTypeVal=id("wanLinkSel").value,offTimeVal=id("offTime").value;pppoe.linkType=connTypeVal;switch(parseInt(connTypeVal)){case 0:case 3:pppoe.maxIdleTime=offTimeVal;break;default:break}}if(true==saveAdvance){link.linkMode=id("wanRateSel").value;pppoe.lcpMru=id("mtu").value;pppoe.svName=id("svcName").value;pppoe.acName=id("acName").value;pppoe.fixipEnb=id("fixedIp").checked?1:0;pppoe.manualDns=id("manualDns").checked?1:0;if(1==pppoe.fixipEnb){pppoe.fixip=id("ispIp").value}if(1==pppoe.manualDns){pppoe.dns[0]=id("dns0").value;pppoe.dns[1]=id("dns1").value}}link.linkType=LINK_TYPE_PPPOE;setLoadingId(loadingId);closeAlert();errNo=$.write($.toText(pppoe)+$.toText(link),$.block);if(errHandle(errNo)){$.read(PPPOE_DATA_ID+"#"+LINK_DATA_ID);return}updateStatus();id("psw").value=pppoe.paswd}function commitSettings(handleChange,handleUnchange,handleFail){var nameVal=id("name").value,pswVal=id("psw").value;if(handleChange==undefined){handleChange=function(){commitData(false,false,false,"save");return true}}if(handleUnchange==undefined){handleUnchange=function(){linkUp();return true}}if(handleFail==undefined){handleFail=function(){return false}}if(LINK_TYPE_PPPOE==link.linkType&&pppoe.name==nameVal&&pswVal==pppoe.paswd){return handleUnchange()}if(0==nameVal.length||0==pswVal.length){showConfirm(label.accPwdNullTip,function(confirm){if(true==confirm){return handleChange()}else{return handleFail()}});return true}return handleChange()}function onSave(){commitSettings()}function onSaveSecondConn(){var saveSeondConn=function(basicSettingChanged){var sndConnType=null;var staticSndIp="0.0.0.0";var staticSndMask="0.0.0.0";if(id("sndSwitchDis").checked){sndConnType=SND_CONN_NON}if(id("sndSwitchStc").checked){sndConnType=SND_CONN_STC;staticSndIp=id("stcIp").value;staticSndMask=id("stcMask").value;if(errHandle(checkIp(staticSndIp),"stcIp")||errHandle(checkMask(staticSndMask),"stcMask")||errHandle(checkIpMask(staticSndIp,staticSndMask),"stcMask")||errHandle(checkLanConflict(staticSndIp,staticSndMask),"stcMask")){return false}}if(id("sndSwitchDyn").checked){sndConnType=SND_CONN_DYN}if(sndConnType==null){showAlert(errStr.unknown.replace(":",""));return false}if(true==basicSettingChanged||LINK_TYPE_PPPOE!=link.linkType||pppoe.sndConnType!=sndConnType||(sndConnType==SND_CONN_STC&&(staticSndIp!=pppoe.staticSndIp||staticSndMask!=pppoe.staticSndMask))){commitData(true,false,false,"saveSecondConn")}return true};commitSettings(function(){saveSeondConn(true)},function(){saveSeondConn(false)})}function onSaveLinkMode(){var saveLinkMode=function(basicSettingChanged){var connTypeVal=id("wanLinkSel").value,offTimeVal=id("offTime").value;switch(parseInt(connTypeVal)){case 0:case 3:if(errHandle(checkOffTime(offTimeVal,99,0),"offTime")){return false}break;default:break}if(true==basicSettingChanged||LINK_TYPE_PPPOE!=link.linkType||pppoe.linkType!=connTypeVal||pppoe.maxIdleTime!=offTimeVal){commitData(false,true,false,"saveLinkMode")}return true};commitSettings(function(){saveLinkMode(true)},function(){saveLinkMode(false)})}function onSaveHighSet(){var saveHighSet=function(basicSettingChanged){var manualDnsChk=id("manualDns").checked?1:0,fixIpChk=id("fixedIp").checked?1:0;var primDnsVal=id("dns0").value,seDnsVal=id("dns1").value,ispIpVal=id("ispIp").value;var svcNameVal=id("svcName").value,acNameVal=id("acName").value,mtuVal=id("mtu").value;var linkModeVal=id("wanRateSel").value;if(errHandle(checkMtu(mtuVal,1492,576),"mtu")||(id("fixedIp").checked&&(errHandle(checkIp(ispIpVal),"ispIp")||errHandle(checkLanConflict(ispIpVal),"ispIp")))||(id("manualDns").checked&&(errHandle(checkPrimDns(primDnsVal),"dns0")||errHandle(checkSeDns(seDnsVal),"dns1")))){return false}if(true==basicSettingChanged||LINK_TYPE_PPPOE!=link.linkType||link.linkMode!=linkModeVal||pppoe.svName!=svcNameVal||pppoe.acName!=acNameVal||pppoe.manualDns!=manualDnsChk||pppoe.dns[0]!=primDnsVal||pppoe.dns[1]!=seDnsVal||pppoe.fixipEnb!=fixIpChk||pppoe.fixip!=ispIpVal||pppoe.lcpMru!=mtuVal){commitData(false,false,true,"saveHighSet")}return true};commitSettings(function(){saveHighSet(true)},function(){saveHighSet(false)})}function sndConnSwitch(sndConnType){switch(parseInt(sndConnType)){case SND_CONN_DYN:var status=$.findBlock(LINK_STATUS_DATA_ID);id("dynIp").innerHTML="0.0.0.0";id("dynMask").innerHTML="0.0.0.0";id("sndSwitchDyn").checked=true;$("#sndConnDyn").show();$("#sndConnStc").hide();break;case SND_CONN_STC:if(pppoe.staticSndIp!="0.0.0.0"){id("stcIp").value=pppoe.staticSndIp}else{id("stcIp").value=""}if(pppoe.staticSndMask!="0.0.0.0"){id("stcMask").value=pppoe.staticSndMask}else{id("stcMask").value=""}id("sndSwitchStc").checked=true;$("#sndConnDyn").hide();$("#sndConnStc").show();break;case SND_CONN_NON:default:$("#sndConnDyn").hide();$("#sndConnStc").hide();id("sndSwitchDis").checked=true;break}}var pppoe=$.findBlock(PPPOE_DATA_ID);var link=$.findBlock(LINK_DATA_ID);var lan=$.findBlock(LAN_DATA_ID);$.read(PPPOE_DATA_ID+"#"+LAN_DATA_ID);selectInit("wanSel",wanOptions,LINK_TYPE_PPPOE,wanSelectChange);selectInit("wanRateSel",rateOptions,getWanRateOption(link.linkMode),undefined,30);selectInit("wanLinkSel",linkOptions,pppoe.linkType,doLinkTypeSet);var ipv6Mode=$.readEx(IPV6_MODE_DATA_ID);var ipv6WanInterface=$.readEx(IPV6_WAN_INTERFACE_DATA_ID);var ipv6PPPoE=$.readEx(IPV6_PPPOE_DATA_ID);if(ipv6Mode.mode==IPV6_MODE_ROUTER&&ipv6WanInterface.interfaceType==IPV6_WAN_TYPE_PPPOE&&ipv6PPPoE.shareSession==1){id("wanSel").disable(true);$("#shareSessionNote").show()}id("name").value=pppoe.name;id("psw").value=pppoe.paswd;id("offTime").value=pppoe.maxIdleTime;id("mtu").value=pppoe.lcpMru;id("svcName").value=pppoe.svName;id("acName").value=pppoe.acName;id("ispIp").value=pppoe.fixip;id("dns0").value=pppoe.dns[0]||"";id("dns1").value=pppoe.dns[1]||"";id("manualDns").checked=(1==pppoe.manualDns);id("fixedIp").checked=(1==pppoe.fixipEnb);id("save").onclick=onSave;id("saveSecondConn").onclick=onSaveSecondConn;id("saveLinkMode").onclick=onSaveLinkMode;id("saveHighSet").onclick=onSaveHighSet;id("disconnect").onclick=linkDown;id("manualDns").onclick=doManualDnsSet;id("fixedIp").onclick=doFixedIpSet;id("sndSwitchDis").onclick=function(){sndConnSwitch(SND_CONN_NON)};id("sndSwitchDyn").onclick=function(){sndConnSwitch(SND_CONN_DYN)};id("sndSwitchStc").onclick=function(){sndConnSwitch(SND_CONN_STC)};sndConnSwitch(pppoe.sndConnType);disableBtn("disconnect",true,"delAll","delAllUn");doLinkTypeSet(pppoe.linkType||0);doManualDnsSet();doFixedIpSet();updateTimer()}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleA" id="stateDiv">
+		<label class="title"><%menuStr.wanSet%></label>
+		<div id="netSetState" class="handleRelCon">
+			<i class="state"></i>
+			<span class="state"></span>
+			<i id="pppoeSolution"></i>
+		</div>
+		<i class="helpBtn" helpStr="PPPoEHelp"></i>
+	</div>
+	<div class="block">
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label class="inputLiLbl"><%label.netMode%><i></i></label>
+				<span class="highSetSelect">
+					<span id="wanSel" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+			<li id="shareSessionNote" class="hidden">
+				<label class="threeLineNote"><%label.ipv6ShareSessionNote2%></label>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label for="name"><%label.netAccount%><i></i></label><input id="name" maxLength="255" type="text" />
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="psw"><%label.netPwd%><i></i></label><input id="psw" maxLength="255" type="password" />
+			</li>
+		</ul>
+
+		<ul class="hsInputUlDes">
+			<li class="hsInputLiDes">
+				<label class="desLbl"><%label.ipAddr%><i></i></label>
+				<label id="ip" class="noteLbl">0.0.0.0</label>
+			</li>
+		</ul>
+
+		<ul class="hsInputUlDes">
+			<li class="hsInputLiDes">
+				<label class="desLbl"><%label.dns%><i></i></label>
+				<label id="dns" class="noteLbl">0.0.0.0</label>
+			</li>
+		</ul>
+
+		<div class="blockFuncA">
+			<span id="disconnect" class="delAll"><i class="subBtnLg"></i><label><%btn.disconnect%></label></span>
+			<span id="save" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+
+	<p class="hsTitleLine"></p>
+	<div class="title titleA titleSub">
+		<label class="title"><%label.secondConn%></label>
+	</div>
+	<div class="block">
+
+		<ul class="gridLine gridLineA gridLineRadio" id="scGridLine">
+			<input id="sndSwitchDis" name="sndConnType" class="switchRadio" type="radio"/><label class="noteLbl" for="sndSwitchDis"><%label.secondDisable%></label>
+			<input id="sndSwitchDyn" name="sndConnType" class="switchRadio" type="radio" style="margin-left: 50px;"/><label class="noteLbl" for="sndSwitchDyn"><%label.wdynamic%></label>
+			<input id="sndSwitchStc" name="sndConnType" class="switchRadio" type="radio" style="margin-left: 50px;" /><label class="noteLbl" for="sndSwitchStc"><%label.wstatic%></label>
+		</ul>
+		<div id="sndConnDyn" class="hidden">
+			<ul class="hsInputUlDes">
+				<li class="hsInputLiDes">
+					<label class="desLbl"><%label.ipAddr%><i></i></label>
+					<label id="dynIp" class="noteLbl">0.0.0.0</label>
+				</li>
+			</ul>
+			<ul class="hsInputUlDes">
+				<li class="hsInputLiDes">
+					<label class="desLbl"><%label.mask%><i></i></label>
+					<label id="dynMask" class="noteLbl">0.0.0.0</label>
+				</li>
+			</ul>
+		</div>
+		<div id="sndConnStc" class="hidden">
+			<ul class="hsInputUl">
+				<li class="hsInputLi" >
+					<label for="svcName"><%label.ipAddr%><i></i></label><input id="stcIp" maxLength="15" /><i class="tip"></i>
+				</li>
+			</ul>
+			<ul class="hsInputUl">
+				<li class="hsInputLi" >
+					<label for="svcName"><%label.mask%><i></i></label><input id="stcMask" maxLength="15" /><i class="tip"></i>
+				</li>
+			</ul>
+		</div>
+		<div class="blockFuncA">
+			<span id="saveSecondConn" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+
+	<p class="hsTitleLine"></p>
+	<div class="title titleA titleSub">
+		<label class="title"><%label.linkMode%></label>
+	</div>
+	<div class="block">
+		<ul class="hsInputUl">
+			<li class="hsInputLi hsInputLiB">
+				<span id="wanLinkSel" class="selectB">
+					<span class="value hsValueB"></span><i class="hsArrowM"></i>
+				</span>
+			</li>
+		</ul>
+		<ul id="ulOffTime" class="hsInputUl">
+			<li class="hsInputLi hsInputLiC" id="offTimeLi" >
+				<label for="offTime" id="offTimeLabel"><%label.offTime%><i></i></label><input id="offTime" maxLength="2" />
+			</li>
+			<li>
+				<label class="offtimeMin"><%label.minute%></label>
+				<label class="oneLineNote"><%label.offTimeComment%></label>
+			</li>
+		</ul>
+		<div class="blockFuncA">
+			<span id="saveLinkMode" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+
+	<p class="hsTitleLine"></p>
+	<div class="title titleA titleSub">
+		<label class="title"><%label.pppoeHighSet%></label>
+		<i class="helpBtn" helpStr="PPPoEAdvHelp"></i>
+	</div>
+	<div class="block" id="advBlock">
+		<ul class="hsInputUl">
+			<li class="hsInputLi hsInputLiC" >
+				<label for="mtu"><%label.mtu%><i></i></label><input id="mtu" maxLength="4" />
+			</li>
+			<li class="twoLineWidth">
+				<label id="pppoemtu" class="twoLineNote"><%label.pppoeMtuComment%></label>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label class="inputLiLbl"><%label.wanRateSet%><i></i></label>
+				<span class="highSetSelect" style="width: 210px">
+					<span id="wanRateSel" class="select" style="width: 210px">
+						<span class="value" style="width: 150px"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="svcName"><%label.svcName%><i></i></label><input id="svcName" maxLength="128" /><i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="acName"><%label.acName%><i></i></label><input id="acName" maxLength="128" /><i class="tip"></i>
+			</li>
+		</ul>
+
+		
+		<ul class="gridLine gridLineB">
+			<input id="fixedIp" class="checkbox" type="checkbox" />
+			<label for="fixedIp" class="noteLbl"><%label.usedISPAddr%></label>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="ispIp"><%label.ISPADDR%><i></i></label><input id="ispIp" maxLength="15" /><i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="gridLine gridLineB">
+			<input id="manualDns" class="checkbox" type="checkbox" />
+			<label for="manualDns" class="noteLbl"><%label.manualDns%></label>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="dns0"><%label.dns0%><i></i></label><input id="dns0" maxLength="15" /><i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="dns1"><%label.dns1%><i></i></label><input id="dns1" maxLength="15" /><i class="tip"></i>
+			</li>
+			<li>
+				<label class="oneLineNote"><%label.optional%></label>
+			</li>
+		</ul>
+		<div class="blockFuncA">
+			<span id="saveHighSet" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+</div>

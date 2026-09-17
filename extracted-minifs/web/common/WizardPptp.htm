@@ -1,0 +1,142 @@
+<style type="text/css">
+li.inputLi input.radioWidget {
+	width: 13px;
+	margin-right: 10px;
+}
+li.wizardBom li.inputLi label.radioLabel {
+	text-align: left;
+	width: 100px;
+}
+#sndSwitchDyn, #sndSwitchStc{
+	width: 14px;
+}
+#sndSwitchDyn {
+	margin-left: 137.5px;
+}
+</style>
+<script type="text/javascript">function init(){function errHandle(errNo){switch(errNo){case ENONE:return false;case EINVNET:showNote("wzdIpNote",errStr.ipAddrNetErr);break;case EINVIP:showNote("wzdIpNote",errStr.ipAddrErr);break;case EINVIPFMT:showNote("wzdIpNote",errStr.ipAddrFmtNoteErr);break;case EINVGROUPIP:showNote("wzdIpNote",errStr.ipAddrGroupErr);break;case EINVLOOPIP:showNote("wzdIpNote",errStr.ipAddrLoopErr);break;case EINVMASK:showNote("wzdMaskNote");break;case EINVNETID:case EINVHOSTID:case EINVIPMASKPAIR:showNote("wzdIpNote",errStr.ipAddrMaskNotMatchNote);break;case ECOMFLICTNET:showNote("wzdIpNote",errStr.ipAddrLanWanConflictShortNote);break;case EINVGTW:showNote("wzdGatewayNote");break;case EINVFDNSVR:showNote("wzdPrimDnsNote");break;case EINVSDNSVR:showNote("wzdSeDnsNote");break;default:break}return true}function checkDomainIp(domainIp){var errNote="";if(domainIp.length==0){errNote=errStr.inputIpErr}else{if(/[a-zA-Z]/g.test(domainIp)==true){if(ENONE!=checkDomain(domainIp)){errNote=errStr.domainErr}}else{if(ENONE!=validIpFormat(domainIp)){errNote=errStr.ipAddrFmtNoteErr}else{if(ENONE!=validIpAddr(domainIp)){errNote=errStr.ipAddrNetErr}}}}if(errNote!=""){showNote("wzdDomainNote",errNote);return false}return true}function checkLanConflict(ipVal,maskVal){var lanIp=transIp(lan.ip),lanMask=transIp(lan.mask);var stcIp=transIp(ipVal),stcMask=transIp(maskVal);return(0==((lanIp^stcIp)&lanMask&stcMask))?ECOMFLICTNET:ENONE}function checkGateway(value){return ENONE!=checkIp(value)?EINVGTW:ENONE}function checkPrimDns(value){if(lan.ip==value){return EINVFDNSVR}return ENONE!=checkIp(value)?EINVFDNSVR:ENONE}function checkSeDns(value){if(""==value||"0.0.0.0"==value){id("stcDns1").value="0.0.0.0";return ENONE}if(lan.ip==value){return EINVSDNSVR}return ENONE!=checkIp(value)?EINVSDNSVR:ENONE}function wzdAccountPwdConfirm(){var i,input,p,span,divFunc;var divCon=document.createElement("div");divCon.className="confirmCon";document.body.appendChild(divCon);var div=document.createElement("div");div.className="confirm";divCon.appendChild(div);i=document.createElement("i");i.className="confirmLogo";div.appendChild(i);span=document.createElement("span");span.className="WzdAccPwdConfirmQuestion";span.innerHTML=label.accPwdNullTip;div.appendChild(span);divFunc=document.createElement("div");divFunc.className="confirmFuncCon";div.appendChild(divFunc);input=document.createElement("input");input.className="subBtn subBtnL";input.value=btn.confirm;input.type="button";input.onclick=function(){hideCover(function(){document.body.removeChild(divCon);saveData()})};divFunc.appendChild(input);input=document.createElement("input");input.className="subBtn subBtnR";input.value=btn.backWzd;input.type="button";input.onclick=function(){hideCover(function(){var name=id("name");var psw=id("psw");if(name.value==0){name.focus()}else{psw.focus()}document.body.removeChild(divCon)})};divFunc.appendChild(input)}function switchSecondConnection(mode){if(mode==1){$("#stc").hide()}else{$("#stc").show()}}function saveData(){var nameVal=id("name").value,pswVal=id("psw").value;var domainIpVal=id("domainIp").value;var ipVal=id("stcIp").value,maskVal=id("stcMask").value,gatewayVal=id("stcGateway").value;var primDnsVal=id("stcDns0").value,seDnsVal=id("stcDns1").value;var pptp=$.findBlock(PPTP_DATA_ID);var link=$.findBlock(LINK_DATA_ID);link.linkType=LINK_TYPE_PPTP;pptp.userName=nameVal;pptp.passwd=pswVal;pptp.domainIp=domainIpVal;pptp.bDhcp=(id("sndSwitchDyn").checked?1:0);if(pptp.bDhcp==0){pptp.ip=ipVal;pptp.mask=maskVal;pptp.gateway=gatewayVal;pptp.dns[0]=primDnsVal;pptp.dns[1]=seDnsVal}loadPage("WizardWireless.htm","wizardCon",doNothing)}function onSave(){var nameVal=id("name").value,pswVal=id("psw").value;var domainIpVal=id("domainIp").value;var ipVal=id("stcIp").value,maskVal=id("stcMask").value,gatewayVal=id("stcGateway").value;var primDnsVal=id("stcDns0").value,seDnsVal=id("stcDns1").value;var dhcpEnabled=(id("sndSwitchDyn").checked?1:0);closeNote("wzdDomainNote");closeNote("wzdIpNote");closeNote("wzdMaskNote");closeNote("wzdGatewayNote");closeNote("wzdPrimDnsNote");closeNote("wzdSeDnsNote");if(!checkDomainIp(domainIpVal)){return}if(dhcpEnabled==0){if(errHandle(checkIp(ipVal))||errHandle(checkMask(maskVal))||errHandle(checkIpMask(ipVal,maskVal))||errHandle(checkLanConflict(ipVal,maskVal))||errHandle(checkGateway(gatewayVal))||errHandle(checkPrimDns(primDnsVal))||errHandle(checkSeDns(seDnsVal))){return}}if(0==nameVal.length||0==pswVal.length){showCover(wzdAccountPwdConfirm)}else{saveData()}}var pptp=$.findBlock(PPTP_DATA_ID);var lan=$.findBlock(LAN_DATA_ID);id("sndSwitchDyn").onclick=function(){switchSecondConnection(1)};id("sndSwitchStc").onclick=function(){switchSecondConnection(0)};selectInit("netModeSel",options,LINK_TYPE_PPTP,netWorkModeChange);wzdStopSet();id("sub").onclick=onSave;id("name").value=pptp.userName;id("psw").value=pptp.passwd;id("domainIp").value=pptp.domainIp;if(parseInt(pptp.bDhcp)==0){id("sndSwitchStc").checked=true;id("sndSwitchDyn").checked=false;id("stcIp").value=pptp.ip;id("stcMask").value=pptp.mask;id("stcGateway").value=pptp.gateway;id("stcDns0").value=pptp.dns[0]||"";id("stcDns1").value=pptp.dns[1]||"";switchSecondConnection(0)}else{id("sndSwitchStc").checked=false;id("sndSwitchDyn").checked=true;switchSecondConnection(1)}}init();</script>
+<ul class="wzdUl">
+	<span class="wizardSkip"><i class="wzdSkipImg"></i><br /><span class="wzdSkipDes"><%label.skipWzd%></span></span>
+	<li class="wizardTop wizardTopWan">
+		<img class="wzdWanLogo" src="../images/netSet_me.png" />
+	</li>
+	<li class="wizardMid wizardMidWan">
+		<h1><%label.netSet%></h1>
+	</li>
+	<li class="wizardBom">
+		<p class="wizardTip"><%label.netSetPwdTip%></p>
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi inputLiWzdXtp">
+				<label><%label.netMode%></label>
+				<span id="netModeSel" class="select">
+					<span class="value wzdValue"></span>
+					<i class="arrow"></i>
+				</span>
+			</li>
+		</ul>
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi inputLiWzdXtp">
+				<label for=""><%label.netAccount%></label>
+				<input id="name" type="text" maxLength="255" />
+				<i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi inputLiWzdXtp">
+				<label for=""><%label.netPwd%></label>
+				<input id="psw" type="password" maxLength="255" />
+				<i class="tip"></i>
+			</li>
+		</ul>
+
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi inputLiWzdXtp">
+				<label for="domainIp"><%label.serverIp%></label>
+				<input id="domainIp" maxLength="63" type="text" />
+			</li>
+			<li id="wzdDomainNote" class="note">
+				<i class="arrowL"></i>
+				<div class="noteCon">
+					<p><%errStr.ipAddrFmtNoteErr%></p>
+				</div>
+			</li>
+		</ul>
+	
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi inputLiWzdXtp">
+				<input id="sndSwitchDyn" name="switch" class="radioWidget WzdsndSwitchDyn" type="radio" />
+				<label class="noteLbl radioLabel" for="sndSwitchDyn"><%label.wdynamic%></label>
+				<input id="sndSwitchStc" name="switch" class="radioWidget" type="radio"/>
+				<label class="noteLbl radioLabel" for="sndSwitchStc"><%label.wstatic%></label>
+			</li>
+		</ul>
+
+
+		<div id="stc">
+			<ul class="inputUl wizardIptPos">
+				<li class="inputLi inputLiWzdXtp">
+					<label for="stcIp"><%label.ipAddr%></label>
+					<input id="stcIp" maxLength="15" /><i class="tip"></i>
+				</li>
+				<li id="wzdIpNote" class="note">
+					<i class="arrowL"></i>
+					<div class="noteCon">
+						<p><%errStr.ipAddrFmtNoteErr%></p>
+					</div>
+				</li>
+			</ul>
+			<ul class="inputUl wizardIptPos">
+				<li class="inputLi inputLiWzdXtp">
+					<label for="stcMask"><%label.mask%></label>
+					<input id="stcMask" maxLength="15" /><i class="tip"></i>
+				</li>
+				<li id="wzdMaskNote" class="note">
+					<i class="arrowL"></i>
+					<div class="noteCon">
+						<p><%errStr.maskErr%></p>
+					</div>
+				</li>
+			</ul>
+			<ul class="inputUl wizardIptPos">
+				<li class="inputLi inputLiWzdXtp">
+					<label for="stcGateway"><%label.gateway%></label>
+					<input id="stcGateway" maxLength="15" /><i class="tip"></i>
+				</li>
+				<li id="wzdGatewayNote" class="note">
+					<i class="arrowL"></i>
+					<div class="noteCon">
+						<p><%errStr.gatewayErr%></p>
+					</div>
+				</li>
+			</ul>
+			<ul class="inputUl wizardIptPos">
+				<li class="inputLi inputLiWzdXtp">
+					<label for="stcDns0"><%label.dns0%></label>
+					<input id="stcDns0" maxLength="15" /><i class="tip"></i>
+				</li>
+				<li id="wzdPrimDnsNote" class="note">
+					<i class="arrowL"></i>
+					<div class="noteCon">
+						<p><%errStr.wzdPrimDnsErr%></p>
+					</div>
+				</li>
+			</ul>
+			<ul class="inputUl wizardIptPos">
+				<li class="inputLi inputLiWzdXtp">
+					<label for="stcDns1"><%label.dns1%></label>
+					<input id="stcDns1" maxLength="15" /><i class="tip"></i>
+				</li>
+				<li id="wzdSeDnsNote" class="note">
+					<i class="arrowL"></i>
+					<div class="noteCon">
+						<p><%errStr.wzdSeDnsErr%></p>
+					</div>
+				</li>
+			</ul>
+		</div>
+
+	</li>
+	<li class="lgBtns">
+		<a id="sub" href="javascript:void(0)"><i class="btnR"></i></a>
+	</li>
+</ul>

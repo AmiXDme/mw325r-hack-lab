@@ -1,0 +1,292 @@
+<script type="text/javascript">var IPTV_MODE_DISABLED=0;var IPTV_MODE_BRIDGE=1;var IPTV_MODE_8021Q=2;var IPTV_MODE_RU=3;var IPTV_MODE_SG_SINGTEL=4;var IPTV_MODE_MY_UNIFI=5;var IPTV_MODE_MY_MAXIS1=6;var IPTV_MODE_MY_MAXIS2=7;var IPTV_MODE_VN_VIETTEL=8;var IPTV_MODE_PT_MEO=9;var IPTV_MODE_PT_VODAFONE=10;var IPTV_MODE_AU_NBN=11;var IPTV_MODE_NZ_UFB=12;var IPTV_MODE_CUSTOM=13;var IPTV_MODE_MY_CELCOM=14;var IPTV_MODE_END=15;var VLAN_SERVICE_ID_INTERNET=0;var VLAN_SERVICE_ID_IPTV=1;var VLAN_SERVICE_ID_VOIP=2;var VLAN_SERVICE_ID_MULTICAST=3;var VLAN_SERVICE_ID_PT_BRIDGE=4;var VLAN_SERVICE_NUM=5;var LAN1_INDEX=0;var LAN2_INDEX=1;var LAN3_INDEX=2;var LAN_PORT_NUM=3;var LAN_BITMAP=[1,2,4,8];var profileList=[{mode:IPTV_MODE_RU,label:label.iptvModeRussia,services:[{id:VLAN_SERVICE_ID_INTERNET,display:true,fixed:true,tag:true,vid:1257,priority:0,member:LAN_BITMAP[LAN2_INDEX]},{id:VLAN_SERVICE_ID_IPTV,display:true,fixed:true,tag:true,vid:4000,priority:4,member:LAN_BITMAP[LAN3_INDEX]},{id:VLAN_SERVICE_ID_VOIP,display:true,fixed:true,tag:true,vid:263,priority:0,member:LAN_BITMAP[LAN1_INDEX]},{id:VLAN_SERVICE_ID_MULTICAST,display:true,fixed:true,tag:false,vid:1110,priority:4,member:LAN_BITMAP[LAN3_INDEX]},]},{mode:IPTV_MODE_SG_SINGTEL,label:label.iptvModeSingtel,services:[{id:VLAN_SERVICE_ID_INTERNET,display:true,fixed:true,tag:true,vid:10,priority:0,member:LAN_BITMAP[LAN1_INDEX]|LAN_BITMAP[LAN2_INDEX]},{id:VLAN_SERVICE_ID_IPTV,display:true,fixed:true,tag:true,vid:20,priority:4,member:LAN_BITMAP[LAN3_INDEX]},{id:VLAN_SERVICE_ID_VOIP,display:false,fixed:true,tag:true,vid:0,priority:0,member:0},{id:VLAN_SERVICE_ID_MULTICAST,display:false,fixed:true,tag:false,vid:0,member:0},]},{mode:IPTV_MODE_MY_UNIFI,label:label.iptvModeUnifi,services:[{id:VLAN_SERVICE_ID_INTERNET,display:true,fixed:true,tag:true,vid:500,priority:0,member:LAN_BITMAP[LAN2_INDEX]|LAN_BITMAP[LAN3_INDEX]},{id:VLAN_SERVICE_ID_IPTV,display:true,fixed:true,tag:true,vid:600,priority:0,member:LAN_BITMAP[LAN1_INDEX]},{id:VLAN_SERVICE_ID_VOIP,display:false,fixed:true,tag:true,vid:0,priority:0,member:0},{id:VLAN_SERVICE_ID_MULTICAST,display:false,fixed:true,tag:false,vid:0,member:0},]},{mode:IPTV_MODE_MY_MAXIS1,label:label.iptvModeMaxis+1,services:[{id:VLAN_SERVICE_ID_INTERNET,display:true,fixed:true,tag:true,vid:621,priority:0,member:LAN_BITMAP[LAN2_INDEX]},{id:VLAN_SERVICE_ID_IPTV,display:true,fixed:true,tag:true,vid:823,priority:0,member:LAN_BITMAP[LAN1_INDEX]},{id:VLAN_SERVICE_ID_VOIP,display:true,fixed:true,tag:true,vid:822,priority:0,member:LAN_BITMAP[LAN3_INDEX]},{id:VLAN_SERVICE_ID_MULTICAST,display:false,fixed:true,tag:false,vid:0,member:0},]},{mode:IPTV_MODE_MY_MAXIS2,label:label.iptvModeMaxis+2,services:[{id:VLAN_SERVICE_ID_INTERNET,display:true,fixed:true,tag:true,vid:11,priority:0,member:LAN_BITMAP[LAN2_INDEX]},{id:VLAN_SERVICE_ID_IPTV,display:true,fixed:true,tag:true,vid:17,priority:0,member:LAN_BITMAP[LAN1_INDEX]},{id:VLAN_SERVICE_ID_VOIP,display:true,fixed:true,tag:true,vid:14,priority:0,member:LAN_BITMAP[LAN3_INDEX]},{id:VLAN_SERVICE_ID_MULTICAST,display:false,fixed:true,tag:false,vid:0,member:0},]},{mode:IPTV_MODE_MY_CELCOM,label:label.iptvModeCelcom,services:[{id:VLAN_SERVICE_ID_INTERNET,display:true,fixed:true,tag:true,vid:101,priority:0,member:LAN_BITMAP[LAN1_INDEX]|LAN_BITMAP[LAN2_INDEX]},{id:VLAN_SERVICE_ID_IPTV,display:false,fixed:true,tag:true,vid:0,priority:0,member:0},{id:VLAN_SERVICE_ID_VOIP,display:true,fixed:true,tag:true,vid:201,priority:0,member:LAN_BITMAP[LAN3_INDEX]},{id:VLAN_SERVICE_ID_MULTICAST,display:false,fixed:true,tag:true,vid:0,member:0},]},{mode:IPTV_MODE_VN_VIETTEL,label:label.iptvModeViettel,services:[{id:VLAN_SERVICE_ID_INTERNET,display:true,fixed:true,tag:true,vid:35,priority:0,member:LAN_BITMAP[LAN1_INDEX]},{id:VLAN_SERVICE_ID_IPTV,display:true,fixed:true,tag:true,vid:2502,priority:4,member:LAN_BITMAP[LAN2_INDEX]},{id:VLAN_SERVICE_ID_VOIP,display:true,fixed:true,tag:true,vid:37,priority:5,member:LAN_BITMAP[LAN3_INDEX]},{id:VLAN_SERVICE_ID_MULTICAST,display:false,fixed:true,tag:false,vid:0,member:0}]},{mode:IPTV_MODE_PT_MEO,label:label.iptvModeMeo,services:[{id:VLAN_SERVICE_ID_INTERNET,display:true,fixed:true,tag:true,vid:12,priority:0,member:LAN_BITMAP[LAN1_INDEX]|LAN_BITMAP[LAN2_INDEX]},{id:VLAN_SERVICE_ID_PT_BRIDGE,display:false,fixed:true,member:LAN_BITMAP[LAN3_INDEX]}]},{mode:IPTV_MODE_PT_VODAFONE,label:label.iptvModeVodafone,services:[{id:VLAN_SERVICE_ID_INTERNET,display:true,fixed:true,tag:true,vid:100,priority:0,member:LAN_BITMAP[LAN1_INDEX]},{id:VLAN_SERVICE_ID_IPTV,display:true,fixed:true,tag:true,vid:105,priority:0,member:LAN_BITMAP[LAN2_INDEX]},{id:VLAN_SERVICE_ID_VOIP,display:true,fixed:true,tag:true,vid:101,priority:0,member:0},{id:VLAN_SERVICE_ID_PT_BRIDGE,display:false,fixed:true,member:LAN_BITMAP[LAN3_INDEX]}]},{mode:IPTV_MODE_AU_NBN,label:label.iptvModeNbn,services:[{id:VLAN_SERVICE_ID_INTERNET,display:true,fixed:true,tag:true,vid:100,priority:0,member:LAN_BITMAP[LAN1_INDEX]|LAN_BITMAP[LAN2_INDEX]|LAN_BITMAP[LAN3_INDEX]},{id:VLAN_SERVICE_ID_IPTV,display:false,fixed:true,tag:true,vid:0,priority:0,member:0},{id:VLAN_SERVICE_ID_VOIP,display:false,fixed:true,tag:true,vid:0,priority:0,member:0},{id:VLAN_SERVICE_ID_MULTICAST,display:false,fixed:true,tag:false,vid:0,member:0}]},{mode:IPTV_MODE_NZ_UFB,label:label.iptvModeUfb,services:[{id:VLAN_SERVICE_ID_INTERNET,display:true,fixed:true,tag:true,vid:10,priority:0,member:LAN_BITMAP[LAN1_INDEX]|LAN_BITMAP[LAN2_INDEX]|LAN_BITMAP[LAN3_INDEX]},{id:VLAN_SERVICE_ID_IPTV,display:false,fixed:true,tag:true,vid:0,priority:0,member:0},{id:VLAN_SERVICE_ID_VOIP,display:false,fixed:true,tag:true,vid:0,priority:0,member:0},{id:VLAN_SERVICE_ID_MULTICAST,display:false,fixed:true,tag:false,vid:0,member:0}]},{mode:IPTV_MODE_BRIDGE,label:label.iptvModeBridge,iptvMember:LAN_BITMAP[LAN3_INDEX]},{mode:IPTV_MODE_CUSTOM,label:label.iptvModeCustom,services:[{id:VLAN_SERVICE_ID_INTERNET,display:true,fixed:false,tag:false,vid:0,priority:0,member:LAN_BITMAP[LAN1_INDEX]|LAN_BITMAP[LAN2_INDEX]|LAN_BITMAP[LAN3_INDEX]},{id:VLAN_SERVICE_ID_IPTV,display:true,fixed:false,tag:true,vid:0,priority:0,member:0},{id:VLAN_SERVICE_ID_VOIP,display:true,fixed:false,tag:true,vid:0,priority:0,member:0},{id:VLAN_SERVICE_ID_MULTICAST,display:true,fixed:false,tag:false,vid:0,priority:0,member:0}]}];var vlanPriority=[{str:label.iptvVlanPriority0,value:0},{str:label.iptvVlanPriority1,value:1},{str:label.iptvVlanPriority2,value:2},{str:label.iptvVlanPriority3,value:3},{str:label.iptvVlanPriority4,value:4},{str:label.iptvVlanPriority5,value:5},{str:label.iptvVlanPriority6,value:6},{str:label.iptvVlanPriority7,value:7}];var serviceIdMap=[{serviceId:VLAN_SERVICE_ID_INTERNET,htmlId:"internet"},{serviceId:VLAN_SERVICE_ID_IPTV,htmlId:"iptv"},{serviceId:VLAN_SERVICE_ID_VOIP,htmlId:"voip"},{serviceId:VLAN_SERVICE_ID_MULTICAST,htmlId:"multicast"},{serviceId:VLAN_SERVICE_ID_PT_BRIDGE,htmlId:"ptBridge"},];var vlanService=[{str:label.iptvVlanServiceInternet,value:VLAN_SERVICE_ID_INTERNET},{str:label.iptvVlanServiceIPTV,value:VLAN_SERVICE_ID_IPTV},{str:label.iptvVlanServiceVOIP,value:VLAN_SERVICE_ID_VOIP}];var lanServiceList=[-1,VLAN_SERVICE_ID_INTERNET,VLAN_SERVICE_ID_INTERNET,VLAN_SERVICE_ID_INTERNET,VLAN_SERVICE_ID_INTERNET];var iptv={};var lanService=[-1,VLAN_SERVICE_ID_VOIP,VLAN_SERVICE_ID_INTERNET,VLAN_SERVICE_ID_INTERNET,VLAN_SERVICE_ID_IPTV];var DEFAULT_VLAN_TAG_INTERNET=true;var DEFAULT_VLAN_TAG_MULTICAST=false;function errHandle(errNo,objOrId){if(errNo!=ENONE){showAlert(errStr.unknown+errNo,objOrId);return true}return false}function getIptvModeList(){var modeList=[{str:label.iptvModeDisabled,value:IPTV_MODE_DISABLED}];var i=0;var len=profileList.length;for(i=0;i<len;i++){modeList.push({str:profileList[i].label,value:profileList[i].mode})}return modeList}function getServiceLabel(serviceId){var serviceLabelMap=[{id:VLAN_SERVICE_ID_INTERNET,label:label.iptvVlanServiceInternet},{id:VLAN_SERVICE_ID_IPTV,label:label.iptvVlanServiceIPTV},{id:VLAN_SERVICE_ID_VOIP,label:label.iptvVlanServiceVOIP},{id:VLAN_SERVICE_ID_MULTICAST,label:label.iptvVlanServiceMulticast},{id:VLAN_SERVICE_ID_PT_BRIDGE,label:label.iptvVlanServicePtBridge}];for(var i=0;i<serviceLabelMap.length;i++){if(serviceLabelMap[i].id==serviceId){return serviceLabelMap[i].label}}return""}function fillVlanData(mode){var i=0;var len=profileList.length;for(i=0;i<len;i++){if(mode==profileList[i].mode){break}}if(len<=i){return}var serviceList=profileList[i].services;for(i=0;i<serviceIdMap.length;i++){if(serviceIdMap[i].serviceId!=VLAN_SERVICE_ID_PT_BRIDGE){$("#"+serviceIdMap[i].htmlId+"VlanWR").hide();$("#"+serviceIdMap[i].htmlId+"VlanRO").hide()}}$("#lanServiceWR").hide();$("#lanServiceRO").hide();len=serviceList.length;var lanServiceFixed=true;for(i=0;i<len;i++){var j=0;var service=serviceList[i];for(j=0;j<serviceIdMap.length;j++){if(service.id==serviceIdMap[j].serviceId){break}}if(j>=serviceIdMap.length){continue}var idPrefix=serviceIdMap[j].htmlId;if(service.fixed==false){lanServiceFixed=false;if(service.display==true){id(idPrefix+"Priority").changeSel(iptv.uService[service.id].uVlanPriority);$("#"+idPrefix+"Vid").val(iptv.uService[service.id].uVid);id(idPrefix+"TagEnable").checked=(iptv.uService[service.id].bTagEnable=="1");$("#"+idPrefix+"VlanWR").show();for(j=1;j<=LAN_PORT_NUM;j++){if((service.id!=VLAN_SERVICE_ID_MULTICAST)&&(iptv.uService[service.id].uMemberPorts&LAN_BITMAP[eval("LAN"+j+"_INDEX")])){lanServiceList[j]=service.id}}}}else{for(j=1;j<=LAN_PORT_NUM;j++){if((service.id!=VLAN_SERVICE_ID_MULTICAST)&&(service.member&LAN_BITMAP[eval("LAN"+j+"_INDEX")])){lanServiceList[j]=service.id}}if(service.display==true){$("#"+idPrefix+"VlanRO .vid")[0].innerHTML=service.vid;$("#"+idPrefix+"VlanRO .priority")[0].innerHTML=service.priority;$("#"+idPrefix+"VlanRO .tagbox")[0].checked=(service.tag==true);$("#"+idPrefix+"VlanRO").show()}}}if(lanServiceFixed==true){$(".lan1ServiceRO")[0].innerHTML=getServiceLabel(lanServiceList[1]);$(".lan2ServiceRO")[0].innerHTML=getServiceLabel(lanServiceList[2]);$(".lan3ServiceRO")[0].innerHTML=getServiceLabel(lanServiceList[3]);$("#lanServiceRO").show()}else{id("lan1Service").changeSel(lanServiceList[1]);id("lan2Service").changeSel(lanServiceList[2]);id("lan3Service").changeSel(lanServiceList[3]);$("#lanServiceWR").show()}}function displayBridge(show){if(show){$("#bridgeMemberContainer").show();$("#iptvBridgeHelp").show()}else{$("#bridgeMemberContainer").hide();$("#iptvBridgeHelp").hide()}}function display8021Q(mode,show){if(show){fillVlanData(mode);$("#vlanSettingContainer ul.selOptsUl li.option").css({fontWeight:"normal"});$("#vlanSettingContainer ul.selOptsUl li.option span").hide();$("#vlanSettingContainer").show();if(mode==IPTV_MODE_CUSTOM||mode==IPTV_MODE_8021Q){$("#iptvVlanHelp").show()}else{$("#iptvVlanHelp").hide()}}else{$("#vlanSettingContainer").hide();$("#iptvVlanHelp").hide()}}function displayMode(mode){switch(parseInt(mode)){case IPTV_MODE_DISABLED:$(".helpBtn").show();displayBridge(false);display8021Q(mode,false);break;case IPTV_MODE_BRIDGE:$(".helpBtn").show();displayBridge(true);display8021Q(mode,false);break;case IPTV_MODE_8021Q:case IPTV_MODE_RU:case IPTV_MODE_SG_SINGTEL:case IPTV_MODE_MY_UNIFI:case IPTV_MODE_MY_MAXIS1:case IPTV_MODE_MY_MAXIS2:case IPTV_MODE_MY_CELCOM:case IPTV_MODE_VN_VIETTEL:case IPTV_MODE_PT_MEO:case IPTV_MODE_PT_VODAFONE:case IPTV_MODE_AU_NBN:case IPTV_MODE_NZ_UFB:$(".helpBtn").hide();displayBridge(false);display8021Q(mode,true);break;case IPTV_MODE_8021Q:case IPTV_MODE_CUSTOM:$(".helpBtn").show();displayBridge(false);display8021Q(mode,true);break;default:break}}function switchIPTVMode(mode){displayMode(mode);if(mode==IPTV_MODE_DISABLED){$("#iptvModeHelp").show()}else{$("#iptvModeHelp").hide()}}function selectIPTV(type){mode=parseInt(type);if(mode<IPTV_MODE_DISABLED||mode>=IPTV_MODE_END){return}switchIPTVMode(mode)}function checkConfig(newConfig){var oldConfig=$.findBlock(IPTV_DATA_ID);if(oldConfig.uMode!=newConfig.uMode||oldConfig.uBridgePorts!=newConfig.uBridgePorts){return true}var len=oldConfig.uService.length;for(var i=0;i<len;i++){if(oldConfig.uService[i].uVid!=newConfig.uService[i].uVid||oldConfig.uService[i].uVlanPriority!=newConfig.uService[i].uVlanPriority||oldConfig.uService[i].bTagEnable!=newConfig.uService[i].bTagEnable||oldConfig.uService[i].uMemberPorts!=newConfig.uService[i].uMemberPorts){return true}}return false}function onSave(){var iptvMode=id("iptvMode").value;var newIptv=cloneObject(iptv);newIptv.uMode=iptvMode;if(iptvMode==IPTV_MODE_BRIDGE){newIptv.uBridgePorts=id("bridgeMember").value}else{if(iptvMode==IPTV_MODE_CUSTOM||iptvMode==IPTV_MODE_8021Q){if(!checkVid("internetVid")||!checkVid("iptvVid")||!checkVid("voipVid")||!checkVid("multicastVid")){return}var internetVid=$("#internetVid").val();var internetPriority=id("internetPriority").value;var internetTag=$("#internetTagEnable").is(":checked")?1:0;var iptvVid=$("#iptvVid").val();var iptvPriority=id("iptvPriority").value;var iptvTag=$("#iptvTagEnable").is(":checked")?1:0;var voipVid=$("#voipVid").val();var voipPriority=id("voipPriority").value;var voipTag=$("#voipTagEnable").is(":checked")?1:0;var multicastVid=$("#multicastVid").val();var multicastPriority=id("multicastPriority").value;var multicastTag=$("#multicastTagEnable").is(":checked")?1:0;var internetMember=0;var iptvMember=0;var voipMember=0;var lanService;for(i=1;i<=LAN_PORT_NUM;i++){lanService=id("lan"+i+"Service").value;switch(lanService){case VLAN_SERVICE_ID_INTERNET:internetMember|=LAN_BITMAP[eval("LAN"+i+"_INDEX")];break;case VLAN_SERVICE_ID_IPTV:iptvMember|=LAN_BITMAP[eval("LAN"+i+"_INDEX")];break;case VLAN_SERVICE_ID_VOIP:voipMember|=LAN_BITMAP[eval("LAN"+i+"_INDEX")];break;default:break}}newIptv.uService[VLAN_SERVICE_ID_INTERNET].uVid=internetVid;newIptv.uService[VLAN_SERVICE_ID_INTERNET].uVlanPriority=internetPriority;newIptv.uService[VLAN_SERVICE_ID_INTERNET].bTagEnable=internetTag;newIptv.uService[VLAN_SERVICE_ID_INTERNET].uMemberPorts=internetMember;newIptv.uService[VLAN_SERVICE_ID_IPTV].uVid=iptvVid;newIptv.uService[VLAN_SERVICE_ID_IPTV].uVlanPriority=iptvPriority;newIptv.uService[VLAN_SERVICE_ID_IPTV].bTagEnable=iptvTag;newIptv.uService[VLAN_SERVICE_ID_IPTV].uMemberPorts=iptvMember;newIptv.uService[VLAN_SERVICE_ID_VOIP].uVid=voipVid;newIptv.uService[VLAN_SERVICE_ID_VOIP].uVlanPriority=voipPriority;newIptv.uService[VLAN_SERVICE_ID_VOIP].bTagEnable=voipTag;newIptv.uService[VLAN_SERVICE_ID_VOIP].uMemberPorts=voipMember;newIptv.uService[VLAN_SERVICE_ID_MULTICAST].uVid=multicastVid;newIptv.uService[VLAN_SERVICE_ID_MULTICAST].uVlanPriority=multicastPriority;newIptv.uService[VLAN_SERVICE_ID_MULTICAST].bTagEnable=multicastTag;newIptv.uService[VLAN_SERVICE_ID_MULTICAST].uMemberPorts=iptvMember}}if(!checkConfig(newIptv)){return}showConfirm(label.iptvRebootWarning,function(confirm){if(true==confirm){var errNo=$.write($.toText(newIptv),$.block);if(errHandle(errNo)){return}setLoadingId("sysReboot");if($.reboot().errorno==ENONE){showProgressNum(14000,undefined,function(){window.location.reload()})}}})}function getPortService(vlan){var lanService=[-1,0,0,0,0];for(var i=0;i<VLAN_SERVICE_NUM;i++){if(i!=VLAN_SERVICE_ID_MULTICAST){for(var j=1;j<=LAN_PORT_NUM;j++){if(vlan[i].uMemberPorts&LAN_BITMAP[eval("LAN"+j+"_INDEX")]){lanService[j]=i}}}}return lanService}function isDigit(str){return/^\s*\d+\s*$/.test(str)}function checkVid(idStr){var vid=id(idStr).value;if(!isDigit(vid)){showAlert(errStr.illegalInput,idStr);return false}if(vid<2||vid>4094){showAlert(errStr.vidExceeds,idStr);return false}var vidElemList=$(".vlanServiceVid input");for(var i=0;i<vidElemList.length;i++){if(vidElemList[i].id!=idStr&&vid==vidElemList[i].value){showAlert(errStr.vidConflicts,idStr);return false}}return true}function init(){var bridgeMember=[{str:label.iptvBridgeMemberLan3,value:LAN_BITMAP[LAN3_INDEX]},{str:label.iptvBridgeMemberLan32,value:LAN_BITMAP[LAN2_INDEX]|LAN_BITMAP[LAN3_INDEX]},{str:label.iptvBridgeMemberLanAll,value:LAN_BITMAP[LAN1_INDEX]|LAN_BITMAP[LAN2_INDEX]|LAN_BITMAP[LAN3_INDEX]},];$.read(IPTV_DATA_ID);iptv=$.findBlock(IPTV_DATA_ID);selectInit("iptvMode",getIptvModeList(),iptv.uMode,selectIPTV);selectInit("bridgeMember",bridgeMember,iptv.uBridgePorts,function(){},30);selectInit("internetPriority",vlanPriority,0);selectInit("iptvPriority",vlanPriority,0);selectInit("voipPriority",vlanPriority,0);selectInit("multicastPriority",vlanPriority,0);selectInit("lan1Service",vlanService,VLAN_SERVICE_ID_INTERNET);selectInit("lan2Service",vlanService,VLAN_SERVICE_ID_INTERNET);selectInit("lan3Service",vlanService,VLAN_SERVICE_ID_INTERNET);switchIPTVMode(iptv.uMode);id("save").onclick=onSave;$("div.spanPri, div.spanService").css({width:"140px",height:"40px",lineHeight:"40px",verticalAlign:"middle"});$(".spanPri .value, .spanService .value").css({width:"80px"});$(".spanPri .hsArrowM, .spanService .hsArrowM").css({borderWidth:"4px 4px 0"});$("#vlanSettingContainer ul.selOptsUl li.option").css({fontWeight:"normal"});$("#vlanSettingContainer ul.selOptsUl li.option span").hide();$(".configTableHead td").css({backgroundColor:"#ff6060",color:"#ffffff",fontWeight:"bold"});$("div.vlanServiceVid").css({border:"1px solid #e0e0e0",borderRadius:"4px",width:"65px",height:"28px",margin:"auto"});$(".vlanServiceVid input").css({height:"25px",lineHeight:"25px",verticalAlign:"center",textAlign:"center",width:"60px",border:"none",fontSize:"12px"});$(".vlanServiceVid input").focusin(function(){$(this).parents("div.vlanServiceVid").css({borderColor:"#ff6060"})}).focusout(function(){$(this).parents("div.vlanServiceVid").css({borderColor:"#e0e0e0"})});$("#vlanTagContainer table, #vlanMemberContainer table").css({marginLeft:"53px",width:"560px"});$(".configTableHead div").css({width:"140px"});$(".portModeTableHead div").css({width:"187px"});$("#lanServiceWR div.spanService").css({width:"187px"})}init();</script>
+
+<div id="hcCo" class="hcCo">
+	<div class="title titleC">
+		<label class="title">IPTV</label>
+		<div id="netSetState" class="handleRelCon">
+			<i class="state"></i>
+			<span class="state"></span>
+		</div>
+		<i class="helpBtn" helpStr="iptvHelp"></i>
+	</div>
+	<div class="block">
+		<div id="iptvModeContainer"> 
+			<ul class="hsInputUl">
+				<li class="hsInputLi">
+					<label class="inputLiLbl"><%label.iptvModeTitle%><i></i></label>
+					<span class="highSetSelect">
+						<span id="iptvMode" class="select">
+							<span class="value"></span><i class="hsArrowM"></i>
+						</span>
+					</span>
+				</li>
+			</ul>
+		</div>
+
+		<div id="bridgeMemberContainer"> 
+			<ul class="hsInputUl">
+				<li class="hsInputLi">
+					<label class="inputLiLbl"><%label.iptvBridgeMemberTitle%><i></i></label>
+					<span class="highSetSelect">
+						<span id="bridgeMember" class="select">
+							<span class="value"></span><i class="hsArrowM"></i>
+						</span>
+					</span>
+				</li>
+			</ul>
+
+			<div class="backpng" style="background: url(../images/back.png) no-repeat; width: 400px; height:128px; margin: 60px auto">
+				<table style="width: 120px; margin-left: 160px;  border-collapse: collapse">
+					<tbody>
+						<tr style="height: 27px; line-height: 27px; vertical-align: middle; text-align: center; font-size: 11px">
+                            <td style="background-color: #6594ce; color: #ffffff; font-weight: bold;">WAN</td>
+                            <td style="background-color: #a0c85b; color: #ffffff; font-weight: bold;">LAN1</td>
+                            <td style="background-color: #a0c85b; color: #ffffff; font-weight: bold;">LAN2</td>
+                            <td style="background-color: #a0c85b; color: #ffffff; font-weight: bold;">LAN3</td>
+						</tr>
+						<tr>
+                            <td><div style="height:55px; width:19px; border-right: 1px solid #c5c5c5"></div></td> 
+                            <td><div style="height:55px; width:19px; border-right: 1px solid #c5c5c5"></div></td> 
+                            <td><div style="height:55px; width:16px; border-right: 1px solid #c5c5c5"></div></td> 
+                            <td><div style="height:55px; width:12px; border-right: 1px solid #c5c5c5"></div></td> 
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+
+		<div id="vlanSettingContainer" style="padding-top: 0px" class="title">
+			<div class="title titleC">
+				<label class="title"><%label.iptvVlanServiceTitle%></label>
+				<div id="netSetState" class="handleRelCon">
+					<i class="state"></i>
+					<span class="state"></span>
+				</div>
+			</div>
+			<div class="blockTable" id="vlanTagContainer">
+				<table class="dataGrid">
+					<tbody>
+						<tr class="configTableHead">
+							<td><div><%label.iptvTableHeadService%></div></td>
+							<td><div><%label.iptvTableHeadVid%></div></td>
+							<td><div><%label.iptvTableHeadPriority%></div></td>
+							<td><div><%label.iptvTableHeadTag%></div></td>
+						</tr>
+
+						<tr id="internetVlanWR" class="hide">
+							<td><%label.iptvVlanServiceInternet%></td>
+							<td style="white-space: normal">
+								<div class="vlanServiceVid">
+									<input id="internetVid" type="text" maxlength=4 onchange="checkVid('internetVid')"/>
+								</div>
+							</td>
+							<td style="white-space: normal">
+								<div id="internetPriorityContainer" class="spanPri">
+									<span id="internetPriority" class="select"> 
+										<span class="value"></span><i class="hsArrowM"></i>
+									</span>
+								</div>
+							</td>
+							<td style="white-space: normal">
+								<input id="internetTagEnable" class="checkbox"  type="checkbox" />
+							</td>
+						</tr>
+
+						<tr id="internetVlanRO" class="hide">
+							<td><%label.iptvVlanServiceInternet%></td>
+							<td style="white-space: normal">
+								<span class="vid"/>
+							</td>
+							<td style="white-space: normal">
+								<span class="priority"/> 
+							</td>
+							<td style="white-space: normal">
+								<input class="tagbox" class="checkbox"  type="checkbox" checked disabled />
+							</td>
+						</tr>
+
+						<tr id="iptvVlanWR" class="hide">
+							<td><%label.iptvVlanServiceIPTV%></td>
+							<td style="white-space: normal">
+								<div class="vlanServiceVid">
+									<input id="iptvVid" type="text" maxlength=4 onchange="checkVid('iptvVid')"/>
+								</div>
+							</td>
+							<td style="white-space: normal">
+								<div id="iptvPriorityContainer" class="spanPri">
+									<span id="iptvPriority" class="select"> 
+										<span class="value"></span><i class="hsArrowM"></i>
+									</span>
+								</div>
+							</td>
+							<td style="white-space: normal">
+								<input id="iptvTagEnable" class="checkbox"  type="checkbox"  checked disabled />
+							</td>
+						</tr>
+
+						<tr id="iptvVlanRO" class="hide">
+							<td><%label.iptvVlanServiceIPTV%></td>
+							<td style="white-space: normal">
+								<span class="vid"/>
+							</td>
+							<td style="white-space: normal">
+								<span class="priority"/> 
+							</td>
+							<td style="white-space: normal">
+								<input class="tagbox" class="checkbox"  type="checkbox" checked  disabled/>
+							</td>
+						</tr>
+
+						<tr id="multicastVlanWR" class="hide">
+							<td><%label.iptvVlanServiceMulticast%></td>
+							<td style="white-space: normal">
+								<div class="vlanServiceVid">
+									<input id="multicastVid" type="text" maxlength=4 onchange="checkVid('multicastVid')"/>
+								</div>
+							</td>
+							<td style="white-space: normal">
+								<div id="multicastPriorityContainer" class="spanPri">
+									<span id="multicastPriority" class="select"> 
+										<span class="value"></span><i class="hsArrowM"></i>
+									</span>
+								</div>
+							</td>
+							<td style="white-space: normal">
+								<input id="multicastTagEnable" class="checkbox"  type="checkbox" />
+							</td>
+						</tr>
+
+						<tr id="multicastVlanRO" class="hide">
+							<td><%label.iptvVlanServiceMulticast%></td>
+							<td style="white-space: normal">
+								<span class="vid"/>
+							</td>
+							<td style="white-space: normal">
+								<span class="priority"/> 
+							</td>
+							<td style="white-space: normal">
+								<input class="tagbox" class="checkbox"  type="checkbox" checked disabled/>
+							</td>
+						</tr>
+
+						<tr id="voipVlanWR" class="hide">
+							<td><%label.iptvVlanServiceVOIP%></td>
+							<td style="white-space: normal">
+								<div class="vlanServiceVid">
+									<input id="voipVid" type="text" maxlength=4 onchange="checkVid('voipVid')"/>
+								</div>
+							</td>
+							<td style="white-space: normal">
+								<div id="voipPriorityContainer" class="spanPri">
+									<span id="voipPriority" class="select"> 
+										<span class="value"></span><i class="hsArrowM"></i>
+									</span>
+								</div>
+							</td>
+							<td style="white-space: normal">
+								<input id="voipTagEnable" class="checkbox"  type="checkbox"  checked disabled />
+							</td>
+						</tr>
+			 
+						<tr id="voipVlanRO" class="hide">
+							<td><%label.iptvVlanServiceVOIP%></td>
+							<td style="white-space: normal">
+								<span class="vid"/>
+							</td>
+							<td style="white-space: normal">
+								<span class="priority"/> 
+							</td>
+							<td style="white-space: normal">
+								<input class="tagbox" class="checkbox"  type="checkbox" checked disabled/>
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="title titleC">
+				<label class="title"><%label.iptvVlanMemberTitle%></label>
+				<div id="netSetState" class="handleRelCon">
+					<i class="state"></i>
+					<span class="state"></span>
+				</div>
+			</div>
+			<div class="backpng" style="background: url(../images/back.png) no-repeat; width: 400px; height:128px; margin-left: 208px;">
+				<table style="width: 120px; margin-left: 160px;  border-collapse: collapse">
+					<tbody>
+						<tr style="height: 27px; line-height: 27px; vertical-align: middle; text-align: center; font-size: 11px">
+                            <td style="background-color: #6594ce; color: #ffffff; font-weight: bold;">WAN</td>
+                            <td style="background-color: #a0c85b; color: #ffffff; font-weight: bold;">LAN1</td>
+                            <td style="background-color: #a0c85b; color: #ffffff; font-weight: bold;">LAN2</td>
+                            <td style="background-color: #a0c85b; color: #ffffff; font-weight: bold;">LAN3</td>
+						</tr>
+						<tr>
+                            <td><div style="height:55px; width:19px; border-right: 1px solid #c5c5c5"></div></td> 
+                            <td><div style="height:55px; width:19px; border-right: 1px solid #c5c5c5"></div></td> 
+                            <td><div style="height:55px; width:16px; border-right: 1px solid #c5c5c5"></div></td> 
+                            <td><div style="height:55px; width:12px; border-right: 1px solid #c5c5c5"></div></td> 
+						</tr>
+					</tbody>
+				</table>
+			</div>
+			<div class="blockTable" id="vlanMemberContainer">
+				<table class="dataGrid">
+					<tbody>
+						<tr class="configTableHead portModeTableHead">
+							<td><div>LAN 1</div></td>
+							<td><div>LAN 2</div></td>
+							<td><div>LAN 3</div></td>
+						</tr>
+						<tr id="lanServiceWR" class="hide">
+							<td style="white-space: normal">
+								<div id="lan1ServiceContainer" class="spanService">
+									<span id="lan1Service" class="select"> 
+										<span class="value"></span><i class="hsArrowM"></i>
+									</span>
+								</div>
+							</td>
+							<td style="white-space: normal">
+								<div id="lan2ServiceContainer" class="spanService">
+									<span id="lan2Service" class="select"> 
+										<span class="value"></span><i class="hsArrowM"></i>
+									</span>
+								</div>
+							</td>
+							<td style="white-space: normal">
+								<div id="lan3ServiceContainer" class="spanService">
+									<span id="lan3Service" class="select"> 
+										<span class="value"></span><i class="hsArrowM"></i>
+									</span>
+								</div>
+							</td>
+						</tr>
+
+						<tr id="lanServiceRO" class="hide">
+							<td style="white-space: normal">
+								<span class="lan1ServiceRO" />
+							</td>
+							<td style="white-space: normal">
+								<span class="lan2ServiceRO" />
+							</td>
+							<td style="white-space: normal">
+								<span class="lan3ServiceRO" />
+							</td>
+						</tr>
+					</tbody>
+				</table>
+			</div>
+		</div>
+		<div class="blockFuncA">
+			<span id="save" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+</div>
+<style type="text/css">
+div.vlanServiceVid focus
+{
+	border: '1px solid #00ff00'
+}
+.hide 
+{
+	display: none;
+}
+<style>

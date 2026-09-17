@@ -1,0 +1,413 @@
+<ul id="PPPoEHelp" class="help">
+	<li class="title">WAN 連線類型</li>
+	<li class="content">選擇您 ISP(網路業者) 提供的網際網路連線類型。</li>
+	<li class="title">PPPoE</li>
+	<li class="content">若您使用 DSL(數位訂閱線路)服務且 ISP 提供使用者名稱和密碼，請選擇此類型。</li>
+	<li class="title">PPPoE 使用者名稱/密碼</li>
+	<li class="content">您的 ISP 提供的使用者名稱和密碼。</li>
+</ul>
+<ul id="PPPoEAdvHelp" class="help">
+	<li class="title">MTU 大小(位元組)</li>
+	<li class="content">最大傳輸單位請輸入 576-1492 之間的值。</li>
+	<li class="title">WAN 速率設定</li>
+	<li class="content">為 WAN 連接埠選擇速率和雙工模式。</li>
+	<li class="title">服務名稱/伺服器名稱</li>
+	<li class="content">除非您的 ISP 要求，否則請不要變更。</li>
+	<li class="title">使用 ISP 指定的 IP 位址</li>
+	<li class="content">若 IP 位址為 ISP 提供，請選擇這個，並將它輸入至相對應欄位。</li>
+	<li class="title">手動設定 DNS 伺服器</li>
+	<li class="content">DNS 位址將被自動配發至路由器，您也可以手動設定需要的。</li>
+</ul>
+<ul id="PPPoEServerDeadHelp" class="help">
+	<li class="title">請確認線路是否適當連接。</li>
+	<li class="content">
+		請確認硬體已確實連接(正常為網路-數據機-路由器)，且對應 LED 燈為恆亮或閃爍。
+	</li>
+	<li class="content">
+		透過網路線直接連接電腦和數據機確認網際網路是否正常運作中。 
+	</li>
+	<li class="titleList">若未正常運作，請聯繫您的 ISP(網際網路服務供應商)。</li>
+	<li class="titleList">若運作正常，請試試下列：</li>
+	<ul class="listNum">
+		<li>複製目前電腦的 MAC 位址並再試一次。</li>
+		<p><a href="javascript:void(0)" onclick="cloneLocalMac()">>>>點擊複製目前電腦的 MAC 位址。</a></p>
+		<li>請聯繫您的 ISP 確認連線類型是PPPoE。</li>
+		<li>等待數分鐘後再試一次。</li>
+	</ul>
+</ul>
+<ul id="PPPoENPErrHelp" class="help">
+	<li class="title">請確認使用者名稱和密碼已正確輸入。</li>
+	<li class="content">欄位有分大小寫，請不要認錯相似的字元像是「o」和「0」、「l」和「1」。</li>
+	<li class="content">若使用者名稱和密碼都入入正確但問題仍在，請透過網路線直接連接電腦確認網際網路是正常的。 </li>
+	<li class="titleList">若未正常運作，請聯繫您的 ISP(網際網路服務供應商)。</li>
+	<li class="titleList">若運作正常，請試試下列：</li>
+	<ul class="listNum">
+		<li>複製目前電腦的 MAC 位址並再試一次。</li>
+		<p><a href="javascript:void(0)" onclick="cloneLocalMac()">>>>點擊複製目前電腦的 MAC 位址。</a></p>
+		<li>等待數分鐘後再試一次。</li>
+	</ul>
+</ul>
+<ul id="PPPoEOtherErrHelp" class="help">
+	<li class="content">透過網路線直接連接電腦和數據機確認網際網路是否正常運作中。 </li>
+	<li class="titleList">若未正常運作，請聯繫您的 ISP(網際網路服務供應商)。</li>
+	<li class="titleList">若運作正常，還原您的數據機至預設值並參考快速安裝手冊以再設一次。</li>
+</ul>
+
+<ul id="pptpHelp" class="help">
+	<li class="title">WAN 連線類型</li>
+	<li class="content">選擇您 ISP(網路業者) 提供的網際網路連線類型。</li>
+	<li class="title">PPTP</li>
+	<li class="content">若您連接至 PPTP VPN 伺服器且 ISP 提供使用者名稱、密碼和 IP 位址/域名，請選擇此類型。</li>
+	<li class="title">使用者名稱/密碼</li>
+	<li class="content">您的 ISP 提供的使用者名稱和密碼。</li>
+	<li class="title">伺服器 IP/域名</li>
+	<li class="content">輸入由您 ISP 業者提供的 VPN 伺服器 IP 位址或域名。</li>
+	<li class="title">浮動 IP</li>
+	<li class="content">若 IP 位址和子網路遮罩為 ISP 自動分配，請選擇這個。</li>
+	<li class="title">固定 IP</li>
+	<li class="content">若 IP 位址、子網路遮罩、預設閘道和 DNS 位址為 ISP 提供，請選擇這個，並將它輸入至相對應欄位。</li>
+	<li class="title">IP 位址/子網路遮罩/預設閘道/主要 DNS/次要 DNS</li>
+	<li class="content">若您選擇固定 IP，請輸入您 ISP 提供的資訊。</li>
+	<li class="title">網際網路 IP 位址</li>
+	<li class="content">網際網路 IP 伺服器位址由 PPTP 伺服器配發。</li>
+	<li class="title">網際網路 DNS</li>
+	<li class="content">網際網路 DNS 伺服器位址由 PPTP 伺服器配發。</li>
+</ul>
+
+<ul id="pptpAdvHelp" class="help">
+	<li class="title">MTU 大小</li>
+	<li class="content">大部分 PPTP 的乙太網路 MTU(最大傳輸單位)大小為 1420 位元組。若 ISP 沒有要求，不建議變更 MTU 大小。</li>
+	<li class="title">WAN 速率設定</li>
+	<li class="content">為 WAN 連接埠選擇速率和雙工模式。</li>
+</ul>
+
+<ul id="l2tpHelp" class="help">
+	<li class="title">WAN 連線類型</li>
+	<li class="content">選擇您 ISP(網路業者) 提供的網際網路連線類型。</li>
+	<li class="title">L2TP</li>
+	<li class="content">若您連接至 L2TP VPN 伺服器且 ISP 提供使用者名稱、密碼和 IP 位址/域名，請選擇此類型。</li>
+	<li class="title">使用者名稱/密碼</li>
+	<li class="content">您的 ISP 提供的使用者名稱和密碼。</li>
+	<li class="title">伺服器 IP/域名</li>
+	<li class="content">輸入由您 ISP 業者提供的 VPN 伺服器 IP 位址或域名。</li>
+	<li class="title">浮動 IP</li>
+	<li class="content">若 IP 位址和子網路遮罩為 ISP 自動分配，請選擇這個。</li>
+	<li class="title">固定 IP</li>
+	<li class="content">若 IP 位址、子網路遮罩、預設閘道和 DNS 位址為 ISP 提供，請選擇這個，並將它輸入至相對應欄位。</li>
+	<li class="title">IP 位址/子網路遮罩/預設閘道/主要 DNS/次要 DNS</li>
+	<li class="content">若您選擇固定 IP，請輸入您 ISP 提供的資訊。</li>
+	<li class="title">網際網路 IP 位址</li>
+	<li class="content">網際網路 IP 伺服器位址由 L2TP 伺服器配發。</li>
+	<li class="title">網際網路 DNS</li>
+	<li class="content">網際網路 DNS 伺服器位址由 L2TP 伺服器配發。</li>
+</ul>
+
+<ul id="l2tpAdvHelp" class="help">
+	<li class="title">MTU 大小</li>
+	<li class="content">大部分 L2TP 的乙太網路 MTU(最大傳輸單位)大小為 1460 位元組。若 ISP 沒有要求，不建議變更 MTU 大小。</li>
+	<li class="title">WAN 速率設定</li>
+	<li class="content">為 WAN 連接埠選擇速率和雙工模式。</li>
+</ul>
+
+<ul id="DMZHelp" class="help">
+	<li class="title">DMZ(非軍事區域)主機功能允許一本地主機暴露在網際網路上滿足特別服務的需求，像是線上遊戲或視訊會議。 </li>
+	<li class="title">分配電腦或服務作為 DMZ 伺服器：</li>
+	<li class="content">1. 啟用 DMZ。<br>
+						2. 輸入要作為 DMZ 主機的本地電腦 IP 位址。<br>
+						3. 點擊儲存。</li>
+</ul>
+
+<ul id="DdnsHelp" class="help">
+	<li class="title">動態 DNS(域名系統)讓您分配一固定主機和域名至一浮動的網際網路 IP 位址。這當您架設自己的網站、FTP 伺服器或其他接在路由器下的伺服器是十分有用的。一開始，您需要登入一動態 DNS 服務供應商像是 www.dyndns.com。接著在路由器中輸入您的登入資訊。</li>
+	<li class="title">設定動態 DNS</li>
+	<li class="content">1. 選擇動態 DNS 服務供應商。 <br>
+						2. 啟用動態 DNS 客戶端。<br>
+						3. 輸入您動態 DNS 帳戶的使用者名稱和密碼。<br>
+						4. 輸入您動態 DNS 服務供應商註冊的網域名稱。<br>
+						5. 點擊儲存。<br>
+	</li>
+	<li class="warnning">注意：首先，您需要先註冊 DDNS 服務供應商像是www.dyndns.com。</li>
+</ul>
+
+<ul id="dhcpServerHelp" class="help">
+	<li class="title">DHCP 伺服器將自動分配 IP 位址和子網路遮罩給連接至您路由器的電腦。</li>
+	<li class="title">起始 IP 位址/結束 IP 位址</li>
+	<li class="content">輸入可被您租用給客戶端的 IP 位址範圍。</li>
+	<li class="title">位址租約時間</li>
+	<li class="content">輸入 IP 位址租借給客戶端的時間長短，值介於 1 到 2880 分鐘之間。</li>
+	<li class="title">預設閘道</li>
+	<li class="content">選填.建議輸入 LAN IP 位址。預設 LAN IP 位址為 192.168.1.1。 </li>
+	<li class="title">DNS 伺服器</li>
+	<li class="content">選填.若 ISP 有提供 DNS 伺服器位址請填入。</li>
+</ul>
+
+<ul id="wlanGuestNetWorkHelp" class="help">
+	<li class="title">訪客網路讓您設定另外的網路名稱(SSID)和密碼建立一個與主要網路不互通的無線網路，供訪客存取網路。</li>
+	<li class="title">無線網路名稱/密碼</li>
+	<li class="content">為訪客網路設定網路名稱和密碼，密碼應包含 8-63 字元，建議您設定混合數字、字母和符號。</li>
+	<li class="title">允許訪客存取我的本地網路</li>
+	<li class="content">選設是否允許訪客網路上的無線設備訪問您的本地網路，預設為否。</li>
+	<li class="title">上傳頻寬/下載頻寬</li>
+	<li class="content">讓您設定訪客網路的總上傳/下載速度。</li>
+	<li class="title">設定訪客存取時間</li>
+	<li class="content">設定一段啟用訪客網路的時間。</li>
+</ul>
+
+<ul id="wlanNetworkHelp" class="help">
+	<li class="title">無線網路名稱(SSID)</li>
+	<li class="content">您可以保留預設無線網路名稱(SSID)，或是建立一個新名稱(最多 32 個字)。此欄位須注意大小寫。</li>
+	<li class="title">密碼</li>
+	<li class="content">安全性版本為 WPA2-PSK/WPA-PSK，他支援 AES 加密，提供更強的安全性。輸入 8-63 由數字、字母和文字組成的密碼。</li>
+	<li class="title">頻道</li>
+	<li class="content">為無線網路選擇一運作頻道，預設頻道為自動。除非遇到間歇性的無線連接問題，否則請勿更改。</li>
+	<li class="title">模式</li>
+	<li class="content">選擇一傳輸混合模式。</li>
+	<li class="title">頻道寬度</li>
+	<li class="content">為無線網路選擇一頻道寬度。</li>
+	<li class="title">傳輸功率</li>
+	<li class="content">選擇高、中或低來指定資料傳輸功率。預設與建議設定為高。</li>
+	<li class="title">AP 隔離</li>
+	<li class="content">選擇此複選框以啟用「AP 隔離」功能，該功能讓您可以限制並管控網路上的所有無線設備互相溝通，但仍能使用網際網路。此功能預設是關閉的。</li>
+</ul>
+
+<ul id="accessCtrlHelp" class="help">
+	<li class="title">存取控制讓您限制本地網路的存取內容。</li>
+	<li class="title"></li>
+	<li class="content">
+		新增存取控制的規則：
+	</li>
+	<ul class="listNum">
+		<li> 啟用存取控制。</li>
+		<li> 選擇白名單或黑名單。</li>
+		<li> 點擊新增並輸入此規則的描述。</li>
+		<li> 點擊設定來新增一被控制的主機。輸入明確的描述，選擇 IP 位址或 MAC 位址並輸入相對應的資訊，點擊套用。</li>
+		<li> 點擊設定以指明網際網路內容。您可以選擇所有目標或新增目標，在欄位中輸入相對應資訊並點擊套用。</li>
+		<li> 點擊設定以設定時間排程。選擇所有時間或是您可以新增排程。若要新增排程，請點擊並拖曳過框後點擊套用。</li>
+		<li> 在規則清單中點擊儲存。</li>
+	</ul>
+</ul>
+
+<ul id="IPMACBindHelp" class="help">
+	<li class="title">IP & MAC 綁定(又稱為 ARP 綁定)，可用於透過將設備的 IP 位址和 MAC 位址綁定在一起來控制 LAN 中特定電腦的訪問。IP 和 MAC 綁定還可以防止其他設備使用特定的 IP 位址。</li>
+	<li class="title">設定設備 ARP 綁定：</li>
+	<li class="content">
+		1. 點擊新增。<br>
+		2. 輸入主機名稱。<br>
+		3. 輸入設備的 MAC 位址(像是：00-E0-4C-00-07-BE)。<br>
+		4. 輸入您想綁定至該 MAC 位址的 IP 位址(像是 192.168.1.80)。<br>
+		5. 點擊儲存。
+	</li>
+</ul>
+
+<ul id="dynamicIpHelp" class="help">
+	<li class="title">WAN 連線類型</li>
+	<li class="content">選擇您 ISP(網路業者) 提供的網際網路連線類型。</li>
+	<li class="title">浮動 IP </li>
+	<li class="content">若 IP 位址和子網路遮罩為 ISP 自動分配，請選擇這個。</li>
+	<li class="title">IP 位址/子網路遮罩/閘道</li>
+	<li class="content">此資訊為 ISP 自動配發</li>
+	<li class="title">MTU 大小(位元組)</li>
+	<li class="content">最大傳輸單位請輸入 576-1500 之間的值。</li>
+	<li class="title">手動設定 DNS 伺服器</li>
+	<li class="content">DNS 位址將被自動配發至路由器，您也可以手動設定需要的。</li>
+	<li class="title">使用單播 DHCP 取得 IP</li>
+	<li class="content">一些 ISP 的DHCP 伺服器不支援廣播應用。若您無法正常取得 IP 位址，您可以選擇此選項。</li>
+	<li class="title">WAN 速率設定</li>
+	<li class="content">為 WAN 連接埠選擇速率和雙工模式。</li>
+</ul>
+
+<ul id="lanHelp" class="help">
+	<li class="title">MAC 位址</li>
+	<li class="content">分配給路由器 LAN 連接埠的獨特實體位址。</li>
+	<li class="title">LAN IP 設定</li>
+	<li class="content">選擇自動或手動。</li>
+	<li class="title">在自動模式中，路由器將自動偵測 LAN-WAN IP 位址衝突：</li>
+	<ul class="listNum">
+		<li>當 WAN 連接埠取得的 IP 位址和 LAN IP 位址在相同網段，LAN IP 位址將自動變更成其他網段的 IP。</li>
+		<li>若 LAN IP 位址已變更，目前的虛擬伺服器和 DMZ 設定將停用。</li>
+		<li>若預設 LAN IP 位址已變更，您可以在網頁介面使用http://mwlogin.net進行登入。</li>
+		<li>建議您設定電腦自動取得 IP 位址。若您使用固定 IP，請依照路由器的 LAN IP 位址和閘道變更您的電腦 IP 位址和閘道。</li>
+	</ul>
+	<li class="title">IP 位址</li>
+	<li class="content">輸入路由器的 LAN IP 位址。</li>
+	<li class="title">子網路遮罩</li>
+	<li class="content">輸入子網路遮罩，一般會是 255.255.255.0</li>
+</ul>
+
+<ul id="iptvHelp" class="help">
+
+<ul id="iptvModeHelp" class="help">
+	<li class="title">模式</li>
+	<li class="content">依照您的 ISP 選擇適合的模式。</li>
+</ul>
+
+<ul id="iptvBridgeHelp" class="help">
+	<li class="content"> 您可以在此頁面中設定橋接 LAN 連接埠。 </li>
+	<li class="warnning">注意：若您變更 LAN 連接埠橋接至 WAN 連接埠，系統將會重啟，點擊儲存按鈕便可儲存您的設定。</li>
+</ul>
+
+<ul id="iptvVlanHelp" class="help">
+	<li class="content">您可以在此頁面中位不同的應用設定 VLAN 參數。</li>
+	<li class="title">服務</li>
+	<li class="content">設定 VLAN ID，優先度並選擇是否按照 ISP 的要求用 802.1Q 標記網際網路封包。</li>
+	<li class="title">通訊埠模式</li>
+	<li class="content">分配您的 LAN 連接埠給網際網路、VoIP 或 IPTV 供應商。</li>
+</ul>
+
+</ul>
+
+<ul id="macCloneHelp" class="help">
+	<li class="title">有些 ISP 會註冊您電腦的 MAC 位址作為存取網路的依據，若您要將路由器新增在網路中來分享網際網路連線，ISP 端的設定將不接受 MAC 位址變更，故我們需要複製您電腦的 MAC 位址到路由器上。</li>
+</ul>
+
+<ul id="parentControlHelp" class="help">
+	<li class="title">有了家長監護，您可以限制管理的設備網際網路存取時間。</li>
+	<li class="title">新增家長設備</li>
+	<li class="content">
+		點擊新增並從下拉選單選擇一個設備來將它新增至設備列表。
+	</li>
+	<li class="title">有效時間</li>
+	<li class="content">除了家長設備的其他設備都將被限制，點擊並拖曳至框中以設定期間。</li>
+</ul>
+
+<ul id="natBoostHelp" class="help">
+	<li class="title">NAT 加速。</li>
+		啟用 NAT 加速以確認您的路由器能有最佳的吞吐量。
+</ul>
+
+<ul id="routeTableHelp" class="help">
+	<li class="title">進階路由被用來為網路資訊封包預定一固定的路由，以到達特定的主機或網路。</li>
+	<li class="title">目的地位址</li>
+	<li class="content">輸入一目的地 IP 位址為此項目分配固定路由。</li>
+	<li class="title">子網路遮罩</li>
+	<li class="content">輸入一子網路遮罩以確定 IP 位址的網路和主機部份。</li>
+	<li class="title">下一個節點</li>
+	<li class="content">輸入一 IP 位址連接路由器至網路或主機。</li>
+</ul>
+
+<ul id="staticIpHelp" class="help">
+	<li class="title">WAN 連線類型</li>
+	<li class="content">選擇您 ISP(網路業者) 提供的網際網路連線類型。</li>
+	<li class="title">固定 IP </li>
+	<li class="content">若 IP 位址為 ISP 提供，請選擇這個。</li>
+	<li class="title">IP 位址/子網路遮罩/閘道/DNS 伺服器</li>
+	<li class="content">在對應欄位中輸入由您 ISP 提供的參數。</li>
+	<li class="title">MTU 大小(位元組)</li>
+	<li class="content">最大傳輸單位請輸入 576-1500 之間的值。</li>
+	<li class="title">WAN 速率設定</li>
+	<li class="content">為 WAN 連接埠選擇速率和雙工模式。</li>
+</ul>
+
+<ul id="sysUpgradeHelp" class="help">
+	<li class="title">更新路由器的韌體</li>
+	<ul class="listNum">
+		<li>前往 <a target="blank" href="http://www.mercusys.com/">www.mercusys.com</a></li>
+		<li>下載最新的韌體到您的電腦中。</li>
+		<li> 點擊瀏覽來定位選擇下載的韌體檔案。</li>
+		<li> 點擊升級。</li>
+		<li> 路由器將在更新完成後自動重啟。</li>
+	</ul>
+</ul>
+
+<ul id="UpnpCfgHelp" class="help">
+	<li class="title">通用隨插即用(UPnP)功能預設是啟用的，讓電腦和網際網路設備能自動在本地網路中找到並互相連繫。</li>
+	<li class="title">應用描述</li>
+	<li class="content">顯示在 UPnP 請求中的描述。</li>
+	<li class="title">外部通訊埠</li>
+	<li class="content">顯示路由器為應用程式開啟的外部通訊埠。</li>
+	<li class="title">協定</li>
+	<li class="content">顯示被本地主機使用的網路協定類型。</li>
+	<li class="title">內部通訊埠</li>
+	<li class="content">顯示路由器為應用程式開啟的內部通訊埠。</li>
+	<li class="title">IP 位址</li>
+	<li class="content">顯示本地主機的 IP 位址。</li>
+	<li class="title">狀態</li>
+	<li class="content">顯示通訊埠是否已啟用。</li>
+	<li class="warnning">注意：請確認您的路由器、作業系統和應用程式支援 UPnP 功能。 </li>
+</ul>
+
+<ul id="virtualServerCfgHelp" class="help">
+	<li class="title">當您在本地網路中建立一伺服器並想要在網際網路上分享，虛擬伺服器可實現該服務並將其提供給網際網路的用戶。同時，虛擬伺服器可保障本地網路的安全，因為其他服務在網際網路上仍是無法看到的。</li>
+	<li class="title">一般伺服器</li>
+	<li class="content">從下拉選單中選擇一個服務。</li>
+	<li class="title">外部通訊埠</li>
+	<li class="content">顯示虛擬伺服器使用的通訊埠號或通訊埠範圍。</li>
+	<li class="title">內部通訊埠</li>
+	<li class="content">顯示運作服務應用中電腦的通訊埠號。</li>
+	<li class="title">IP 位址</li>
+	<li class="content">顯示運作應用服務的電腦 IP 位址。</li>
+	<li class="title">協定</li>
+	<li class="content">顯示協定使用的服務應用：TCP、UDP 或所有(所有路由器支援的協定)。</li>
+	<li class="title">新增虛擬伺服器項目：</li>
+	<li class="content">
+		1. 點擊新增。<br>
+		2. 從下拉選單中選擇一服務來自動填充外部通訊埠適當的埠號。若服務未列在此，請直接輸入外部埠號(如：21)或埠號範圍(如：21-25)。<br>
+		3. 若內部通訊埠與外部通訊埠相同請保持空白，或是外部通訊埠為單一通訊埠時輸入特定通訊埠號(如：21)。<br>
+		4. 在內部的 IP 範圍內，以點分十進位制輸入運作服務應用的電腦 IP 位址。<br>
+		5. 為服務應用選擇一協定：TCP、UDP或從協定的下拉選單選擇所有。<br>
+		6. 點擊儲存。
+	</li>
+	<li class="warnning">注意：請確認本地管理和遠端管理使用的外部通訊埠不同，否則虛擬伺服器可能無法正常運作。</li>
+</ul>
+
+<ul id="manageSULclHelp" class="help">
+	<li class="title">本地管理</li>
+	<li class="content">允許所有在您網路上的設備存取並管理路由器。預設路由器允許所有在本地網路中的設備存取並管理路由器。</li>
+	<li class="content">允許特定 MAC 位址的設備存取並管理路由器。
+請輸入設備的 MAC 位址以允許存取網路。</li>
+</ul>
+
+<ul id="manageSURmtHelp" class="help">
+	<li class="title">遠端管理</li>
+	<li class="content">停用：預設此功能是關閉的。</li>
+	<li class="content">允許所有設備透過網際網路遠端存取並管理路由器。
+所有設備將能夠在網路中遠端存取並管理路由器。</li>
+	<li class="content">允許特定 IP 設備透過網際網路遠端存取並設定路由器，請輸入設備的遠端 IP 位址允許存取路由器。</li>
+	<li class="title">通訊埠</li>
+	<li class="content">輸入從 1024 到 65535 用來存取路由器的通訊埠號碼。
+預設值為 8888。</li>
+</ul>
+
+<ul id="ipv6Help" class="help">
+<ul id="ipv6ModeHelp" class="help">
+	<li class="title">模式</li>
+	<li class="content">
+	依照您的 ISP 網路拓樸選擇運作模式。
+	若您的 ISP 使用 Pass-Through(橋接)網路設定，請選擇 Pass-Through (橋接)。
+	此類型連線不需要設定。
+	若為其他連線類型，選擇路由器並完成 IPv6 設定。
+	若要停用路由器的 IPv6 功能，請選擇停用。
+	</li>
+</ul>
+
+<ul id="ipv6RouterHelp" class="help">
+	<li class="title">WAN 連線類型</li>
+	<li class="content">
+	依您 ISP 提供的資訊選擇適當的 WAN 連線類型。
+	</li>
+	<li class="title">一般的</li>
+	<li class="content">選擇此類型做為一般的 IPv6 網際網路連線。</li>
+	<li class="title">PPPoE</li>
+	<li class="content">若您的 ISP 使用 PPPoEv6 配置來配發位址並提供使用者名稱和密碼，請選擇此類型。</li>
+	<li class="title">Tunnel 6to4</li>
+	<li class="content">若您的 ISP 使用 6to4 配置來配發位址，請選擇此類型。</li>
+	<li class="title">取得 IPv6 位址</li>
+	<li class="content">依您的 ISP 給予的資訊選擇自動或固定。</li>
+	<li class="title">位址</li>
+	<li class="content">路由器 WAN 介面的 IPv6 位址。</li>
+	<li class="title">前綴長度</li>
+	<li class="content">路由器 WAN 介面的 IPv6 前綴長度。</li>
+	<li class="title">預設閘道</li>
+	<li class="content">路由器 WAN 介面的預設 IPv6 閘道。</li>
+	<li class="title">使用與 IPv4 相同的 PPPoE 連線</li>
+	<li class="content">若與 IPv4 使用相同 PPPoE 連線，請選擇此類型。請在您選擇此選像之前確認您的 IPv4 WAN 連線為 PPPoE。</li>
+	<li class="title">使用者名稱/密碼</li>
+	<li class="content">您的 ISP 提供的使用者名稱和密碼。</li>
+	<li class="title">手動設定 DNS 伺服器</li>
+	<li class="content">DNS 位址將被自動配發至路由器，您也可以手動設定需要的。</li>
+	<li class="title">主要 DNS / 次要 DNS</li>
+	<li class="content">輸入您 ISP 提供的主要/次要的 IPv6 DNS 伺服器位址。</li>
+	<li class="title">啟用前綴委託</li>
+	<li class="content">若由 ISP 的 DHCPv6 伺服器取得一前綴委派，請選擇此類型。LAN 中的客戶端將生成帶有此前綴的 IPv6 位址。</li>
+</ul>
+</ul>

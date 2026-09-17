@@ -1,0 +1,41 @@
+<script type="text/javascript">function init(){var updateTimerHandle;function updateStatus(){if(LINK_TYPE_STATIC_IP==parseInt(link.linkType)){clearTimeout(updateTimerHandle);$.readNonBlock(LINK_STATUS_DATA_ID,function(){var status=$.findBlock(LINK_STATUS_DATA_ID);var bNwNote=id("bNwNote");var vis="hidden";switch(parseInt(status.status)){case LINK_DOWN:if(status.code>=LINK_CODE_UNKNOWN){bNwNote.innerHTML=linkCode[status.code];vis="visible"}break;case LINK_UP:default:break}bEptNetWorkSet(status.status,linkType[LINK_TYPE_STATIC_IP]);$("div.bNwConnectS").css("visibility",vis);updateTimerHandle=$.setTimeout(updateStatus,2000)})}}function errHandle(errNo){switch(errNo){case ENONE:return false;case EINVNET:showNote("basicIpNote",errStr.ipAddrNetErr);break;case EINVIP:showNote("basicIpNote",errStr.ipAddrErr);break;case EINVIPFMT:showNote("basicIpNote",errStr.ipAddrFmtNoteErr);break;case EINVGROUPIP:showNote("basicIpNote",errStr.ipAddrGroupErr);break;case EINVLOOPIP:showNote("basicIpNote",errStr.ipAddrLoopErr);break;case EINVMASK:showNote("basicMaskNote");break;case EINVNETID:case EINVHOSTID:case EINVIPMASKPAIR:showNote("basicIpNote",errStr.ipAddrMaskNotMatchNote);break;case ECOMFLICTNET:showNote("basicIpNote",errStr.ipAddrLanWanConflictNote);break;case EINVGTW:showNote("basicGatewayNote");break;case EINVFDNSVR:showNote("basicPrimDnsNote");break;case EINVSDNSVR:showNote("basicSeDnsNote");break;default:break}return true}function checkLanConflict(ipVal,maskVal){var lanIp=transIp(lan.ip),lanMask=transIp(lan.mask);var stcIp=transIp(ipVal),stcMask=transIp(maskVal);return(0==((lanIp^stcIp)&lanMask&stcMask))?ECOMFLICTNET:ENONE}function checkGateway(value){return ENONE!=checkIp(value)?EINVGTW:ENONE}function checkPrimDns(value){if(lan.ip==value){return EINVFDNSVR}return ENONE!=checkIp(value)?EINVFDNSVR:ENONE}function checkSeDns(value){if(""==value||"0.0.0.0"==value){id("dns1").value="0.0.0.0";return ENONE}if(lan.ip==value){return EINVSDNSVR}return ENONE!=checkIp(value)?EINVSDNSVR:ENONE}function closeAllNote(){closeNote("basicIpNote");closeNote("basicMaskNote");closeNote("basicGatewayNote");closeNote("basicPrimDnsNote");closeNote("basicSeDnsNote")}function checkInput(){closeAllNote();if(errHandle(checkIp(ipObj.value))||errHandle(checkMask(maskObj.value))||errHandle(checkIpMask(ipObj.value,maskObj.value))||errHandle(checkLanConflict(ipObj.value,maskObj.value))||errHandle(checkGateway(gatewayObj.value))||errHandle(checkPrimDns(primDnsObj.value))||(seDnsObj.value.length!=0&&errHandle(checkSeDns(seDnsObj.value)))){return false}closeAllNote();return true}function onSave(){var errNo=ENONE;if(false==checkInput()){return}if(LINK_TYPE_STATIC_IP!=link.linkType||stcIp.ip!=ipObj.value||stcIp.mask!=maskObj.value||stcIp.gateway!=gatewayObj.value||stcIp.dns[0]!=primDnsObj.value||stcIp.dns[1]!=seDnsObj.value){stcIp.ip=ipObj.value;stcIp.mask=maskObj.value;stcIp.gateway=gatewayObj.value;stcIp.dns[0]=primDnsObj.value;stcIp.dns[1]=seDnsObj.value;link.linkType=LINK_TYPE_STATIC_IP;setLoadingId("saveImg",true);errNo=$.write($.toText(stcIp)+$.toText(link),$.block);if(errHandle(errNo)){$.read(STATIC_IP_DATA_ID+"#"+LINK_DATA_ID);return}updateStatus()}closeAllNote()}var stcIp,lan,link;var ipObj=id("ip"),maskObj=id("mask"),gatewayObj=id("gateway");var primDnsObj=id("dns0"),seDnsObj=id("dns1");$.read(STATIC_IP_DATA_ID+"#"+LAN_DATA_ID);stcIp=$.findBlock(STATIC_IP_DATA_ID);lan=$.findBlock(LAN_DATA_ID);link=$.findBlock(LINK_DATA_ID);ipObj.value=stcIp.ip;ipObj.onblur=checkInput;maskObj.value=stcIp.mask;maskObj.onblur=checkInput;gatewayObj.value=stcIp.gateway;gatewayObj.onblur=checkInput;primDnsObj.value=stcIp.dns[0]||"";primDnsObj.onblur=checkInput;seDnsObj.value=stcIp.dns[1]||"";seDnsObj.onblur=checkInput;id("saveImg").onclick=onSave;$("div.bFunc")[0].style.visibility="visible";updateStatus()}init();</script>
+<ul class="bcInputUl">
+	<li class="bcInputLi">
+		<label for=""><%label.ipAddr%><i></i></label><input id="ip" maxLength="15" type="text" />
+	</li>
+	<li id="basicIpNote" class="note">
+		<i class="arrowL"></i><div class="noteCon"><p><%errStr.ipAddrFmtNoteErr%></p></div>
+	</li>
+</ul>
+<ul class="bcInputUl">
+	<li class="bcInputLi" >
+		<label for=""><%label.mask%><i></i></label><input id="mask" maxLength="15" type="text" />
+	</li>
+	<li id="basicMaskNote" class="note">
+		<i class="arrowL"></i><div class="noteCon"><p><%errStr.maskErr%></p></div>
+	</li>
+</ul>
+<ul class="bcInputUl">
+	<li class="bcInputLi" >
+		<label for=""><%label.gateway%><i></i></label><input id="gateway" maxLength="15" type="text" />
+	</li>
+	<li id="basicGatewayNote" class="note">
+		<i class="arrowL"></i><div class="noteCon"><p><%errStr.gatewayErr%></p></div>
+	</li>
+</ul>
+<ul class="bcInputUl">
+	<li class="bcInputLi" >
+		<label class="M" for=""><%label.dns0%><i></i></label><input id="dns0" class="M" maxLength="15" type="text" />
+	</li>
+	<li id="basicPrimDnsNote" class="note">
+		<i class="arrowL"></i><div class="noteCon"><p><%errStr.wzdPrimDnsErr%></p></div>
+	</li>
+</ul>
+<ul class="bcInputUl">
+	<li class="bcInputLi" >
+		<label class="M" for=""><%label.dns1%><i></i></label><input id="dns1" class="M" maxLength="15" type="text" />
+	</li>
+	<li id="basicSeDnsNote" class="note">
+		<i class="arrowL"></i><div class="noteCon"><p><%errStr.wzdSeDnsErr%></p></div>
+	</li>
+</ul>

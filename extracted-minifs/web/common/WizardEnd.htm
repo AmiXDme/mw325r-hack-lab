@@ -1,0 +1,101 @@
+<style type="text/css">
+	li.wizardEnd{
+		color:#FFFFFF;
+		display:none;
+		text-align:center;
+		padding:185px 0 36px;
+	}
+	i.wzdEndLogo{
+		background:url(../images/wzd_me.png) no-repeat scroll -109px -107px;
+		display:inline-block;
+		height:128px;
+		margin-top:62px;
+		width:143px;
+	}
+	span.wzdEndTip{
+		background:url(../images/wzd_me.png) no-repeat scroll -4px 0px;
+		display:inline-block;
+		height:100px;
+		padding-top:7px;
+		vertical-align:top;
+		width:338px;
+	}
+	li.wizardWlanChgEnd{
+		color:#FFFFFF;
+		display:none;
+		text-align:center;
+		padding:160px 0 28px;
+	}
+	h1.wzdEndTitle{
+		font-size:32px;
+		font-weight:lighter;
+	}
+	h1.wzdEndTitle span.wzdTilteSpan{
+		vertical-align:middle;
+	}
+	h1.wzdEndTitle i.wzdTitleBtn{
+		background:url(../images/wzd_me.png) no-repeat scroll -263px -241px;
+		display:inline-block;
+		height:35px;
+		margin:0 5px;
+		vertical-align:middle;
+		width:35px;
+	}
+	i.wirelessChg{
+		background:url(../images/wzdWarningWhite_me.png) no-repeat;
+		display:block;
+		height:76px;
+		margin:38px auto 0;
+		width:76px;
+	}
+	img.wirelessChgDetecting{
+		width:28px;
+		height:28px;
+		margin-top:38px;
+		display:none;
+	}
+	p.wirelessChgTip{
+		font-size:12px;
+		font-weight:bold;
+		margin-top:20px;
+	}
+	li.lgBtns i.btnL{
+		background:url("../images/wzd_me.png") no-repeat scroll -125px -242px;
+		margin-right:46px;
+	}
+	li.lgBtns i.btnR{
+		background:url("../images/wzd_me.png") no-repeat scroll -263px -241px;
+	}
+	#wrelesstip{
+		width:600px;
+		margin-left: 200px;
+	}
+</style>
+<script type="text/javascript">function init(){var bLinkStatus=false;var bLinkStatusHd;var bWirelessLinked=false;var staDataObj=$.readEx(STARTTABLE_DATA_ID);function bEptGetLocalInfi(){var localInfo,item;var pos,result=$.getPeerMac();if(ENONE!=result.errorno||""==result.data){return}localInfo=result.data;pos=localInfo.indexOf("\r\n");if(pos>0){localInfo=localInfo.substring(0,pos)}for(var index=0,len=staDataObj.list.length;index<len;index++){item=staDataObj.list[index];if(item.mac==localInfo){if(item.type>0){bWirelessLinked=true}break}}}bEptGetLocalInfi();wzdConSet({height:"480px"});wzdStopSet();id("pre").onclick=function(){loadPage("WizardWireless.htm","wizardCon",doNothing)};id("sub").onclick=function(){var data="",link=$.findBlock(LINK_DATA_ID);var stcIp=$.findBlock(STATIC_IP_DATA_ID),pppoe=$.findBlock(PPPOE_DATA_ID),pptp=$.findBlock(PPTP_DATA_ID),l2tp=$.findBlock(L2TP_DATA_ID);var mbssid=$.findBlock(MBSSID_MAIN_DATA_ID);var wlanBasic=$.findBlock(WLAN_BASIC_DATA_ID);switch(parseInt(link.linkType)){case LINK_TYPE_DHCP:data=$.toText(link);break;case LINK_TYPE_PPPOE:data=$.toText(pppoe)+$.toText(link);break;case LINK_TYPE_STATIC_IP:data=$.toText(stcIp)+$.toText(link);break;case LINK_TYPE_L2TP:data=$.toText(l2tp)+$.toText(link);break;case LINK_TYPE_PPTP:data=$.toText(pptp)+$.toText(link);break;default:break}if(true==wzdWirelessChanged){data+=$.toText(mbssid)}$.write(data,$.block);if(true==wzdWirelessChanged&&true==bWirelessLinked){$.setResetSign(1);function bLinkStatusDetect(){$.detect(function(){if(0!=$.result.data.length&&false==bLinkStatus){bLinkStatus=true;wzdStop()}});bLinkStatusHd=$.setTimeout(bLinkStatusDetect,2500)}bLinkStatus=false;clearTimeout(bLinkStatusHd);$("i.wirelessChg").css("display","none");$("li.lgBtns").css("visibility","hidden");$("img.wirelessChgDetecting").css("display","inline");$("p.wirelessChgTip")[0].innerHTML=label.wirelessLinkTip;$("span.wizardSkip").css("visibility","hidden");$.setTimeout(bLinkStatusDetect,3000)}else{wzdStop()}};if(false==wzdWirelessChanged){$("li.wizardEnd").css("display","block")}else{$("li.wizardWlanChgEnd").css("display","block")}}init();</script>
+<ul class="wzdUl">
+	<span class="wizardSkip"><i class="wzdSkipImg"></i><br /><span class="wzdSkipDes"><%label.skipWzd%></span></span>
+	<li class="wizardEnd">
+		<i class="wzdEndLogo"></i>
+		<span class="wzdEndTip">
+			<h1 class="wzdEndTitle">
+				<span class="wzdTilteSpan"><%label.endWzdTitleFS%></span>
+				<i class="wzdTitleBtn"></i>
+			</h1>
+			<h1 class="wzdEndTitle"><%label.endWzdTitleS%></h1>
+		</span>
+	</li>
+	<li class="wizardWlanChgEnd">
+		<h1 class="wzdEndTitle">
+			<span class="wzdTilteSpan"><%label.endWzdTitleFS%></span>
+			<i class="wzdTitleBtn"></i>
+		</h1>
+		<h1 class="wzdEndTitle"><%label.endWzdTitleS%></h1>
+		<i class="wirelessChg"></i>
+		<img class="wirelessChgDetecting" src="../images/wdsDetect_me.gif" />
+		<p id="wrelesstip" class="wirelessChgTip"><%label.endWzdWirelessChgTip%></p>
+	</li>
+	<li class="lgBtns">
+		<a id="pre" href="javascript:void(0)"><i class="btnL"></i></a>
+		<a id="sub" href="javascript:void(0)"><i class="btnR"></i></a>
+	</li>
+</ul>

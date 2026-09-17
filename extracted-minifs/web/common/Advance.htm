@@ -1,0 +1,51 @@
+<style type="text/css">
+	body{
+		overflow-y:scroll;
+		*overflow-y:visible;
+	}
+	span.wizardDes{
+		cursor:pointer;
+		letter-spacing:0px;
+		margin-left:14px;
+		white-space:pre;
+		vertical-align:middle;
+	}
+	div.noteCon p {
+		line-height:16px;
+		margin-top:4px;
+		padding-left:4px;
+		width:100px;
+	}
+</style>
+<script type="text/javascript">var wanOptions=[{str:label.staticIp,value:LINK_TYPE_STATIC_IP},{str:label.dhcp,value:LINK_TYPE_DHCP},{str:label.pppoe,value:LINK_TYPE_PPPOE},{str:label.l2tp,value:LINK_TYPE_L2TP},{str:label.pptp,value:LINK_TYPE_PPTP}];var rateOptions=[{str:label.dupAuto,value:0},{str:label.dup10MF,value:1},{str:label.dup10MH,value:2},{str:label.dup100MF,value:3},{str:label.dup100MH,value:4}];var advAFObj={head:id("head"),foot:id("foot"),hcCon:id("hcCon"),hcConL:id("hcConL"),hcConR:id("hcConR"),hcDetail:id("hcDetail"),highSetCon:id("highSetCon"),highSetMenu:id("highSetMenu")};function getWanRateOption(wanRate){for(var i=0,len=rateOptions.length;i<len;i++){if(rateOptions[i].value==wanRate){return wanRate}}return 0}function wanSelectChange(value){var wanTypes=["DynamicIp.htm","StaticIp.htm","PPPoE.htm","Xtp.htm","Xtp.htm"];if(""==value.toString()){value=LINK_TYPE_PPPOE}menuArgs.connType=value;loadPage(wanTypes[value],"hcDetail",highSetAutoFit)}function highSetAutoFit(){var clientHeight=document.documentElement.clientHeight;var highSetCon=advAFObj.highSetCon;var hcCon=advAFObj.hcCon;var hcDetail=advAFObj.hcDetail;var highSetMenu=advAFObj.highSetMenu;var headHeight=advAFObj.head.offsetHeight;var footHeight=advAFObj.foot.offsetHeight;var height,menuHeight,detailHeight,tmp;var hcCoHeight,hcCo;if(isIESix==true){menuHeight=parseInt(highSetMenu.offsetHeight);hcCo=$("div.hcCo")[0];if(typeof hcCo!="undefined"){hcCoHeight=parseInt(hcCo.offsetHeight);tmp=menuHeight>hcCoHeight?menuHeight:hcCoHeight}else{detailHeight=parseInt(hcDetail.offsetHeight);tmp=menuHeight>detailHeight?menuHeight:detailHeight}height=parseInt(clientHeight)-headHeight-footHeight;height=height>tmp?height+"px":tmp+"px";highSetCon.style.height=height;hcCon.style.height=height;hcDetail.style.height=height}else{height=parseInt(clientHeight)-headHeight-footHeight+"px";highSetCon.style.minHeight=height;hcCon.style.minHeight=height;hcDetail.style.minHeight=height}simulateMouseC(hcDetail)}function highSetPageResize(){highSetAutoFit();window.onresize=function(){if(id("highSetCon")!=null){highSetAutoFit()}}}function init(){function loadBasicSet(){loadPage("Basic.htm","Con")}function loadHighSet(){loadPage("Advance.htm","Con")}function baiscLogout(){logout()}function headMenuClick(index){basicHLisConf[index].handle()}function headmenuInit(){var ul=id("headFunc");var li,img,span,confObj;for(var i=0,len=basicHLisConf.length;i<len;i++){confObj=basicHLisConf[i];li=document.createElement("li");span=document.createElement("span");span.innerHTML=confObj.str;li.appendChild(span);ul.appendChild(li);li.onclick=(function(index){return function(){headMenuClick(index)}})(i);if(i==0){li.style.backgroundColor="transparent"}else{if(i!=1){li.style.backgroundColor="transparent"}}}}var basicHLisConf=[{str:"<%label.basicSet%>",handle:loadBasicSet},{str:"<%label.highSet%>",handle:loadHighSet},{str:"<%label.logout%>",handle:baiscLogout}];setStyle(document.body,{height:"100%",fontSize:"12px"});id("softVersion").innerHTML+=($.findBlock(DEVICE_DATA_ID).softVer);id("hardVersion").innerHTML+=($.findBlock(DEVICE_DATA_ID).hardVer);headmenuInit();menuInit();highSetPageResize();id("highSetWizard").onclick=function(){loadPage("Wizard.htm","Con")}}var supportList=locale.languageList();selectInit("language",supportList,CURRLANG,function(lanType){locale.set(lanType)});if(supportList.length<=1){$("#languageSel").hide()}init();</script>
+<div id="head">
+	<ul id="headFunc" class="headFunc"></ul>
+	<ul id="languageSel" class="language hsInputUl">
+		<li class="hsInputLi">
+			<span class="highSetSelect">
+				<span id="language" class="select">
+					<span class="value"></span><i class="hsArrowM"></i>
+				</span>
+			</span>
+		</li>
+	</ul>
+	<span class="hardwareinfo"><%titleStr.hardwareinfo%></span>
+</div>
+<div id="highSetCon">
+	<div id="hcCon">
+		<div id="hsMenu">
+			<div id="highSetMenu"></div>
+			<div id="highSetWizard" class="highSetWizard">
+				<i></i><span class="wizardDes"><%label.wizard%></span>
+			</div>
+		</div>
+		<fieldset class="hsFieldset">
+			<div id="hcDetail"></div>
+		</fieldset>
+	</div>
+</div>
+<div id="foot">
+	<span id="hardVersion"><%label.upCurrHard%><%label.colon%></span>
+	<span id="softVersion"><%label.softVersion%><%label.colon%></span>
+	<span id="netAddrTel"><a href="http://www.mercusys.com" target="_blank"><%label.officalAddr%></a><span>
+</div>

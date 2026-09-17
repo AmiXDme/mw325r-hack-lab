@@ -1,0 +1,69 @@
+<style type="text/css">
+	li.wizardMid h1{
+		margin-bottom:65px;
+	}
+	li.wizardBom ul.overflowH{
+		margin-bottom:12px;
+	}
+	li.wizardBom p.wizardWirelessTip{
+		font-size:12px;
+		width: 500px;
+		margin: 0 auto 20px auto;
+	}
+	li.lgBtns i.btnL{
+		background:url("../images/wzd_me.png") no-repeat scroll -125px -242px;
+		margin-right:46px;
+	}
+</style>
+<script type="text/javascript">function init(){function wzdWlCloseNote(idStr){id(idStr).style.display="none";closeNote(idStr)}function wzdWlShowNote(idStr){id(idStr).style.display="inline-block";showNote(idStr)}function wzdWirelessPwdConfirm(cover){var i,input,p,span;var divCon=document.createElement("div");divCon.className="confirmCon";document.body.appendChild(divCon);var div=document.createElement("div");div.className="confirm";divCon.appendChild(div);i=document.createElement("i");i.className="confirmLogo";div.appendChild(i);span=document.createElement("span");span.className="confirmQuestion";span.innerHTML=label.confirmNoWirelessPwd;div.appendChild(span);input=document.createElement("input");input.className="confirmInputConfirm";input.value=btn.toPwd;input.type="button";input.onclick=function(){hideCover(function(){document.body.removeChild(divCon);wzdWirelessPwd.focus()})};div.appendChild(input);p=document.createElement("p");p.className="confirmFuncCon";div.appendChild(p);span=document.createElement("span");span.className="confrimInputCancel";span.innerHTML=label.wirelessNoPwdNote;span.onclick=function(){hideCover(function(){document.body.removeChild(divCon);onSave()})};p.appendChild(span)}function checkSsidInput(){wzdWlCloseNote("wzdAntNote");wzdWlCloseNote("wzdAntLongNote");if(0==wzdWirelessName.value.length){wzdWlShowNote("wzdAntNote");return false}return true}function checkWlanPwdInput(){closeNote("wzdPwdNote");closeNote("pwdDepNote");var errorNo=checkWlanPwd(wzdWirelessPwd.value);if(EINVWLANPWD==errorNo){showNote("wzdPwdNote",errStr.wlanWzdPwdInvalid);return false}else{if(EINVPSKLEN==errorNo){showNote("wzdPwdNote",errStr.wlanWzdPwdLenValid);return false}}return true}function pwdCheckMixChars(str){var hasNum=false;var hasLetter=false;var hasSymbol=false;hasNum=/\d/g.test(str);hasLetter=/[a-zA-Z]/g.test(str);hasSymbol=/[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e\s]/g.test(str);return hasNum&&hasSymbol&&hasLetter}function checkWlanPwdDep(){var width=25,tip="";var pwdValue=wzdWirelessPwd.value;var len=pwdValue.length;var lgPwdNoteDis=(isIESix||isIESeven)?"inline":"inline-block";if(false==checkWlanPwdInput()){return}if(0==pwdValue.length){lgPwdNoteDis="none"}if(/^\d+$/.test(pwdValue)||/^[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e\s]+$/.test(pwdValue)||/^[a-zA-Z]+$/.test(pwdValue)){if(len<=12){tip=label.weak;width=width}else{tip=label.media;width=width*2}}else{if(true==pwdCheckMixChars(pwdValue)){tip=label.strong;width=width*3}else{if(len<=12){tip=label.media;width=width*2}else{tip=label.strong;width=width*3}}}id("pwdDepNote").style.display=lgPwdNoteDis;id("pwdDep").innerHTML=tip;id("chgPwdDep").style.width=width+"px"}function onSave(){var nameVal=id("name").value,pswVal=wzdWirelessPwd.value;mbssid.cSsid=nameVal;mbssid.bSecurityEnable=(0==pswVal.length)?0:1;if(1==mbssid.bSecurityEnable){mbssid.cPskSecret=pswVal}mbssid.bSecCheck=(0==pswVal.length)?1:0;mbssid.bEnable=1;mbssid.bBcastSsid=1;mbssid.uAuthType=3;mbssid.uPSKSecOpt=3;mbssid.uPSKEncryptType=3;wzdWirelessChanged=false;if((mbssid.cSsid!=wzdMbssidBackup.cSsid)||(mbssid.bSecurityEnable!=wzdMbssidBackup.bSecurityEnable)||((mbssid.bSecurityEnable==1)&&(mbssid.cPskSecret!=wzdMbssidBackup.cPskSecret))){wzdWirelessChanged=true}loadPage("WizardEnd.htm","wizardCon",doNothing)}var mbssid=$.findBlock(MBSSID_MAIN_DATA_ID);var wzdWirelessPwd=id("wzdWirelessPwd");var wzdWirelessName=id("name");wzdConSet({height:"480px"});wzdStopSet();wzdWirelessName.value=mbssid.cSsid;if(1==mbssid.bSecurityEnable){wzdWirelessPwd.value=mbssid.cPskSecret}else{wzdWirelessPwd.value=""}id("pre").onclick=function(){var link=$.findBlock(LINK_DATA_ID);netWorkModeChange(link.linkType)};id("sub").onclick=function(){var nameVal=wzdWirelessName.value;var pswVal=wzdWirelessPwd.value;var errorNo=ENONE;wzdWlCloseNote("wzdAntNote");wzdWlCloseNote("wzdAntLongNote");if(0==nameVal.length){wzdWlShowNote("wzdAntNote");return}errorNo=$.instr("wlan checkSsid ssid:"+nameVal).errorno;if(errorNo==EINVSSIDLEN){wzdWlShowNote("wzdAntLongNote");return}errorNo=checkWlanPwd(pswVal);if(errorNo==EINVWLANPWD){showNote("wzdPwdNote",errStr.wlanWzdPwdInvalid);return}else{if(EINVPSKLEN==errorNo){showNote("wzdPwdNote",errStr.wlanWzdPwdLenValid);return}else{if(EPWDBLANK==errorNo){closeNote("wzdPwdNote");showCover(wzdWirelessPwdConfirm);return}}}closeNote("wzdPwdNote");onSave()};wzdWirelessName.onblur=checkSsidInput;wzdWirelessPwd.onblur=checkWlanPwdInput;wzdWirelessPwd.onkeyup=checkWlanPwdDep}init();</script>
+<ul class="wzdUl">
+	<span class="wizardSkip"><i class="wzdSkipImg"></i><br /><span class="wzdSkipDes"><%label.skipWzd%></span></span>
+	<li class="wizardTop wizardTopWireless">
+		<img class="wzdWanLogo" src="../images/icon_wifi_me.png" />
+	</li>
+	<li class="wizardMid wizardMidWireless">
+		<h1><%menuStr.wifi%></h1>
+	</li>
+	<li class="wizardBom">
+		<ul class="inputUl wizardIptPos">
+			<li class="inputLi">
+				<label for=""><%label.wirelessName%></label>
+				<input id="name" type="text" maxLength="32" />
+				<i class="tip"></i>
+			</li>
+			<li id="wzdAntNote" class="note">
+				<i class="arrowL"></i>
+				<div class="noteCon">
+					<p><%errStr.wlanSsidErr%></p>
+				</div>
+			</li>
+			<li id="wzdAntLongNote" class="note">
+				<i class="arrowL"></i>
+				<div class="noteCon">
+					<p><%errStr.wlanSsidLenErr%></p>
+				</div>
+			</li>
+		</ul>
+		<ul class="inputUl wizardIptPos overflowH">
+			<li class="inputLi">
+				<label for=""><%label.wirelessPwd%></label>
+				<input id="wzdWirelessPwd" type="text" class="imeModeN" maxLength="63" />
+				<i class="tip"></i>
+			</li>
+			<li id="wzdPwdNote" class="note">
+				<i class="arrowL"></i><div class="noteCon"><p><%errStr.wlanWzdPwdLenValid%></p></div>
+			</li>
+			<li id="pwdDepNote" class="note">
+				<i class="arrowL"></i><div class="noteCon">
+					<p class="pwdDepC"><%label.chgPwdDep%><%label.colon%><label id="pwdDep"><%label.weak%></label></p>
+					<div class="pwdDepL pwdDepLW"><label id="chgPwdDep"></label></div>
+				</div>
+			</li>
+		</ul>
+		<p class="wizardWirelessTip"><%label.wirelessPwdTip%></p>
+	</li>
+	<li class="lgBtns">
+		<a id="pre" href="javascript:void(0)"><i class="btnL"></i></a>
+		<a id="sub" href="javascript:void(0)"><i class="btnR"></i></a>
+	</li>
+</ul>

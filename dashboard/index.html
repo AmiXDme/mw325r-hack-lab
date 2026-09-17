@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MW325R Hack Dashboard</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: #0d1117; color: #c9d1d9; font-family: 'Segoe UI', system-ui, sans-serif; padding: 20px; }
+  h1 { color: #58a6ff; font-size: 22px; margin-bottom: 4px; }
+  .sub { color: #8b949e; font-size: 13px; margin-bottom: 16px; }
+  .sub b { color: #3fb950; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .card { background: #161b22; border: 1px solid #30363d; border-radius: 8px; padding: 14px; }
+  .card .k { font-size: 12px; color: #8b949e; text-transform: uppercase; letter-spacing: .5px; }
+  .card .v { font-size: 18px; margin-top: 6px; font-weight: 600; }
+  .ok { color: #3fb950; } .bad { color: #f85149; } .warn { color: #d29922; } .info { color: #58a6ff; }
+  .mono { font-family: Consolas, monospace; font-size: 14px; word-break: break-all; }
+  h2 { font-size: 16px; color: #58a6ff; margin: 18px 0 8px; }
+  #log { background: #010409; border: 1px solid #30363d; border-radius: 8px; padding: 12px; max-height: 320px; overflow-y: auto; font-family: Consolas, monospace; font-size: 13px; }
+  #log div { padding: 3px 0; border-bottom: 1px solid #161b22; }
+  #log .t { color: #6e7681; margin-right: 8px; }
+  ul.findings { list-style: none; }
+  ul.findings li { background: #161b22; border: 1px solid #30363d; border-left: 3px solid #d29922; border-radius: 6px; padding: 10px 12px; margin-bottom: 8px; font-size: 14px; }
+  ul.findings li.crit { border-left-color: #f85149; }
+  ul.findings li.good { border-left-color: #3fb950; }
+  .refresh { font-size: 12px; color: #6e7681; margin-top: 10px; }
+</style>
+</head>
+<body>
+<h1>&#x1F6E1;&#xFE0F; MW325R Hack Dashboard</h1>
+<div class="sub">Live view of the security test &bull; auto-refreshes every 2s &bull; last update: <b id="upd">-</b></div>
+<div class="grid" id="cards"></div>
+<h2>Key findings</h2>
+<ul class="findings" id="findings"></ul>
+<h2>Live activity log</h2>
+<div id="log"></div>
+<div class="refresh">Open this page at <span class="mono">http://localhost:8099</span> (or double-click the file). Served from this machine only.</div>
+<script>
+async function tick() {
+  try {
+    const r = await fetch('status.json?_=' + Date.now());
+    const d = await r.json();
+    document.getElementById('upd').textContent = d.updated || '-';
+    document.getElementById('cards').innerHTML = d.cards.map(c =>
+      `<div class="card"><div class="k">${c.k}</div><div class="v ${c.c}">${c.v}</div></div>`).join('');
+    document.getElementById('findings').innerHTML = d.findings.map(f =>
+      `<li class="${f.c||''}">${f.t}</li>`).join('');
+    const log = document.getElementById('log');
+    log.innerHTML = d.log.map(e => `<div><span class="t">${e.t}</span>${e.m}</div>`).join('');
+    log.scrollTop = log.scrollHeight;
+  } catch(e) {}
+}
+tick(); setInterval(tick, 2000);
+</script>
+</body>
+</html>

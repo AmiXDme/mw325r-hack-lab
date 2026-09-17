@@ -1,0 +1,103 @@
+<style type="text/css">
+	h2{
+		color:#666666;
+		font-size:13px;
+		font-weight:bold;
+		margin:0px;;
+	}
+	i.bmArrow{
+		border-top:9px solid #FF6060;
+		border-right:9px solid #FFFFFF;
+		border-bottom:9px solid #FF6060;
+		border-left:0px solid #FF6060;
+		height:0px;
+		overflow:hidden;
+		position:absolute;
+		right:0px;
+		top:97px;
+		width:0px;
+	}
+	fieldset.basicSConFieldset{
+		border:none;
+		font-size:0;
+		height:100%;
+		margin:0;
+	}
+	i.stateBg{
+		background:url("../images/basic_me.png") no-repeat scroll -50px -299px;
+		height:26px;
+		left:193px;
+		position:absolute;
+		top:3px;
+		width:26px;
+	}
+	i.state{
+		background:url(../images/basic_me.png) no-repeat scroll -4px -345px;
+		height:26px;
+		left:195px;
+		position:absolute;
+		top:3px;
+		width:26px;
+	}
+	i.bmWirelssSetLgSDual{
+		left:106px;
+	}
+</style>
+<script type="text/javascript">function bEquipLinkedNumSet(num){var equipMngNum=id("equipMngNum");var equipMngNumL=id("equipMngNumL");equipMngNum.innerHTML=num;equipMngNumL.innerHTML=num}function bEptNetWorkSet(state,mode){var netWorkMode=id("netWorkMode");var bmNetworkLgS=id("bmNetworkLgS");var bg="";netWorkMode.innerHTML=mode;switch(parseInt(state)){case LINK_UP:bg="url(../images/basic_me.png) no-repeat scroll -64px -345px";break;case LINKING_UP:case LINKING_DOWN:bg="url(../images/basic_me.png) no-repeat scroll -4px -345px";break;case LINK_DOWN:bg="url(../images/basic_me.png) no-repeat scroll -33px -345px";break;default:bg="url(../images/basic_me.png) no-repeat scroll -64px -345px"}bmNetworkLgS.style.background=bg}function bEptWlanSet(isOn,ssid){var wirelessSSID=id("wirelessSSID");var bmWirelssSetLgS=id("bmWirelssSetLgS");var bg="";wirelessSSID.innerHTML="<pre>"+label.wirelessName+label.colon+htmlEscape(getStrInMax(ssid,22))+"</pre>";if(true==isOn){bg="url(../images/basic_me.png) no-repeat scroll -64px -345px"}else{bg="url(../images/basic_me.png) no-repeat scroll -33px -345px"}bmWirelssSetLgS.style.background=bg}function init(){function loadBasicSet(){loadPage("Basic.htm","Con")}function loadHighSet(){loadPage("Advance.htm","Con")}function baiscLogout(){logout()}function headMenuClick(index){basicHLisConf[index].handle()}function headmenuInit(){var ul=id("headFunc");var li,img,span,confObj;for(var i=0,len=basicHLisConf.length;i<len;i++){confObj=basicHLisConf[i];li=document.createElement("li");span=document.createElement("span");span.innerHTML=confObj.str;li.appendChild(span);ul.appendChild(li);li.onclick=(function(index){return function(){headMenuClick(index)}})(i);if(i==0){}else{li.style.backgroundColor="transparent"}}}function basicMenuClick(index){var confObj=basicLisConf[index];id("bmArrow").style.top=confObj.arrowPosition;loadPage(confObj.pageName,"basicSCon")}function basicPageLoad(index){id(basicLisConf[index].basicMDiv).onclick()}function basicMenuInit(){for(var i=0,len=basicLisConf.length;i<len;i++){id(basicLisConf[i].basicMDiv).onclick=(function(index){return function(){basicMenuClick(index)}})(i)}}var basicLisConf=[{arrowPosition:"97px",pageName:"BasicEptManagement.htm",basicMDiv:"linkEptMbtn"},{arrowPosition:"321px",pageName:"BasicNetWork.htm",basicMDiv:"netWorkMbtn"},{arrowPosition:"545px",pageName:"BasicWireless.htm",basicMDiv:"wirelessMbtn"}];var basicHLisConf=[{str:"<%label.basicSet%>",handle:loadBasicSet},{str:"<%label.highSet%>",handle:loadHighSet},{str:"<%label.logout%>",handle:baiscLogout}];var wanLinkType;headmenuInit();basicMenuInit();basicPageLoad(0);$.read(LINK_DATA_ID+"#"+LINK_STATUS_DATA_ID+"#"+MBSSID_MAIN_DATA_ID+"#"+DEVICE_DATA_ID);wanLinkType=$.findBlock(LINK_DATA_ID).linkType||LINK_TYPE_PPPOE;bEptNetWorkSet($.findBlock(LINK_STATUS_DATA_ID).status,linkType[wanLinkType]);bEptWlanSet($.findBlock(MBSSID_MAIN_DATA_ID).bEnable,$.findBlock(MBSSID_MAIN_DATA_ID).cSsid);id("hardVersion").innerHTML+=($.findBlock(DEVICE_DATA_ID).hardVer);id("softVersion").innerHTML+=($.findBlock(DEVICE_DATA_ID).softVer)}var supportList=locale.languageList();selectInit("language",supportList,CURRLANG,function(lanType){locale.set(lanType)});if(supportList.length<=1){$("#languageSel").hide()}init();</script>
+<div id="head">
+	<ul id="headFunc" class="headFunc"></ul>
+	<ul id="languageSel" class="language hsInputUl">
+		<li class="hsInputLi">
+			<span class="highSetSelect">
+				<span id="language" class="select">
+					<span class="value"></span><i class="hsArrowM"></i>
+				</span>
+			</span>
+		</li>
+	</ul>
+	<span class="hardwareinfo"><%titleStr.hardwareinfo%></span>
+</div>
+<div id="basicContent">
+	<ul id="bConFun" class="basicMenuFRM">
+		<li id="bmLinkEqt">
+			<div id="linkEptMbtn" class="menuCon">
+				<p class="logo">
+					<img class="basicMenuBg" src="../images/equipMng_me.png" />
+					<i class="stateBg basicMenuSlM"></i>
+					<span id="equipMngNum" class="bmEquipMngNum basicMenuSlM"></span>
+				</p>
+				<h2><%label.linkEpt%></h2>
+				<p class="bmStatus"><%label.linkedEpt%><%label.colon%><label id="equipMngNumL"></label><%label.tai%></p>
+			</div>
+		</li>
+		<li class="bmNetWork">
+			<div id="netWorkMbtn" class="menuCon">
+				<p class="logo">
+					<img class="basicMenuBg" src="../images/netSet_me.png" />
+					<i id="bmNetworkLgS" class="state basicMenuSlM"></i>
+				</p>
+				<h2><%label.netSet%></h2>
+				<p class="bmStatus"><%label.netMode%><%label.colon%><label id="netWorkMode"></label></p>
+			</div>
+		</li>
+		<li class="bmWireless">
+			<div id="wirelessMbtn" class="menuCon">
+				<p class="logo">
+					<img class="basicMenuBg" src="../images/icon_wifi_me.png" />
+					<i id="bmWirelssSetLgS" class="state basicMenuSlM"></i>
+				</p>
+				<h2><%menuStr.wifi%></h2>
+				<div id="wirelessSSID" class="bmStatus"><%label.wirelessName%><%label.colon%></div>
+			</div>
+		</li>
+		<i id="bmArrow" class="bmArrow"></i>
+	</ul>
+	<fieldset class="basicSConFieldset">
+		<div id="basicSCon"></div>
+	</fieldset>
+</div>
+<div id="foot">
+	<span id="hardVersion"><%label.upCurrHard%><%label.colon%></span>
+	<span id="softVersion"><%label.softVersion%><%label.colon%></span>
+	<span id="netAddrTel"><a href="http://www.mercusys.com" target="_blank"><%label.officalAddr%></a><span>
+</div>

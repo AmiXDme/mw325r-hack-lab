@@ -1,0 +1,63 @@
+<style type="text/css">
+	div.bNwConnectS{
+		color:#FF6060;
+		font-size:0px;
+		font-weight:bold;
+		margin-left:175px;
+		padding:40px 0 20px;
+		visibility:hidden;
+	}
+	div.bNwConnectS #bNwNote{
+		display:inline-block;
+		font-size:12px;
+		margin-right:10px;
+		vertical-align:middle;
+	}
+	div.bNwConnectS #bNwHelp{
+		background:url("../images/basic_me.png") no-repeat scroll -176px -345px;
+		cursor:pointer;
+		display:inline-block;
+		height:17px;
+		vertical-align:middle;
+		width:17px;
+		visibility:hidden;
+	}
+	span.basicSelect{
+		display:inline-block;
+		width:239px;
+	}
+	i.bcArrowM{
+		border-top:8px solid #000000;
+		border-right:8px solid #FFFFFF;
+		border-bottom:0px solid #FFFFFF;
+		border-left:8px solid #FFFFFF;
+		display:inline-block;
+		font-size:0px;
+		height:0px !important;
+		overflow:hidden;
+		vertical-align:middle;
+		width:0px !important;
+	}
+</style>
+<script type="text/javascript">var wanTypes=[];wanTypes[LINK_TYPE_PPPOE]="BasicPPPoE.htm";wanTypes[LINK_TYPE_DHCP]="BasicDynamicIp.htm";wanTypes[LINK_TYPE_STATIC_IP]="BasicStaticIp.htm";wanTypes[LINK_TYPE_L2TP]="BasicL2tp.htm";wanTypes[LINK_TYPE_PPTP]="BasicPptp.htm";function bNwNetWorkModeChange(value){var subLoading=$("#saveImg ~ i.hsSubLoading")[0];if(subLoading){subLoading.style.display="none";$(subLoading).removeClass("success")}$("div.bFunc")[0].style.visibility="hidden";$("div.bNwConnectS").css("visibility","hidden");$("#bNwHelp").css("visibility","hidden");loadPage(wanTypes[value],"bNwDetail")}function init(){$("#shareSessionNote").hide();var options=[{str:label.staticIp,value:LINK_TYPE_STATIC_IP},{str:label.dhcp,value:LINK_TYPE_DHCP},{str:label.pppoe,value:LINK_TYPE_PPPOE},{str:label.l2tp,value:LINK_TYPE_L2TP},{str:label.pptp,value:LINK_TYPE_PPTP}];var linkData=$.readEx(LINK_DATA_ID);var type=linkData.linkType||LINK_TYPE_PPPOE;var ipv6Mode=$.readEx(IPV6_MODE_DATA_ID);var ipv6WanInterface=$.readEx(IPV6_WAN_INTERFACE_DATA_ID);var ipv6PPPoE=$.readEx(IPV6_PPPOE_DATA_ID);selectInit("bNwPppoeSel",options,type,bNwNetWorkModeChange);bNwNetWorkModeChange(type);if(type==LINK_TYPE_PPPOE&&ipv6Mode.mode==IPV6_MODE_ROUTER&&ipv6WanInterface.interfaceType==IPV6_WAN_TYPE_PPPOE&&ipv6PPPoE.shareSession==1){id("bNwPppoeSel").disable(true);$("#shareSessionNote").show()}}init();</script>
+<div class="bNwConnectS">
+	<label id="bNwNote"><%errStr.linkUnknown%></label><i id="bNwHelp" basicHelpTag="true"></i>
+</div>
+
+<ul class="bcInputUl">
+	<li class="bcInputLi">
+		<label class="inputLiLbl"><%label.netMode%><i></i></label>
+		<span class="basicSelect">
+			<span id="bNwPppoeSel" class="bNwSelect">
+				<span class="value"></span><i class="bcArrowM"></i>
+			</span>
+		</span>
+	</li>
+	<li id="shareSessionNote" class="hidden">
+		<label class="threeLineNote"><%label.ipv6ShareSessionNote2%></label>
+	</li>
+</ul>
+<div id="bNwDetail"></div>
+<div class="bFunc">
+	<span id="saveImg"><i id="applyBtn" class="applyBtn"></i><label><%btn.save%></label></span>
+</div>

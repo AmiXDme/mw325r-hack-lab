@@ -1,0 +1,165 @@
+<style type="text/css">
+	div.lgHead{
+		background:url(../images/logo_me.png) no-repeat scroll 0 30px;
+		height:90px;
+		margin:0 auto;
+		width:1000px;
+	}
+	span.hardwareinfo{
+		display:inline-block;
+		font-size:16px;
+		width:120px;
+		height:90px;
+		margin-left:193px;
+		color:#ffffff;
+		line-height:94px;
+	}
+	div.lgContent, li.lgBom, ul.inputUl{
+		width:970px;
+		margin:0px auto;
+		text-align: center;
+	}
+	li.lgTop{
+		font-size:0px;
+		padding-top:55px;
+		text-align:center;
+	}
+	li.lgTop img.lgLogo{
+		display:inline-block;
+		height:100px;
+		width:100px;
+	}
+	li.lgMid{
+		color:#FFFFFF;
+		margin-bottom:18px;
+		text-align:center;
+	}
+	li.lgMid h1{
+		font-size:40px;
+		margin-bottom:10px;
+		margin-top:0;
+	}
+	li.lgMid p{
+		font-size:12px;
+		font-weight:bold;
+	}
+	li.lgBom ul{
+		font-size:0px;
+		margin-bottom:20px;
+		text-align: left;
+	}
+	ul.inputUl li{
+		display:inline-block;
+		*display:inline;
+		*zoom:1;
+	}
+	li.lgBom li.inputLi{
+		background-color:#FFFFFF;
+		border:medium none;
+		border-radius:3px;
+		font-size:0;
+		height:46px;
+		line-height:46px;
+		margin-left:305px;
+		vertical-align:middle;
+		width:360px;
+	}
+	li.lgBom li.inputLi label {
+		width: 180px;
+		padding-right: 20px;
+		text-align: right;
+	}
+	li.lgBom li.note{
+		display:none;
+		margin-left:6px;
+		*zoom:1;
+	}
+	li.note i.arrowL{
+		border-top:3px solid #FF6060;
+		border-right:5px solid #FFFA76;
+		border-bottom:3px solid #FF6060;
+		border-left:0;
+		font-size:0px;
+		overflow:hidden;
+		vertical-align:middle;
+		*zoom:1;
+	}
+	li.note div.noteCon{
+		background-color:#FFFA76;
+		border-radius:3px;
+		display:inline-block;
+		*display:inline;
+		*zoom:1;
+		font-size:12px;
+		height:46px;
+		vertical-align:middle;
+	}
+	div.noteCon p{
+		color:#000000;
+		margin:0 10px;
+		width:250px;
+		line-height:46px;
+	}
+	#lgPwdTip{
+		font-size:12px;
+		margin:0 auto 12px;
+	}
+</style>
+<script type="text/javascript">var PageObj={chkPswVal:function(szValue){return(/^[\x21-\x7e]+$/.test(szValue))},pwdConfFocus:function(){this.lgPwdNote.style.display="none";this.pwdTip.style.visibility="hidden"},pwdFocus:function(){this.lgPwdConfNote.style.display="none";this.pwdConfTip.style.visibility="hidden"},pwdConfCheck:function(){var pwdConf=this.pwdConf;var pwd=this.pwd;this.pwdConfFocus();if(pwdConf.value==pwd.value){this.lgPwdConfNote.style.display="none";this.pwdConfTip.style.visibility="hidden";return true}else{showNote("lgPwdConfNote");disInputTip(this.pwdConfTip,"error");return false}},pwdBlur:function(){var pwd=id("pwd");var len=pwd.value.length;if(len>=0&&len<6){showNote("lgPwdNoteLess");disInputTip(this.pwdTip,"error");window.setTimeout(function(){pwd.focus()},0)}},pwdCheckMixChars:function(str){var hasNum=false;var hasLetter=false;var hasSymbol=false;hasNum=/\d/g.test(str);hasLetter=/[a-zA-Z]/g.test(str);hasSymbol=/[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e\s]/g.test(str);return hasNum&&hasSymbol&&hasLetter},pwdCheck:function(){var width=25,tip="",tipStatus;var pwd=this.pwd;var pwdConf=this.pwdConf;var pwdConfLbl=this.pwdConfLbl;var lgPwdlessTip=(isIESix||isIESeven)?"inline":"inline-block";var lgPwdValTip=(isIESix||isIESeven)?"inline":"inline-block";var pwdTip=this.pwdTip;var pwdValue=pwd.value;var len=pwdValue.length;var lgPwdNoteDis=(isIESix||isIESeven)?"inline":"inline-block";var result=true;var showLess=false;if(len>=0&&len<6){pwdConf.disabled=true;pwdConfLbl.style.color=disableCol;if(pwdTip.style.visibility=="visible"){tipStatus="error";showNote("lgPwdNoteLess")}result=false;showLess=true;lgPwdValTip="none";lgPwdlessTip="none"}else{if(!this.chkPswVal(pwdValue)){lgPwdlessTip="none";pwdConf.disabled=true;pwdConfLbl.style.color=disableCol;tipStatus="error";result=false;showNote("lgPwdNoteInvalidChar")}else{if(len>15){lgPwdlessTip="none";lgPwdValTip="none";pwdConf.disabled=true;pwdConfLbl.style.color=disableCol;tipStatus="error";result=false}else{lgPwdlessTip="none";lgPwdValTip="none";pwdConf.disabled=false;pwdConfLbl.style.color="#4C4C4C";tipStatus="ok"}}}if(true==showLess||"none"!=lgPwdValTip){lgPwdNoteDis="none"}else{if(/^\d+$/.test(pwdValue)||/^[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e\s]+$/.test(pwdValue)||/^[a-zA-Z]+$/.test(pwdValue)){if(len<=10){tip=label.weak;width=width}else{tip=label.media;width=width*2}}else{if(true==this.pwdCheckMixChars(pwdValue)){tip=label.strong;width=width*3}else{if(len<=10){tip=label.media;width=width*2}else{tip=label.strong;width=width*3}}}}this.lgPwdNote.style.display=lgPwdNoteDis;this.lgPwdNoteLess.style.display=lgPwdlessTip;this.lgPwdNoteInvalidChar.style.display=lgPwdValTip;this.pwdDep.innerHTML=tip;this.chgPwdDep.style.width=width+"px";disInputTip(pwdTip,tipStatus);return result},pwdConfChange:function(event){event=event||window.event;var code=event.keyCode;if(this.pwdConfCheck()&&code==13){this.onsub()}},onsub:function(){var result,pwd=this.pwd;var pwdConf=this.pwdConf;if(!this.pwdCheck()||!this.pwdConfCheck()){return}result=$.changeDefaultPwd(pwd.value);if(result.errorno==ENONE){unloadLogin();pwd.value="";pwdConf.value="";PageObj=null}else{errorCode=result.data;pos=errorCode.indexOf("\r\n");if(pos>0){errorCode=errorCode.substring(0,pos)}pwd.focus()}},init:function(){var obj=this;var pwd=id("pwd");var pwdConf=id("pwdConf");this.pwdConf=pwdConf;this.pwd=id("pwd");this.pwdConfLbl=id("pwdConfLbl");this.pwdTip=$("i.tip")[0];this.pwdConfTip=$("i.tip")[1];this.lgPwdNote=id("lgPwdNote");this.lgPwdConfNote=id("lgPwdConfNote");this.lgPwdNoteLess=id("lgPwdNoteLess");this.lgPwdNoteInvalidChar=id("lgPwdNoteInvalidChar");this.pwdDep=id("pwdDep");this.chgPwdDep=id("chgPwdDep");pwdConf.onkeyup=function(event){obj.pwdConfChange(event)};pwdConf.onfocus=function(){obj.pwdConfFocus()};pwdConf.onblur=function(){obj.pwdConfCheck()};pwd.focus();pwd.onkeyup=function(){obj.pwdCheck()};pwd.onblur=function(){obj.pwdBlur()};pwd.onfocus=function(){obj.pwdFocus()};this.pwdConfLbl.style.color=disableCol;this.lgPwdNoteInvalidChar.style.display="none";id("sub").onclick=function(){obj.onsub()}}};PageObj.init();</script>
+<div class="lgHead"><span class="hardwareinfo"><label><%titleStr.hardwareinfo%></label></span></div>
+<div class="lgContent">
+	<ul>
+		<li class="lgTop">
+			<img class="lgLogo" src="../images/mngPwd_me.png" />
+		</li>
+		<li class="lgMid">
+			<h1><%label.chgLgPwdTip%></h1>
+			<p><%label.chgLgFegTip%></p>
+		</li>
+		<li class="lgBom">
+			<p id="lgPwdTip"><%label.chgPwdChar%></p>
+			<ul class="inputUl lgCInputPos">
+				<li class="inputLi">
+					<label for="pwd"><%label.loginSetPwd%></label>
+					<input id="pwd" maxlength="15" type="password" />
+					<i class="tip"></i>
+				</li>
+				<li id="lgPwdNoteLess" class="note">
+					<i class="arrowL"></i>
+					<div class="noteCon">
+						<p><%label.chgPwdLess%></p>
+					</div>
+				</li>
+				<li id="lgPwdNoteInvalidChar" class="note">
+					<i class="arrowL"></i>
+					<div class="noteCon">
+						<p><%errStr.pwdCharValid%></p>
+					</div>
+				</li>
+				<li id="lgPwdNote" class="note">
+					<i class="arrowL"></i>
+					<div class="noteCon">
+						<p class="pwdDepC"><%label.chgPwdDep%><%label.colon%><label id="pwdDep"><%label.weak%></label></p>
+						<div class="pwdDepL pwdDepLW"><label id="chgPwdDep"></label></div>
+					</div>
+				</li>
+			</ul>
+			<ul class="inputUl lgCInputPos">
+				<li class="inputLi">
+					<label id="pwdConfLbl" for="pwdConf"><%label.loginPwdConf%></label>
+					<input id="pwdConf" maxlength="15" disabled="true" type="password" />
+					<i class="tip"></i>
+				</li>
+				<li id="lgPwdConfNote" class="note">
+					<i class="arrowL"></i>
+					<div class="noteCon">
+						<p><%label.chgPwdDif%></p>
+					</div>
+				</li>
+			</ul>
+		</li>
+		<li class="lgBtns">
+			<a id="sub" href="javascript:void(0)"><i class="btnR"></i></a>
+		</li>
+	</ul>
+</div>

@@ -1,0 +1,153 @@
+<style type="text/css">
+p.coverLoadNote {
+	margin-top: 10px !important;
+}
+	#WDSTbl{
+		margin:0px !important;
+	}
+	#WDSCon{
+		visibility:hidden;
+	}
+	#WDSScanFail{
+		line-height:45px;
+		color:#FF6060;
+		border-width:0px 1px 1px 1px;
+		border-style:solid;
+		border-color:#E6E6E6;
+		text-align:center;
+		display:none;
+	}
+	i.WDSRefresh{
+		background:url(../images/advance_me.png) no-repeat scroll -161px -87px;
+		cursor:pointer;
+		display:inline-block;
+		font-size:0;
+		height:14px;
+		position:absolute;
+		right:37px;
+		top:9px;
+		width:15px;
+	}
+	div.WDSAddHandleCon{
+		padding-top:18px;
+		text-align:left;
+	}
+	p.WDSAddHandle{
+		background-color:#FF6060;
+		border-radius:9px;
+		cursor:pointer;
+		height:19px;
+		line-height:19px;
+		margin-left:77px;
+	}
+	p.WDSAddHandle span{
+		color:#FFFFFF;
+		font-size:12px;
+		font-weight:bold;
+		padding-left:10px;
+		vertical-align:middle;
+	}
+	p.WDSAddHandle i{
+		line-height:0px;
+		border-style:solid;
+		vertical-align:middle;
+		display:inline-block;
+		*display:inline;
+		*zoom:1;
+	}
+	i.WDSARRR{
+		border-width:6px 0px 6px 7px;
+		border-color:#FF6060 #FF6060 #FF6060 #FFFFFF;
+		margin-left:5px;
+	}
+	i.WDSARRD{
+		border-width:7px 6px 0px 6px;
+		border-color:#FFFFFF #FF6060 #FF6060 #FF6060;
+	}
+	div.WDSAddHandleDe{
+		margin-top:24px;
+		padding:5px 0 45px 0;
+		background:#FCFCFC;
+		display:none;
+	}
+	div.hsVigWDS{
+		height:197px;
+		overflow:hidden;
+		text-align:center;
+		width:391px;
+	}
+	p.hsVigTtopA{
+		border-radius:0 !important;
+	}
+	p.hsVigWDSPWD{
+		font-size:14px;
+		font-weight:bold;
+		margin:16px 0 0 55px;
+		text-align:left;
+	}
+	ul.hsVigWDSPWD{
+		padding-left:55px;
+	}
+	input.wdsPwdInput{
+		border:1px solid #92D34C;
+		border-radius:5px;
+		display:block;
+		font-size:12px;
+		line-height:33px;
+		margin:42px auto 0;
+		height:33px;
+		text-indent:20px;
+		width:305px;
+	}
+	@media screen and (-webkit-min-device-pixel-ratio:0)
+	{
+		input.wdsPwdInput{
+			line-height:0px !important;
+		}
+	}
+	input.wdsPwdSubBtn{
+		background-color:#92D34C;
+		border:0;
+		border-radius:5px;
+		color:#FFFFFF;
+		font-size:12px;
+		font-weight:bold;
+		margin:30px auto 0;
+		padding:6px 25px;
+	}
+</style>
+<script type="text/javascript">var basicData,apcData,connectingCount;var WDSTargetIndex=undefined;function connectStop(){if(1==apcData.bBridgeEnabled){if($("div.WDSAddHandleDe").css("display")=="none"){$("input.radioBtn").attr("class","radioBtnUn");WDSTargetIndex=undefined;id("pwd").value=""}apcData.bBridgeEnabled=0;$.write($.toText(basicData),$.block);waitForWlanEffect=1}}function startConnectRootAp(){apcData.bBridgeEnabled=1;var errNo=$.write($.toText(basicData),$.block);if(errNo!=ENONE){return errHandle(errNo)}connectingCount=0;showLoading(label.WDSConnecting,connectStop);$.setTimeout(getWdsStatus,1000)}function getWdsStatus(){if(0==apcData.bBridgeEnabled){return}$.instr("wlan wdsstatus",function(result){var wdsStatus=result.data;if(WDS_LINK_CONNECTED==parseInt(wdsStatus)){connectingCount=0;closeLoading();loadPage("WlanWDSCfgThird.htm","WDSCon")}else{if(connectingCount>MAX_CONNECTING_TIME){closeLoading();var linkFailNote;linkFailNote=label.WDSLinkFail+"<span id='retry' class='WDSLinkRetrySp' onclick='startConnectRootAp()'>"+btn.retry+"</span>"+label.period;showLoading(linkFailNote,connectStop,{coverLoadingClass:"coverWarnning",detailClass:"coverLoadWarnning"})}else{connectingCount++;$.setTimeout(getWdsStatus,1000)}}})}function init(){var WDSGrid;var apList={apCnt:0,list:[{ssid:"",rssi:"",channel:"",authMode:""}]};var scanning=true;var WDSCon=id("WDSCon");var WDSScanFail=id("WDSScanFail");var next=id("next");function SignalLevel(rssi){if(rssi>=20){if(rssi>=30){if(rssi>=50){return 5}else{return 4}}else{return 3}}else{if(rssi>=10){return 2}else{return 1}}}function WDSTargetSel(index){closeAlert();var WDSAddHandleDe=$("div.WDSAddHandleDe");if(WDSAddHandleDe.css("display")!="none"){$("i.WDSARRD").attr("class","WDSARRR");WDSAddHandleDe.css("display","none")}WDSTargetIndex=index;var selAuthMode=apList.list[WDSTargetIndex].authMode;if(selAuthMode=="WPA-PSK/WPA2-PSK"){var pwd=id("pwd");pwd.value="";$("div.hsVignetteCon").css("visibility","visible");pwd.focus()}else{if(selAuthMode=="WPA/WPA2"||selAuthMode=="WEP"){showAlert(errStr.wlanSecNotSupport);WDSTargetIndex=undefined;$("input.radioBtn").attr("class","radioBtnUn")}}}function scanStop(){scanning=false;closeLoading();showWDSScanResult()}function showWDSScanResult(){apList.apCnt=0;apList.list=[];WDSGrid.setDataSource(apList.list);WDSGrid.refresh(1);WDSScanFail.style.display="block";WDSCon.style.visibility="visible";disableBtn(next,true,"wdsNext","wdsNextUn")}function wlanGetScanResults(){var i,j,errNo;var SCANEND=1;var wlanScanResults;var cmdGetStatus="wlan scanStatus";if(false==scanning){showWDSScanResult();return}$.instr(cmdGetStatus,function(result){errNo=result.errorno;if(ENONE!=errNo){scanStop();return}if($.local){var tmp;result.data=SCANEND;wlanScanResults=$.findBlock(WLAN_AP_LIST_DATA_ID);for(var i=0;i<32;i++){wlanScanResults.apEntry[i]={};tmp=wlanScanResults.apEntry[i];tmp.cSsid="TPLINK_7500"+i;tmp.uRssi=20+i;tmp.uChannel=1;tmp.uAuthMode=((i%2)*9).toString();tmp.uBgnMode=i%4;tmp.uChanWidth=i%4}wlanScanResults.uApCnt=32}if(result.data==SCANEND){wlanScanResults=$.readEx(WLAN_AP_LIST_DATA_ID);if(0==wlanScanResults.uApCnt){scanStop();return}apList.apCnt=0;apList.list=[];for(i=0,j=wlanScanResults.uApCnt-1;j>=0;i++,j--){apList.list[i]={};if(undefined==wlanScanResults.apEntry[j].cSsid||0==wlanScanResults.apEntry[j].cSsid.length){i--;continue}else{apList.list[i].ssid=wlanScanResults.apEntry[j].cSsid}apList.list[i].rssi=SignalLevel(wlanScanResults.apEntry[j].uRssi);apList.list[i].channel=wlanScanResults.apEntry[j].uChannel;switch(wlanScanResults.apEntry[j].uAuthMode){case"0":apList.list[i].authMode=label.wirelessNoSecurity;break;case"1":case"2":case"3":apList.list[i].authMode="WEP";break;case"4":case"5":case"6":apList.list[i].authMode="WPA/WPA2";break;case"7":case"8":case"9":apList.list[i].authMode="WPA-PSK/WPA2-PSK";break;default:apList.list[i].authMode="unknown";break}}scanning=false;closeLoading();apList.apCnt=wlanScanResults.uApCnt;WDSScanFail.style.display="none";disableBtn(next,false,"wdsNextUn","wdsNext",nextStep);WDSCon.style.visibility="visible";WDSGrid.setDataSource(apList.list);WDSGrid.refresh(1)}else{$.setTimeout(wlanGetScanResults,1000)}})}function scanResultsRefresh(){function startScan(){var cmd="wlan scan";var errNo=$.instr(cmd).errorno;WDSScanFail.style.display="none";if(ENONE!=errNo){scanStop();return}wlanGetScanResults()}$("div.WDSAddHandleDe").css("display","none");scanning=true;showLoading(label.wirelessScanning,scanStop);if(1==waitForWlanEffect){$.setTimeout(startScan,1000);waitForWlanEffect=0}else{startScan()}}function WDSScanTableInit(){WDSGrid=new DataGrid();WDSGrid.init({id:"WDSTbl",data:apList.list,head:[{field:label.wirelessNa,width:142},{field:label.sigDep,width:103},{field:label.secInfo,width:133},{field:label.select,width:58}],list:[{name:"ssid"},{name:"rssi",type:"signal"},{name:"authMode",maxSize:30},{className:"radioBtn",classNameUn:"radioBtnUn",type:"btn",subType:"radio",click:WDSTargetSel}],checkIndex:1,hasSelBox:false,max:64,edit:false})}function nextStep(){var WDSAddHandleDe=$("div.WDSAddHandleDe");if("none"==WDSAddHandleDe.css("display")){if(undefined==WDSTargetIndex){showAlert(errStr.WDSNOHostErr)}else{var authMode=apList.list[WDSTargetIndex].authMode;if(authMode=="WPA-PSK/WPA2-PSK"){WDSTargetIndex=undefined;showAlert(errStr.WDSNOHostErr)}else{if(authMode=="WEP"||authMode=="WPA/WPA2"){$("input.radioBtn").attr("class","radioBtnUn");return errHandle(EINVPSKAUTH)}else{apcData.bBridgeEnabled=1;apcData.cBridgedSsid=apList.list[WDSTargetIndex].ssid;basicData.uChannel=apList.list[WDSTargetIndex].channel;apcData.uSecurityType=1;apcData.cPassWD="";apcData.uDetect=1;startConnectRootAp()}}}}else{var ssid=id("wdsHSsid").value;if(0==ssid.length){return errHandle(EINVSSIDLEN,"wdsHSsid")}var wlanPwd=id("wlanHPwd").value;var uSecType=1;if(0==wlanPwd.length){uSecType=1}else{errNo=checkWlanPwd(wlanPwd);if(ENONE!=errNo){return errHandle(errNo,wlanHPwd)}uSecType=4}apcData.bBridgeEnabled=1;apcData.cBridgedSsid=ssid;apcData.uSecurityType=uSecType;apcData.cPassWD=wlanPwd;startConnectRootAp()}}id("pre").onclick=function(){closeAlert();loadPage("WlanWDSCfgFirst.htm","WDSCon")};next.onclick=nextStep;$("p.WDSAddHandle").click(function(){closeAlert();var WDSAddHandleDe=$("div.WDSAddHandleDe");if(WDSAddHandleDe.css("display")=="none"){$("i.WDSARRR").attr("class","WDSARRD");WDSAddHandleDe.css("display","block");$("input.radioBtn").attr("class","radioBtnUn");if("block"==WDSScanFail.style.display){disableBtn(next,false,"wdsNextUn","wdsNext",nextStep)}}else{$("i.WDSARRD").attr("class","WDSARRR");WDSAddHandleDe.css("display","none");if("block"==WDSScanFail.style.display){disableBtn(next,true,"wdsNext","wdsNextUn")}}});$("i.hsVigClose").bind("click",function(){this.parentNode.parentNode.parentNode.style.visibility="hidden";$("input.radioBtn").attr("class","radioBtnUn")});id("WDSMHPwd").onclick=function(){var wlanPwd=id("pwd").value;var errNo=checkWlanPwd(wlanPwd);if(ENONE!=errNo){return errHandle(errNo,"pwd")}apcData.bBridgeEnabled=1;apcData.cBridgedSsid=apList.list[WDSTargetIndex].ssid;basicData.uChannel=apList.list[WDSTargetIndex].channel;apcData.uSecurityType=4;apcData.cPassWD=wlanPwd;apcData.uDetect=1;$("div.hsVignetteCon").css("visibility","hidden");startConnectRootAp()};id("pwd").onclick=function(){closeAlert()};id("wdsRefreshBtn").onclick=scanResultsRefresh;basicData=$.findBlock(WLAN_BASIC_DATA_ID);apcData=basicData.apc;WDSScanTableInit();WDSCon.style.visibility="hidden";scanResultsRefresh()}init();</script>
+<div class="blockTable">
+	<p class="WDSTitle">
+		<%label.WDSSelRootAp%>
+		<i id="wdsRefreshBtn" class="WDSRefresh"></i>
+	</p>
+	<table id="WDSTbl" class="dataGrid"></table>
+	<p id="WDSScanFail"><%label.WDSScanFail%></p>
+</div>
+<div class="hsVignetteCon">
+	<div class="hsVignette hsVigWDS">
+		<p class="hsVigTtop hsVigTtopA"><%label.WDSHBPWDNOTE%><i class="hsVigClose"></i></p>
+		<input id="pwd" class="wdsPwdInput" maxLength="63" />
+		<input id="WDSMHPwd" type="button" value="<%btn.nextStep%>" class="wdsPwdSubBtn" />
+	</div>
+</div>
+<div class="WDSAddHandleCon">
+	<p class="WDSAddHandle"><span><%label.WDSAddHandle%></span><i class="WDSARRR"></i></p>
+</div>
+<div class="WDSAddHandleDe">
+	<ul class="hsInputUl">
+		<li class="hsInputLi">
+			<label for="wdsHSsid"><%label.WDSHSSID%><i></i></label><input id="wdsHSsid" maxLength="32" /><i class="tip"></i>
+		</li>
+	</ul>
+	<ul class="hsInputUl">
+		<li class="hsInputLi">
+			<label for="wlanHPwd"><%label.wirelessHPwd%><i></i></label><input id="wlanHPwd" maxLength="63" /><i class="tip"></i>
+		</li>
+	</ul>
+</div>
+<div class="blockFuncA">
+	<span id="pre" class="wdsPre"><i class="subBtnLg"></i><label><%btn.preStep%></label></span>
+	<span id="next" class="wdsNext"><i class="subBtnLg"></i><label><%btn.nextStep%></label></span>
+</div>

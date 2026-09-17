@@ -1,0 +1,31 @@
+<style type="text/css">
+	div.WDSFNote{
+		height:190px;
+	}
+	ul.WDSFNote{
+		list-style-type:disc;
+		padding-left:70px;
+	}
+	ul.WDSFNote li{
+		line-height:30px;
+		padding-left:15px;
+		text-align:left;
+	}
+	ul.WDSFNote li.WDSFNoteF{
+		margin-top:35px;
+	}
+	#back{
+		display:none;
+	}
+</style>
+﻿<script type="text/javascript">function init(){var wlanMBssidData=$.findBlock(MBSSID_MAIN_DATA_ID);var wlanApcData=$.findBlock(WLAN_BASIC_DATA_ID).apc;var back=id("back");var bridgedSsid=wlanApcData.cBridgedSsid;function wlanEnable(enable){if(true==enable){wlanMBssidData.bEnable=1;$.write($.toText(wlanMBssidData));waitForWlanEffect=1;loadPage("WlanWDSCfgSecond.htm","WDSCon")}}id("next").onclick=function(){if(0==wlanMBssidData.bEnable){showConfirm(label.wirelessOffNote,wlanEnable)}else{loadPage("WlanWDSCfgSecond.htm","WDSCon")}};if(0!=bridgedSsid.length&&undefined!=bridgedSsid){back.style.display="inline-block";back.onclick=function(){loadPage("WlanWDSCfgEnd.htm","WDSCon")}}}init();</script>
+<div class="WDSBlock WDSFNote">
+	<p class="WDSTitle"><%btn.WDSWzd%></p>
+	<ul class="WDSFNote">
+		<li class="WDSFNoteF"><%label.WDSWzdHpLF%></li>
+	</ul>
+</div>
+<div class="blockFuncA">
+	<span id="back" class="wdsPre"><i class="subBtnLg"></i><label><%btn.backWzd%></label></span>
+	<span id="next" class="wdsNext"><i class="subBtnLg"></i><label><%btn.nextStep%></label></span>
+</div>

@@ -1,0 +1,109 @@
+<style type="text/css">
+	label.oneLineNoteA{
+		margin-left:8px;
+		vertical-align:middle;
+	}
+	#dynamicipmtu{
+		width:207px;
+	}
+	
+</style>
+<script type="text/javascript">function init(){var updateTimerHandle;var EINHOSTNAME=-100;function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return false;case EOUTOFRANGE:showStr=errStr.dhcpcHostNameErr;break;case EINVMTU:showStr=errStr.dhcpcMtuErr;break;case EINVFDNSVR:showStr=errStr.primDnsErr;break;case EINVSDNSVR:showStr=errStr.seDnsErr;break;case EINHOSTNAME:showStr=errStr.hostNameErr;break;case ENOLINK:showStr=errStr.wanLinkDown;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return true}function checkPrimDns(value){if(lan.ip==value){return EINVFDNSVR}return ENONE!=checkIp(value)?EINVFDNSVR:ENONE}function checkSeDns(value){if(""==value||"0.0.0.0"==value){id("dns1").value="0.0.0.0";return ENONE}if(lan.ip==value){return EINVSDNSVR}return ENONE!=checkIp(value)?EINVSDNSVR:ENONE}function checkHostName(value){if(/[^0-9a-z\-]/gi.test(value)==true){return EINHOSTNAME}return ENONE}function linkUp(){var errNo=ENONE;if(LINK_TYPE_DHCP==link.linkType){errHandle($.instr("wan -linkUp").errorno);updateStatus();return}link.linkType=LINK_TYPE_DHCP;errNo=$.write($.toText(link),$.block);if(errHandle(errNo)){$.read(LINK_DATA_ID);return}updateStatus()}function linkDown(){if(LINK_TYPE_DHCP==link.linkType){errHandle($.instr("wan -linkDown").errorno);updateStatus()}}function doManualDnsSet(){var disabled=!id("manualDns").checked;disableInput(id("dns0"),disabled);disableInput(id("dns1"),disabled)}function updateStatus(){clearTimeout(updateTimerHandle);$.readNonBlock(LINK_STATUS_DATA_ID,function(){var status=$.findBlock(LINK_STATUS_DATA_ID);var code=parseInt(status.code);switch(parseInt(status.status)){case LINK_DOWN:id("ip").innerHTML="0.0.0.0";id("mask").innerHTML="0.0.0.0";id("gateway").innerHTML="0.0.0.0";id("dns").innerHTML="0.0.0.0 , 0.0.0.0";disableBtn("connect",false,"refreshUn","refresh",linkUp);disableBtn("disconnect",true,"subBtnRel","subBtnRelUn");if((LINK_CODE_MANUAL!=code)&&(LINK_CODE_NORMAL!=code)){hsStatSet("error",linkCode[code]);break}hsStatSet("error",linkStatus[LINK_DOWN]);break;case LINK_UP:var dnsStr="";hsStatSet("correct",linkStatus[LINK_UP]);id("ip").innerHTML=status.ip;id("mask").innerHTML=status.mask;id("gateway").innerHTML=status.gateway;dnsStr=status.dns[0]+" , "+status.dns[1];if("0.0.0.0"==status.dns[0]&&"0.0.0.0"==status.dns[1]){dnsStr+=(" "+label.dnsException)}id("dns").innerHTML=dnsStr;disableBtn("connect",true,"refresh","refreshUn");disableBtn("disconnect",false,"subBtnRelUn","subBtnRel",linkDown);break;case LINKING_DOWN:hsStatSet("link",linkStatus[LINKING_DOWN]);id("ip").innerHTML="0.0.0.0";id("mask").innerHTML="0.0.0.0";id("gateway").innerHTML="0.0.0.0";id("dns").innerHTML="0.0.0.0 , 0.0.0.0";disableBtn("connect",false,"refreshUn","refresh",linkUp);disableBtn("disconnect",true,"subBtnRel","subBtnRelUn");break;case LINKING_UP:hsStatSet("link",linkStatus[LINKING_UP]);id("ip").innerHTML="0.0.0.0";id("mask").innerHTML="0.0.0.0";id("gateway").innerHTML="0.0.0.0";id("dns").innerHTML="0.0.0.0 , 0.0.0.0";disableBtn("connect",true,"refresh","refreshUn");disableBtn("disconnect",false,"subBtnRelUn","subBtnRel",linkDown);break;default:break}updateTimerHandle=$.setTimeout(updateTimer,2000)})}function updateTimer(){if(LINK_TYPE_DHCP==parseInt(link.linkType)){updateStatus()}}function onSave(){var errNo=ENONE;var linkModeVal=id("wanRateSel").value,nameVal=id("name").value;var primDnsVal=id("dns0").value,seDnsVal=id("dns1").value,mtuVal=id("mtu").value;var manualDnsChk=id("manualDns").checked?1:0,ucastChk=id("ucast").checked?1:0;if(errHandle(checkMtu(mtuVal),"mtu")||(id("manualDns").checked&&(errHandle(checkPrimDns(primDnsVal),"dns0")||errHandle(checkSeDns(seDnsVal),"dns1")))||(errHandle(checkHostName(nameVal),"name"))){return}seDnsVal=id("dns1").value;if(LINK_TYPE_DHCP==link.linkType&&link.linkMode==linkModeVal&&dynIp.manualDns==manualDnsChk&&dynIp.ucast==ucastChk&&dynIp.name==nameVal&&dynIp.mtu==mtuVal&&dynIp.dns[0]==primDnsVal&&dynIp.dns[1]==seDnsVal){return}link.linkType=LINK_TYPE_DHCP;link.linkMode=linkModeVal;dynIp.name=nameVal;dynIp.mtu=mtuVal;dynIp.manualDns=manualDnsChk;dynIp.ucast=ucastChk;if(1==manualDnsChk){dynIp.dns[0]=primDnsVal;dynIp.dns[1]=seDnsVal}closeAlert();setLoadingId("save");errNo=$.write($.toText(dynIp)+$.toText(link),$.block);if(errHandle(errNo)){$.read(DHCPC_DATA_ID+"#"+LINK_DATA_ID);return}updateStatus()}var link=$.findBlock(LINK_DATA_ID);var dynIp=$.findBlock(DHCPC_DATA_ID);var lan=$.findBlock(LAN_DATA_ID);$.read(DHCPC_DATA_ID+"#"+LAN_DATA_ID);selectInit("wanSel",wanOptions,LINK_TYPE_DHCP,wanSelectChange);selectInit("wanRateSel",rateOptions,getWanRateOption(link.linkMode),undefined,30);id("name").value=dynIp.name;id("dns0").value=dynIp.dns[0]||"";id("dns1").value=dynIp.dns[1]||"";id("mtu").value=dynIp.mtu;id("manualDns").checked=(1==dynIp.manualDns);id("ucast").checked=(1==dynIp.ucast);id("save").onclick=onSave;id("connect").onclick=linkUp;id("disconnect").onclick=linkDown;id("manualDns").onclick=doManualDnsSet;disableBtn("disconnect",true,"subBtnRel","subBtnRelUn");doManualDnsSet();updateTimer()}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleA" id="stateDiv">
+		<label class="title"><%menuStr.wanSet%></label>
+		<div id="netSetState" class="handleRelCon">
+			<i class="state"></i>
+			<span class="state" ></span>
+		</div>
+		<i class="helpBtn" helpStr="dynamicIpHelp"></i>
+	</div>
+	<div class="block">
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label class="inputLiLbl"><%label.netMode%><i></i></label>
+				<span class="highSetSelect">
+					<span id="wanSel" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<ul class="hsInputUlDes">
+			<li class="hsInputLiDes">
+				<label class="desLbl"><%label.ipAddr%><i></i></label>
+				<label id="ip" class="noteLbl">0.0.0.0</label>
+			</li>
+		</ul>
+		<ul class="hsInputUlDes">
+			<li class="hsInputLiDes">
+				<label class="desLbl"><%label.mask%><i></i></label>
+				<label id="mask" class="noteLbl">0.0.0.0</label>
+			</li>
+		</ul>
+		<ul class="hsInputUlDes">
+			<li class="hsInputLiDes">
+				<label class="desLbl"><%label.gateway%><i></i></label>
+				<label id="gateway" class="noteLbl">0.0.0.0</label>
+			</li>
+		</ul>
+		<ul class="hsInputUlDes">
+			<li class="hsInputLiDes">
+				<label class="desLbl"><%label.dns%><i></i></label>
+				<label id="dns" class="noteLbl">0.0.0.0 , 0.0.0.0</label>
+			</li>
+		</ul>
+		<div class="blockFuncA">
+			<span id="connect" class="refresh"><i class="subBtnLg"></i><label><%btn.renew%></label></span>
+			<span id="disconnect" class="subBtnRel"><i class="subBtnLg"></i><label><%btn.release%></label></span>
+		</div>
+		<ul class="hsInputUl">
+			<li class="hsInputLi hsInputLiC" >
+				<label for="mtu"><%label.mtu%><i></i></label><input id="mtu" maxLength="4" />
+			</li>
+			<li class="twoLineWidth">
+				<label id="dynamicipmtu" class="twoLineNote"><%label.mtuComment%></label>
+			</li>
+		</ul>
+		<ul class="gridLine gridLineB">
+			<input id="manualDns" class="checkbox" type="checkbox" />
+			<label for="manualDns" class="noteLbl"><%label.manualDns%></label>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="dns0"><%label.dns0%><i></i></label><input id="dns0" maxLength="15" /><i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="dns1"><%label.dns1%><i></i></label><input id="dns1" maxLength="15" /><i class="tip"></i>
+			</li>
+			<li>
+				<label class="oneLineNote"><%label.optional%></label>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="name"><%label.hostName%><i></i></label><input id="name" maxLength="63" /><i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="gridLine gridLineB">
+			<input id="ucast" class="checkbox" type="checkbox" />
+			<label for="ucast" class="noteLbl"><%label.unicast%></label>
+			<label class="oneLineNote oneLineNoteA"><%label.unicastNote%></label>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label class="inputLiLbl"><%label.wanRateSet%><i></i></label>
+				<span class="highSetSelect">
+					<span id="wanRateSel" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<div class="blockFuncA">
+			<span id="save" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,54 @@
+<style type="text/css">
+	#bNwPPPoE{
+		font-size:0px;
+		list-style-type:none;
+		margin:0 0 0 175px;
+		padding:0;
+	}
+	#bNwPPPoE li{
+		border-bottom:1px solid #FF6060;
+		color:#FF6060;
+		height:30px;
+		line-height:30px;
+		margin-bottom:20px;
+		width:502px;
+	}
+	#bNwPPPoE li label{
+		display:inline-block;
+		font-size:12px;
+		text-align:right;
+		vertical-align:middle;
+		width:227px;
+	}
+	#bNwPPPoE li span{
+		display:inline-block;
+		font-size:12px;
+		padding-left:53px;
+		vertical-align:middle;
+	}
+</style>
+<script type="text/javascript">function init(){var updateTimerHandle;function bNwPPPoeHelpSet(linkCode){var bNwPPPoeHelp=id("bNwHelp");var code=parseInt(linkCode);var vis;switch(code){case LINK_CODE_NOECHO:helpBind(bNwPPPoeHelp,"PPPoEServerDeadHelp");vis="visible";break;case LINK_CODE_AUTH_ERR:helpBind(bNwPPPoeHelp,"PPPoENPErrHelp");vis="visible";break;case LINK_CODE_UNKNOWN:case LINK_CODE_DENY:case LINK_CODE_SRVDOWN:case LINK_CODE_OPT_UNSUPPORT:case LINK_CODE_AUTH_UNSUPPORT:helpBind(bNwPPPoeHelp,"PPPoEOtherErrHelp");vis="visible";break;case LINK_CODE_PHYDOWN:default:bNwPPPoeHelp.onclick=null;vis="hidden";break}bNwPPPoeHelp.style.visibility=vis;$("div.bNwConnectS").css("visibility",vis)}function updateStatus(){clearTimeout(updateTimerHandle);$.readNonBlock(LINK_STATUS_DATA_ID,function(result){var ipAddr=id("ip");var dnsAddr=id("dns");var status=$.findBlock(LINK_STATUS_DATA_ID);ipAddr.innerHTML="0.0.0.0";dnsAddr.innerHTML="0.0.0.0 , 0.0.0.0";bEptNetWorkSet(status.status,linkType[LINK_TYPE_PPPOE]);switch(parseInt(status.status)){case LINK_UP:var dnsStr="";ipAddr.innerHTML=status.ip;dnsStr=status.dns[0]+" , "+status.dns[1];if("0.0.0.0"==status.dns[0]&&"0.0.0.0"==status.dns[1]){dnsStr+=(" "+label.dnsException)}dnsAddr.innerHTML=dnsStr;break;case LINK_DOWN:if(status.code>=LINK_CODE_UNKNOWN){id("bNwNote").innerHTML=linkCode[status.code]}break;case LINKING_UP:case LINKING_DOWN:default:break}bNwPPPoeHelpSet(status.code);updateTimerHandle=$.setTimeout(updateTimer,2000)})}function updateTimer(){if(LINK_TYPE_PPPOE==parseInt(link.linkType)){updateStatus()}}function checkInput(){closeNote("basicNameNote");closeNote("basicPswNote");if(0==nameObj.value.length){showNote("basicNameNote");return false}if(0==pswObj.value.length){showNote("basicPswNote");return false}closeNote("basicNameNote");closeNote("basicPswNote");return true}function commitData(){var errNo=ENONE,nameVal=nameObj.value,pswVal=pswObj.value;pppoe.name=nameVal;pppoe.paswd=pswVal;link.linkType=LINK_TYPE_PPPOE;link.linkType=LINK_TYPE_PPPOE;pppoe.name=nameVal;pppoe.paswd=pswVal;setLoadingId("saveImg",true);errNo=$.write($.toText(pppoe)+$.toText(link),$.block);if(ENONE!=errNo){$.read(PPPOE_DATA_ID+"#"+LINK_DATA_ID);return}updateStatus();pswObj.value=pppoe.paswd}function onSave(){var errNo=ENONE,nameVal=nameObj.value,pswVal=pswObj.value;if(LINK_TYPE_PPPOE==link.linkType&&pppoe.name==nameVal&&pswVal==pppoe.paswd){errNo=$.instr("wan -linkUp").errorno;updateStatus();return}if(0==nameVal.length||0==pswVal.length){showConfirm(label.accPwdNullTip,function(confirm){if(true==confirm){commitData()}})}else{commitData()}}var pppoe=$.readEx(PPPOE_DATA_ID),link=$.findBlock(LINK_DATA_ID);var nameObj=id("name"),pswObj=id("psw");nameObj.value=pppoe.name;pswObj.value=pppoe.paswd;id("saveImg").onclick=onSave;$("div.bFunc")[0].style.visibility="visible";updateTimer()}init();</script>
+<ul class="bcInputUl">
+	<li class="bcInputLi">
+		<label for=""><%label.netAccount%><i></i></label><input id="name" maxLength="255" type="text" />
+	</li>
+	<li id="basicNameNote" class="note">
+		<i class="arrowL"></i><div class="noteCon"><p><%errStr.wzdPppoeNameErr%></p></div>
+	</li>
+</ul>
+<ul class="bcInputUl">
+	<li class="bcInputLi" >
+		<label for=""><%label.netPwd%><i></i></label><input id="psw" maxLength="255" type="password" />
+	</li>
+	<li id="basicPswNote" class="note">
+		<i class="arrowL"></i><div class="noteCon"><p><%errStr.wzdPppoePswErr%></p></div>
+	</li>
+</ul>
+<ul id="bNwPPPoE">
+	<li>
+		<label><%label.ipAddr%></label><span id="ip">0.0.0.0</span>
+	</li>
+	<li class="bNwSubPPPoE">
+		<label><%label.dns%></label><span id="dns">0.0.0.0 , 0.0.0.0</span>
+	</li>
+</ul>

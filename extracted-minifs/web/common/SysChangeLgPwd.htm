@@ -1,0 +1,26 @@
+<script type="text/javascript">function init(){var ECHPWDDIF="pwdDiff";var save=id("save");function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return false;case EINVLGPWDLEN:showStr=errStr.lgPwdLenInvalid;break;case EINLGVALCHAR:showStr=errStr.pwdCharValid;break;case ECHPWDDIF:showStr=errStr.pswNotMatch;break;case EINLGVALOLDSAME:showStr=errStr.pswNewOldSameErr;break;case EINVKEY:showStr=errStr.pwdOldPwdErr;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return true}function chkPswVal(szValue){return(/^[\x21-\x7e]+$/.test(szValue))}if(USER_GROUP_REMOTE==$.group){disableBtn(save,true,"subBtnSv","subBtnSvUn")}else{save.onclick=function(){var oldPwd=id("oldPwd");var newPwd=id("newPwd");var newPwdC=id("newPwdC");var oldVal=oldPwd.value;var newVal=newPwd.value;var newCVal=newPwdC.value;var result;if(oldVal.length==0||oldVal.length<6||oldVal.length>15){oldPwd.focus();return errHandle(EINVLGPWDLEN,oldPwd)}if(newVal.length==0||newVal.length<6||newVal.length>15){newPwd.focus();return errHandle(EINVLGPWDLEN,newPwd)}if(chkPswVal(newVal)==false){newPwd.focus();return errHandle(EINLGVALCHAR,newPwd)}if(newVal==oldVal){newPwd.focus();return errHandle(EINLGVALOLDSAME,newPwd)}if(newVal!=newCVal){newPwdC.focus();return errHandle(ECHPWDDIF,newPwdC)}setLoadingId("save");result=$.changeSysPwd(oldVal,newVal);if(ENONE!=result.errorno){errHandle(result.errorno);newPwd.focus()}}}}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleA">
+		<label class="title"><%menuStr.changeLgPwd%></label>
+	</div>
+	<div class="block">
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label id="oldpassword" for="oldPwd"><%label.chgOrPwd%><i></i></label><input id="oldPwd" maxLength="15" type="password" />
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label id="newpassword" for="newPwd"><%label.chgNewPwd%><i></i></label><input id="newPwd" maxLength="15" type="password" />
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label id="confirmpassword" for="newPwdC"><%label.chgConNewPwd%><i></i></label><input id="newPwdC" maxLength="15" type="password" />
+			</li>
+		</ul>
+		<div class="blockFuncA">
+			<span id="save" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+</div>

@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<root xmlns="urn:schemas-upnp-org:device-1-0">
+<specVersion>
+<major>2</major>
+<minor>0</minor>
+</specVersion>
+<device>
+<deviceType>urn:schemas-upnp-org:device:InternetGatewayDevice:1</deviceType>
+<presentationURL>PRESENTATIONURL_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_PRESENTATIONURL</presentationURL>
+<friendlyName>FRIENDLYNAME_AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA_FRIENDLYNAME</friendlyName>
+<manufacturer>MERCUSYS</manufacturer>
+<manufacturerURL>http://www.mercusys.com</manufacturerURL>
+<modelDescription>MW325R 2.0</modelDescription>
+<modelName>MW325R</modelName>
+<modelNumber>2.0</modelNumber>
+<UDN>uuid:upnp-InternetGatewayDevice-UDN_AAAA_UDN</UDN>
+<UPC>123456789001</UPC>
+<serviceList>
+<service>
+<serviceType>urn:schemas-upnp-org:service:Layer3Forwarding:1</serviceType>
+<serviceId>urn:upnp-org:serviceId:L3Forwarding1</serviceId>
+<controlURL>/l3f</controlURL>
+<eventSubURL>/l3f</eventSubURL>
+<SCPDURL>/l3f.xml</SCPDURL>
+</service>
+</serviceList>
+<deviceList>
+<device>
+<deviceType>urn:schemas-upnp-org:device:WANDevice:1</deviceType>
+<friendlyName>WAN Device</friendlyName>
+<manufacturer>MERCUSYS</manufacturer>
+<manufacturerURL>http://www.mercusys.com</manufacturerURL>
+<modelDescription>WAN Device</modelDescription>
+<modelName>WAN Device</modelName>
+<modelNumber>2.0</modelNumber>
+<modelURL></modelURL>
+<serialNumber>12345678900001</serialNumber>
+<UDN>uuid:upnp-WANDevice-UDN_AAAA_UDN</UDN>
+<UPC>123456789001</UPC>
+<serviceList>
+<service>
+<serviceType>urn:schemas-upnp-org:service:WANCommonInterfaceConfig:1</serviceType>
+<serviceId>urn:upnp-org:serviceId:WANCommonInterfaceConfig</serviceId>
+<controlURL>/ifc</controlURL>
+<eventSubURL>/ifc</eventSubURL>
+<SCPDURL>/ifc.xml</SCPDURL>
+</service>
+</serviceList>
+<deviceList>
+<device>
+<deviceType>urn:schemas-upnp-org:device:WANConnectionDevice:1</deviceType>
+<friendlyName>WAN Connection Device</friendlyName>
+<manufacturer>MERCUSYS</manufacturer>
+<manufacturerURL>http://www.mercusys.com</manufacturerURL>
+<modelDescription>WAN Connection Device</modelDescription>
+<modelName>WAN Connection Device</modelName>
+<modelNumber>2</modelNumber>
+<modelURL></modelURL>
+<serialNumber>12345678900001</serialNumber>
+<UDN>uuid:upnp-WANConnectionDevice-UDN_AAAA_UDN</UDN>
+<UPC>123456789001</UPC>
+<serviceList>
+<service>
+<serviceType>urn:schemas-upnp-org:service:WANIPConnection:1</serviceType>
+<serviceId>urn:upnp-org:serviceId:WANIPConnection</serviceId>
+<controlURL>/ipc</controlURL>
+<eventSubURL>/ipc</eventSubURL>
+<SCPDURL>/ipc.xml</SCPDURL>
+</service>
+</serviceList>
+</device>
+</deviceList>
+</device>
+</deviceList>
+</device>
+</root>

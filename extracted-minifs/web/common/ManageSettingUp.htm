@@ -1,0 +1,116 @@
+<style type="text/css">
+	span.bindBtn{
+		border-radius:2px;
+		color:#FFFFFF;
+		height:20px;
+		width:20px;
+		font-size:12px;
+		display:inline-block;
+		cursor:pointer;
+		vertical-align:middle;
+		background:#FF6060;
+		text-align:center;
+	}
+	#appointLocalManage{
+		display:none;
+	}
+	#appointRemoteManage{
+		display:none;
+	}
+	li.hsInputLi label {
+		width: 210px;
+	}
+	span.highSetSelect {
+		width: 290px;
+	}
+	span.highSetSelect span.select {
+		width: 260px;
+		margin-left: 20px;
+	}
+	span.select span.value {
+		width: 240px;
+	}
+</style>
+<script type="text/javascript">function init(){var forbidCurrPc=false;var macNoteStr="macNote";var localWebManageOpts=[{str:label.allLocalManage,value:0},{str:label.appointLocalManage,value:1}];var remoteWebManageOpts=[{str:label.banRemoteManage,value:0},{str:label.allRemoteManage,value:1},{str:label.appointRemoteManage,value:2}];function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return false;case EINVPORT:showStr=errStr.localPortErr;break;case EINVRMTPORT:showStr=errStr.remotePortErr;break;case EINVRMTPORTFMT:showStr=errStr.remotePortNotNum;break;case EPORTRESERVED:showStr=errStr.portConflicErr;break;case ETABLEEMPTY:showStr=errStr.lclMngHostEmptyErr;break;case EENTRYCONFLIC:showStr=errStr.lclMngHostDupErr;break;case EINVMACFMT:showStr=errStr.macFmtErr;break;case EINVMACZERO:showStr=errStr.macZeroErr;break;case EINVMACBROAD:showStr=errStr.macBroadErr;break;case EINVMACGROUP:showStr=errStr.macGroupErr;break;case EINVNET:showStr=errStr.ipAddrNetErr;break;case EINVIP:showStr=errStr.ipAddrErr;break;case EINVIPFMT:showStr=errStr.ipAddrFmtErr;break;case EINVGROUPIP:showStr=errStr.ipAddrGroupErr;break;case EINVLOOPIP:showStr=errStr.ipAddrLoopErr;break;case ELANSUBNET:showStr=errStr.ipLanSubnet;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return true}function checkLclHost(mngOptsVal){var macStr,macVal=[],errNo=ENONE,hostEmpty=true;var index=0,pos=0;forbidCurrPc=false;if(0==mngOptsVal){return ENONE}for(index=0;index<4;index++){if(""==macInput[index].value){macInput[index].value="00-00-00-00-00-00";continue}if("00-00-00-00-00-00"==macInput[index].value){continue}errNo=checkMac(macInput[index].value);if(ENONE!=errNo){showNote(macNoteStr+index,errStr.macErr);return errNo}macVal[index]=macInput[index].value.toUpperCase();hostEmpty=false}if(true==hostEmpty){return ETABLEEMPTY}macStr=macVal.join();for(index in macVal){pos=macStr.indexOf(macVal[index]);if(-1!=macStr.indexOf(macVal[index],pos+1)){return EENTRYCONFLIC}}forbidCurrPc=(-1==macStr.indexOf(currPcMac))?true:false;return ENONE}function checkRmtPort(value){if(false==checkNum(value)){return EINVRMTPORTFMT}if((value!=80)&&(false==checkNumRange(parseInt(value),65535,1024))){return EINVRMTPORT}return ENONE}function onLocalSave(){var mngOptsVal=id("localManageOpts").value;closeAllNote();if(errHandle(checkLclHost(mngOptsVal),"localManageOpts")){return}if(USER_GROUP_REMOTE!=$.group&&true==forbidCurrPc){showConfirm(label.localWebManageForbidNote,function(choose){if(true!=choose){return}localSaveHandle()});return}localSaveHandle()}function closeAllNote(){for(var i=0;i<4;i++){closeNote(macNoteStr+i)}}function localSaveHandle(){var mngOptsVal=id("localManageOpts").value;var lclHost=$.findBlock(LCLHOST_DATA_ID);if(1==mngOptsVal){lclHost.enableAll=0;for(var index in lclHost.mac){lclHost.mac[index]=macInput[index].value}}else{lclHost.enableAll=1}setLoadingId("lclManageSave");errNo=$.write($.toText(lclHost));if(errHandle(errNo)){$.read(LCLHOST_DATA_ID);return}closeAlert()}function onRemoteSave(){var rmtOptsVal=id("remoteManageOpts").value,portVal=id("remoteWebManagePort").value,ipVal=id("ip").value;var rmtHost=$.findBlock(RMTHOST_DATA_ID);switch(parseInt(rmtOptsVal)){case 2:if(errHandle(checkIp(ipVal),"ip")||errHandle(checkRmtPort(portVal),"remoteWebManagePort")){return}rmtHost.addr=ipVal;rmtHost.port=portVal;break;case 1:if(errHandle(checkRmtPort(portVal),"remoteWebManagePort")){return}rmtHost.port=portVal;break;default:break}setLoadingId("rmtManageSave");rmtHost.rule=rmtOptsVal;errNo=$.write($.toText(rmtHost),$.nonBlock);if(errHandle(errNo)){$.read(RMTHOST_DATA_ID);return}closeAlert();if(USER_GROUP_REMOTE==$.group){location.href=location.href.replace(/:\d{1,5}/,":"+portVal)}}function addCurrPc(){if("00-00-00-00-00-00"==lclHost.mac[0]||""==macInput[0].value){macInput[0].value=currPcMac;return}if(currPcMac!=macInput[0].value){showConfirm(label.localWebManageNote,function(choose){if(true!=choose){return}macInput[0].value=currPcMac})}}function localManageSelect(value){id("appointLocalManage").style.display=(value==0?"none":"block")}function bindMACInputBlur(){for(var i=0;i<4;i++){macInput[i].onblur=(function(index){return function(){var errNo;var value=this.value;if("00-00-00-00-00-00"==value||ENONE==checkMac(value)){closeNote(macNoteStr+index)}}})(i)}}function remoteManageSelect(value){var portDis="block";var ipDis="none";if(value==0){portDis="none"}else{if(value!=1){ipDis="block"}}id("appointRemoteManage").style.display=ipDis;id("appointRemoteManagePort").style.display=portDis}var lclHost,rmtHost;var localSelIndex=0,currPcMac=getCurrPcMac().toUpperCase(),macInput=[];if(USER_GROUP_REMOTE==$.group){id("mngPCMacUl").style.display="none"}$.read(LCLHOST_DATA_ID+"#"+RMTHOST_DATA_ID);lclHost=$.findBlock(LCLHOST_DATA_ID);rmtHost=$.findBlock(RMTHOST_DATA_ID);if(true!=lclHost.enableAll){localSelIndex=1}else{$("span.bindBtn")[0].onclick=addCurrPc}selectInit("localManageOpts",localWebManageOpts,localSelIndex,localManageSelect,50);selectInit("remoteManageOpts",remoteWebManageOpts,rmtHost.rule,remoteManageSelect,50);localManageSelect(localSelIndex);remoteManageSelect(rmtHost.rule);for(var index in lclHost.mac){macInput[index]=id("mac"+index);macInput[index].value=lclHost.mac[index].toUpperCase()}id("remoteWebManagePort").value=rmtHost.port;id("ip").value=rmtHost.addr;id("pcMac").innerHTML=currPcMac;id("lclManageSave").onclick=onLocalSave;id("rmtManageSave").onclick=onRemoteSave;bindMACInputBlur()}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleC">
+		<label class="title"><%label.localWebManage%></label>
+		<i class="helpBtn" helpStr="manageSULclHelp"></i>
+	</div>
+	<div class="block">
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label><%label.localWebManageAuth%><i></i></label>
+				<span class="highSetSelect">
+					<span id="localManageOpts" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<div id="appointLocalManage">
+			<ul class="hsInputUl">
+				<li class="hsInputLi">
+					<label for="mac0"><%label.mac%>1<i></i></label><input id="mac0" maxLength="17" type="text" />
+				</li>
+			</ul>
+			<ul class="hsInputUl">
+				<li class="hsInputLi">
+					<label for="mac1"><%label.mac%>2<i></i></label><input id="mac1" maxLength="17" type="text" />
+				</li>
+			</ul>
+			<ul class="hsInputUl">
+				<li class="hsInputLi">
+					<label for="mac2"><%label.mac%>3<i></i></label><input id="mac2" maxLength="17" type="text" />
+				</li>
+			</ul>
+			<ul class="hsInputUl">
+				<li class="hsInputLi">
+					<label for="mac3"><%label.mac%>4<i></i></label><input id="mac3" maxLength="17" type="text" />
+				</li>
+			</ul>
+			<ul id="mngPCMacUl" class="hsInputUlDes">
+				<li class="hsInputLiDes">
+					<label class="desLbl"><%label.managePcMac%><i></i></label>
+					<label id="pcMac" class="noteLbl"></label>
+					<span class="bindBtn">+</span>
+				</li>
+			</ul>
+		</div>
+		<div class="blockFuncA">
+			<span id="lclManageSave" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+
+	<p class="hsTitleLine modelDistance"></p>
+
+	<div class="title titleC">
+		<label class="title"><%label.remoteWebManage%></label>
+		<i class="helpBtn" helpStr="manageSURmtHelp"></i>
+	</div>
+	<div class="block">
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label><%label.remoteWebManageAuth%><i></i></label>
+				<span class="highSetSelect">
+					<span id="remoteManageOpts" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<ul id="appointRemoteManage" class="hsInputUl">
+			<li class="hsInputLi">
+				<label for="ip"><%label.ipAddr%><i></i></label><input id="ip" maxLength="15" type="text" />
+			</li>
+		</ul>
+		<ul id="appointRemoteManagePort" class="hsInputUl">
+			<li class="hsInputLi">
+				<label for="remoteWebManagePort"><%label.remoteWebManagePort%><i></i></label><input id="remoteWebManagePort" maxLength="5" type="text" />
+			</li>
+		</ul>
+		<div class="blockFuncA">
+			<span id="rmtManageSave" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+</div>

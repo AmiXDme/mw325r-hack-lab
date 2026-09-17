@@ -1,0 +1,129 @@
+<style type="text/css">
+	span.speed{
+		color:#808080;
+		font-size:12px;
+		vertical-align:middle;
+	}
+	ul.gridLineD{
+		margin-top:0px;
+		margin-bottom:0px;
+	}
+	input.guestTimeout{
+		border:1px solid #FF555C;
+		border-radius:16px;
+		text-align:center;
+		vertical-align:middle;
+		width:48px;
+	}
+	input.geustNetRadio{
+		vertical-align:middle;
+	}
+	label.noteLblL{
+		margin:0 6px 0px 10px;
+	}
+	label.noteLblR{
+		margin-left:6px;
+	}
+	#guestNetTimeGrid{
+		margin:12px 0 0 89px;
+	}
+	p.guestNetTimeTip{
+		margin:12px 0 0 89px;
+		text-align:left;
+		*zoom:1;
+		display:none;
+	}
+	p.guestNetTimeTip span{
+		color:#999999;
+		vertical-align:middle;
+	}
+	p.guestNetTimeTip i{
+		height:18px;
+		width:18px;
+		margin-left:10px;
+		vertical-align:middle;
+		background:#A0D468;
+		display:inline-block;
+	}
+</style>
+<script type="text/javascript">var EINVSSIDNULL="EINVSSIDNULL";function init(){function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return true;case EINVSSIDLEN:showStr=errStr.wlanSsidLenErr;break;case EINVSSIDNULL:showStr=errStr.wlanSsidErr;break;case EPWDBLANK:showStr=errStr.wlanPwdNull;break;case EINVWLANPWD:showStr=errStr.wlanPwdInvalid;break;case EINVPSKLEN:showStr=errStr.wlanPwdLenValid;break;case EINVSPEEDCFG:showStr=errStr.guestNetSpeedInvalid;break;case EINVTIMEOUTCFG:showStr=errStr.guestNetTimeoutInvalid;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return false}function onGuestNetSwitchChange(state){errNo=ENONE;if(state!=guestNetData.bEnable){guestNetData.bEnable=state;errNo=$.write($.toText(guestNetData),$.block)}return errHandle(errNo)}function onIsSecurityDisableCheck(){isControlDisabled=(true==isSecurityDisable.checked);disableInput(wirelessPwd,isControlDisabled);if(false==isControlDisabled){wirelessPwd.select()}}function onAccessTimeSelChange(){isControlDisabled=(ACCESS_TIME_OFF==accessTimeSel.value);isDisplayValid=((true==isControlDisabled)?"none":"block");timeoutRadio.parentNode.style.display=isDisplayValid;scheduleRadio.parentNode.style.display=isDisplayValid;if((false==isControlDisabled)&&(true==scheduleRadio.checked)){guestNetTimeTip.style.display="block";guestNetTimeGrid.style.display="block"}else{guestNetTimeTip.style.display="none";guestNetTimeGrid.style.display="none"}return}function onAccessTimeRadioClick(){isControlDisabled=timeoutRadio.checked;isDisplayValid=((true==isControlDisabled)?"none":"block");disableInput(timeoutText,!isControlDisabled);if(ACCESS_TIME_OFF!=accessTimeSel.value){guestNetTimeTip.style.display=isDisplayValid;guestNetTimeGrid.style.display=isDisplayValid}return}function onSave(){errNo=ENONE;if(0==(wirelessNa.value).length){return errHandle(EINVSSIDNULL,wirelessNa)}if(false==isSecurityDisable.checked){errNo=checkWlanPwd(wirelessPwd.value);if(ENONE!=errNo){return errHandle(errNo,wirelessPwd)}}if((false==checkNum(maxUploadSpeed.value))||(false==checkNum(maxDownloadSpeed.value))){return errHandle(EINVSPEEDCFG,maxUploadSpeed)}if((ACCESS_TIME_ON==accessTimeSel.value)&&(true==timeoutRadio.checked)){if((""==timeoutText.value)||(false==checkNum(timeoutText.value))||(false==checkNumRange(timeoutText.value,24,0))){return errHandle(EINVTIMEOUTCFG,timeoutText)}}guestNetData=$.findBlock(MBSSID_GUESTNET_DATA_ID);guestNetData.cSsid=wirelessNa.value;guestNetData.cPskSecret=(false==isSecurityDisable.checked)?wirelessPwd.value:guestNetData.cPskSecret;guestNetData.bSecurityEnable=((isSecurityDisable.checked)^1);guestNetData.bLanAccess=innerNetAuthSel.value;guestNetData.uMaxUploadSpeed=maxUploadSpeed.value;guestNetData.uMaxDownloadSpeed=maxDownloadSpeed.value;guestNetData.bSetOpenTime=accessTimeSel.value;guestNetData.uDuration=timeoutText.value;guestNetData.uAllowTimeMode=((true==timeoutRadio.checked)?ACCESS_TIME_TYPE_TIMEOUT:ACCESS_TIME_TYPE_SCHEDULE);guestNetData.uTimeTable=guestNetDataCtl.getSelDate();setLoadingId("save");errNo=$.write($.toText(guestNetData),$.block);return errHandle(errNo)}var ACCESS_TIME_OFF=0;var ACCESS_TIME_ON=1;var ACCESS_TIME_TYPE_TIMEOUT=0;var ACCESS_TIME_TYPE_SCHEDULE=1;var optionList=[{str:label.optionOff,value:0},{str:label.optionOn,value:1}];var errNo=ENONE;var isControlDisabled=false;var isRadioChecked=false;var isDisplayValid=false;var guestNetData=$.readEx(MBSSID_GUESTNET_DATA_ID);var guestNetSwitch=new Switch("switchCon",guestNetData.bEnable,onGuestNetSwitchChange);var guestNetDataCtl=new DateControl("guestNetTimeGrid",{dateArray:guestNetData.uTimeTable,cellHeight:19,cellWidth:19});var wirelessNa=document.getElementById("wirelessNa");var wirelessPwd=document.getElementById("wirelessPwd");var isSecurityDisable=document.getElementById("isSecurityDisable");var innerNetAuthSel=document.getElementById("innerNetAuthSel");var maxUploadSpeed=document.getElementById("maxUploadSpeed");var maxDownloadSpeed=document.getElementById("maxDownloadSpeed");var accessTimeSel=document.getElementById("accessTimeSel");var accessTimeRadio=document.getElementsByName("accessTimeRadio");var timeoutRadio=accessTimeRadio[ACCESS_TIME_TYPE_TIMEOUT];var scheduleRadio=accessTimeRadio[ACCESS_TIME_TYPE_SCHEDULE];var timeoutText=document.getElementById("timeoutText");var guestNetTimeGrid=document.getElementById("guestNetTimeGrid");var guestNetTimeTip=document.getElementById("guestNetTimeTip");var save=document.getElementById("save");wirelessNa.value=guestNetData.cSsid;wirelessPwd.value=guestNetData.cPskSecret;isSecurityDisable.checked=(false==guestNetData.bSecurityEnable);isSecurityDisable.onclick=onIsSecurityDisableCheck;selectInit("innerNetAuthSel",optionList,guestNetData.bLanAccess);maxUploadSpeed.value=guestNetData.uMaxUploadSpeed;maxDownloadSpeed.value=guestNetData.uMaxDownloadSpeed;selectInit("accessTimeSel",optionList,guestNetData.bSetOpenTime,onAccessTimeSelChange);timeoutRadio.checked=(ACCESS_TIME_TYPE_TIMEOUT==guestNetData.uAllowTimeMode);scheduleRadio.checked=(ACCESS_TIME_TYPE_SCHEDULE==guestNetData.uAllowTimeMode);for(var i=0,len=accessTimeRadio.length;i<len;i++){accessTimeRadio[i].onclick=onAccessTimeRadioClick}timeoutText.value=guestNetData.uDuration;save.onclick=onSave;onIsSecurityDisableCheck();onAccessTimeSelChange();onAccessTimeRadioClick()}init();</script>
+
+<div id="hcCo" class="hcCo">
+	<div class="title titleA">
+		<label class="title"><%menuStr.wifiGuestNet%></label>
+		<div id="switchCon" class="switchCon switchConHs">
+			<i class="switchBg"></i>
+			<i class="switchBall"></i>
+		</div>
+		<i class="helpBtn" helpStr="wlanGuestNetWorkHelp"></i>
+	</div>
+	<div class="block">
+		<ul class="hsInputUl">
+			<li class="hsInputLi hsInputLiWlGuest">
+				<label for="wirelessNa"><%label.wirelessName%><i></i></label><input id="wirelessNa" maxLength="32" /><i class="tip"></i>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi hsInputLiWlGuest">
+				<label for="wirelessPwd"><%label.wirelessPwd%><i></i></label><input id="wirelessPwd" maxLength="63" /><i class="tip"></i>
+			</li>
+			<li class="wlanCheckR">
+				<input id="isSecurityDisable" class="checkbox" type="checkbox" />
+				<label for="isSecurityDisable" class="noteLbl"><%label.guestNetNoPwd%></label>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi hsInputLiWlGuest">
+				<label class="wlanGuestLbl"><%label.innerNetAuth%><i></i></label>
+				<span class="highSetSelect wlanGuestSelect">
+					<span id="innerNetAuthSel" class="select">
+						<span class="value wlanGuestValue"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi hsInputLiWlGuest">
+				<label for="maxUploadSpeed" class="wlanGuestLbl"><%label.maxUploadSpeed%><i></i></label>
+				<input class="speedInput" id="maxUploadSpeed" maxLength="7" />
+				<span class="speed"><%label.transmitSpeed%></span>
+			</li>
+			<li><label class="oneLineNote"><%label.noLimit%></label></li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi hsInputLiWlGuest">
+				<label for="maxDownloadSpeed" class="wlanGuestLbl"><%label.maxDownloadSpeed%><i></i></label>
+				<input class="speedInput" id="maxDownloadSpeed" maxLength="7" />
+				<span class="speed"><%label.transmitSpeed%></span>
+			</li>
+			<li><label class="oneLineNote"><%label.noLimit%></label></li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi hsInputLiWlGuest">
+				<label class="wlanGuestLbl"><%label.setAccessTime%><i></i></label>
+				<span class="highSetSelect wlanGuestSelect">
+					<span id="accessTimeSel" class="select">
+						<span class="value wlanGuestValue"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		<ul class="gridLine gridLineB gridLineD">
+			<input class="geustNetRadio" type="radio" name="accessTimeRadio" id="timeoutRadio" />
+			<label class="noteLbl noteLblL" for="timeoutRadio"><%label.guestNetTimeout1%></label>
+			<input id="timeoutText" for="timeoutRadio" class="guestTimeout" maxLength="2" />
+			<label class="noteLbl noteLblR" for="timeoutRadio"><%label.guestNetTimeout2%></label>
+		</ul>
+		<ul class="gridLine gridLineB gridLineD">
+			<input class="geustNetRadio" type="radio" name="accessTimeRadio" id="scheduleRadio" />
+			<label class="noteLbl" for="scheduleRadio"><%label.guestNetSchedule%></label>
+		</ul>
+		<div id="guestNetTimeGrid"></div>
+		<p id="guestNetTimeTip" class="guestNetTimeTip">
+			<span><%label.accessTime%></span><i></i>
+		</p>
+		<div class="blockFuncA">
+			<span id="save" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+</div>

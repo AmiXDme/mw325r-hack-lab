@@ -1,0 +1,21 @@
+<script type="text/javascript">function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return false;case EINVNET:showStr=errStr.ipAddrNetErr;break;case EINVIP:showStr=errStr.ipAddrErr;break;case EINVIPFMT:showStr=errStr.ipAddrFmtErr;break;case EINVGROUPIP:showStr=errStr.ipAddrGroupErr;break;case EINVLOOPIP:showStr=errStr.ipAddrLoopErr;break;case ENOTLANSUBNET:showStr=errStr.ipNotLanSubnet;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return true}function init(){function bSwitchState(state){var errNo=ENONE;if(state==dmz.dmzEnable){return}if(true==errHandle(checkIp(dmz.dmzClient))){bDmzSwitch.setState(1-state);return}dmz.dmzEnable=state;errNo=$.write($.toText(dmz),$.block);if(ENONE!=errNo){dmz.dmzEnable=1-state;bDmzSwitch.setState(1-state)}return errHandle(errNo)}function bSwitchSave(){var errNo=ENONE;var dmzIpVal=id("dmzIpAddr").value;var dmzIpOr=dmz.dmzClient;if(true==errHandle(checkIp(dmzIpVal),"dmzIpAddr")){return}dmz.dmzClient=dmzIpVal;setLoadingId("dmzSave");errNo=$.write($.toText(dmz),$.block);if(ENONE!=errNo){dmz.dmzClient=dmzIpOr;errHandle(errNo)}return true}var dmz=$.readEx(NAPT_DMZ_DATA_ID);var bDmzSwitch=new Switch("switchCon",dmz.dmzEnable,bSwitchState);id("dmzIpAddr").value=dmz.dmzClient;id("dmzSave").onclick=bSwitchSave}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleA">
+		<label class="title"><%menuStr.DMZS%></label>
+		<div id="switchCon" class="switchCon switchConHs">
+			<i class="switchBg"></i>
+			<i class="switchBall"></i>
+		</div>
+		<i class="helpBtn" helpStr="DMZHelp"></i>
+	</div>
+	<div class="block">
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label id="dmzipid" for="lanIpAddr"><%label.dmzIp%><i></i></label><input id="dmzIpAddr" maxLength="15" type="text" />
+			</li>
+		</ul>
+		<div class="blockFuncA">
+			<span id="dmzSave" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+</div>

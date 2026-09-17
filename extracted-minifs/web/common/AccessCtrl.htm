@@ -1,0 +1,337 @@
+<style type="text/css">
+	div.blockLeft{
+		text-align:left;
+	}
+	p.subMenu{
+		color:#505050;
+		font-weight:bold;
+		font-size:14px;
+		text-align:left;
+	}
+	.acPaddingB{
+		padding:10px 30px 10px 44px;
+	}
+	div.acPaddingC{
+		padding:10px 30px 10px 44px;
+	}
+	div.acPaddingE{
+		padding:10px 10px 10px 44px;
+	}
+	ul.radioList{
+		list-style:none;
+	}
+	ul.radioList li{
+		height:20px;
+		margin-bottom:5px;
+	}
+	ul.radioList label{
+		width:300px;
+		color:#000000;
+		font-size:12px;
+		padding:0 3px; 
+		display:inline-block;
+		vertical-align:middle;
+		cursor:pointer;
+		white-space:pre;
+	}
+	ul.radioList span.hostAddr{
+		padding:0 4px 9px 0px;
+		display:inline-block;
+	}
+	ul.radioList input{
+		vertical-align:middle;
+		border:0px;
+		padding:0px;
+		margin:0px;
+	}
+	div.hostBlock{
+		width:386px;
+	}
+	div.planBlock{
+		width:576px;
+	}
+	i.delBtn{
+		width:14px;
+		height:14px;
+		cursor:pointer;
+		display:inline-block;
+		vertical-align:middle;
+		background:url(../images/advance_me.png) no-repeat -98px -179px;
+	}
+	i.delBtnHost{
+		margin-left:30px;
+	}
+	i.delBtnObj{
+		margin-left:30px;
+	}
+	i.delBtnplan{
+		margin-left:210px;
+	}
+	div.vigHost{
+		width:600px;
+		height:auto;
+		margin-top:0px !important;
+	}
+	div.vigPlan{
+		width:650px;
+		height:auto;
+		*margin-left:30px;
+		margin-top:0px !important;
+	}
+	input.floatRBtn{
+		float:right;
+	}
+	label.rightNote{
+		text-align:right;
+		width:70px;
+	}
+	label.rightNote2{
+		width:86px !important;
+	}
+	div.centerBtnBlock{
+		text-align:center;
+		margin-top:0px;
+	}
+	p.pcTimeDemo{
+		margin-top:15px;
+		text-align:left;
+		_zoom:1;
+	}
+	p.pcTimeDemo span{
+		color:#999999;
+		vertical-align:middle;
+	}
+	p.pcTimeDemo i{
+		height:18px;
+		width:18px;
+		vertical-align:middle;
+		background:#A0D468;
+		display:inline-block;
+	}
+	div.hsVignetteConAC{
+		visibility:visible !important;
+		display:none;
+		padding-top:218px;
+	}
+	span.ipSeperator{
+		width:20px;
+		line-height:1px;
+		border-bottom:1px solid #92D34C;
+		margin:auto 2px;
+		vertical-align:middle;
+		display:inline-block;
+	}
+	input.accessVigBtn{
+		border-radius:5px !important;
+		font-weight:bold;
+		margin:auto 10px;
+		padding:6px 30px;
+		*padding:3px 15px;
+	}
+	#planDate{
+		padding-top:20px;
+	}
+	#newPlan{
+		margin-top:20px;
+	}
+</style>
+<script type="text/javascript">function init(){var EDIT_BOX_HOST=0;var EDIT_BOX_OBJ=1;var EDIT_BOX_PLAN=2;var EDIT_BOX_CALLBACKS=[{refreshOldRecord:hostInfoListRefresh,initSelect:initHostSelect,setNum:setHostNum,onClickAdd:onClickNewHost},{refreshOldRecord:visitObjInfoListRefresh,initSelect:initObjSelect,setNum:setObjNum,onClickAdd:onClickNewObj},{refreshOldRecord:planInfoListRefresh,initSelect:initPlanSelect,setNum:setPlanNum,onClickAdd:onClickNewPlan}];var NEW_ENTRY_LABEL=[label.useNewHost,label.useNewObj,label.useNewPlan];var BLOCK_LABEL=[{name:"host",newBlockId:"newHost",oldBlockId:"oldHost",newAddBlockId:"newHostEntry"},{name:"obj",newBlockId:"newVisitObj",oldBlockId:"oldVisitObj",newAddBlockId:"newObjEntry"},{name:"plan",newBlockId:"newPlan",oldBlockId:"oldPlan",newAddBlockId:"newPlanEntry"}];var hsConOrgHeight;var visiableLineNum=6;var NEW_ADD=-1;var subListItemHeight=25;var dataGridLs;var HOST_MAX_ENTRY_NUM=16;var HOST_MODE_IP=0;var HOST_MODE_MAC=1;var hostModeOptions=[{str:label.ipAddr,value:HOST_MODE_IP},{str:label.mac,value:HOST_MODE_MAC}];var OBJ_MAX_ENTRY_NUM=16;var OBJ_MODE_IP=0;var OBJ_MODE_DOMAIN=1;var objModeOptions=[{str:label.ipAddr,value:OBJ_MODE_IP},{str:label.websiteDomain,value:OBJ_MODE_DOMAIN}];var OBJ_PROTO_ALL=0;var OBJ_PROTO_TCP=1;var OBJ_PROTO_UDP=2;var objProtocolOptions=[{str:"ALL",value:0},{str:"TCP",value:1},{str:"UDP",value:2}];var OBJ_SERVICE_PLSSEL=0;var OBJ_SERVICE_DNS=1;var OBJ_SERVICE_GOPHER=2;var OBJ_SERVICE_HTTP=3;var OBJ_SERVICE_NNTP=4;var OBJ_SERVICE_POP3=5;var OBJ_SERVICE_PPTP=6;var OBJ_SERVICE_SMTP=7;var OBJ_SERVICE_SOCK=8;var OBJ_SERVICE_TELNET=9;var objServiceOptions=[{str:label.pSelect,value:0,port:0,proto:OBJ_PROTO_ALL},{str:"DNS",value:1,port:53,proto:OBJ_PROTO_UDP},{str:"GOPHER",value:2,port:70,proto:OBJ_PROTO_TCP},{str:"HTTP",value:3,port:80,proto:OBJ_PROTO_TCP},{str:"NNTP",value:4,port:119,proto:OBJ_PROTO_TCP},{str:"POP3",value:5,port:110,proto:OBJ_PROTO_TCP},{str:"PPTP",value:6,port:1723,proto:OBJ_PROTO_ALL},{str:"SMTP",value:7,port:25,proto:OBJ_PROTO_TCP},{str:"SOCK",value:8,port:1080,proto:OBJ_PROTO_ALL},{str:"TELNET",value:9,port:23,proto:OBJ_PROTO_TCP}];var PLAN_MAX_ENTRY_NUM=16;function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return false;case EINVARG:showStr=errStr.acIncompleteArg;break;case EINVNET:showStr=errStr.ipAddrNetErr;break;case EINVIP:showStr=errStr.ipAddrErr;break;case ENOTLANSUBNET:showStr=errStr.acIpNotLanSubnet;break;case EINVGROUPIP:showStr=errStr.ipAddrGroupErr;break;case EINVLOOPIP:showStr=errStr.ipAddrLoopErr;break;case EINVIPFMT:showStr=errStr.ipAddrFmtErr;break;case EINVMACZERO:showStr=errStr.macZeroErr;break;case EINVMACNULL:showStr=errStr.macNullErr;break;case EINVMACBROAD:showStr=errStr.macBroadErr;break;case EINVMACGROUP:showStr=errStr.macGroupErr;break;case EINVMACFMT:showStr=errStr.macFmtErr;break;case EHOSTNAMEEMP:showStr=errStr.hostNameEmpty;break;case EOBJNAMEEMP:showStr=errStr.objNameEmpty;break;case EPLANNAMEEMP:showStr=errStr.planNameEmpty;break;case EOBJDOMAINALLEMP:showStr=errStr.objDomainAllEmpErr;break;case EREFERED:showStr=errStr.acRefered;break;case EENTRYEXIST:showStr=errStr.acConflictEntry;break;case EINDOMAIN:showStr=errStr.domainErr;break;case EHOSTALLEMPTY:showStr=errStr.acHostAllEmpty;break;case EOBJALLEMPTY:showStr=errStr.acObjAllEmpty;break;case EINVPORT:showStr=errStr.acObjInvalidPort;break;case EILLEGALPORT:showStr=errStr.acObjIlleagalPort;break;case ERULECONFLICT:showStr=errStr.acruleConflict;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return true}function removeChildNodes(obj){var childNodes;if(obj.nodeType!=1){return}childNodes=obj.childNodes;for(var index=0,len=childNodes.length;index<len;index++){obj.removeChild(childNodes[index])}}function bSwitchState(state){var errNo=ENONE;if(state!=accessCtrl.bhavEnable){accessCtrl.bhavEnable=state;errNo=$.write($.toText(accessCtrl),$.block)}errHandle(errNo)}function accessCtrlDelAll(){var ins="advanced bm rule -clr";var result=errHandle($.instr(ins).errorno);if(false==result){acHsConHeightSet()}return !result}function accessCtrlDelSel(index){var ins="advanced bm rule -delete index:"+index;var result=errHandle($.instr(ins).errorno);if(false==result){acHsConHeightSet()}return !result}function accessCtrlSave(mode,index){var ins="advanced bm rule ";var data=accessCtrl.rList[index];var responseData;if((0==data.rName.length)||(0==data.rHost.length)||(0==data.rTarget.length)||(0==data.rSchedule.length)){errHandle(EINVARG);return false}if("edit"==mode){ins+="-edit index:"+index}else{ins+="-add"}ins+=" name:"+encodeURL(data.rName)+" host:"+data.rHost+" targ:"+data.rTarget+" sche:"+data.rSchedule;if(false==errHandle($.instr(ins).errorno)){responseData=$.result.data;if(0!=responseData.length){responseData=responseData.substring(0,responseData.lastIndexOf("\r\n"));data.rName=responseData}acHsConHeightSet();return true}else{return false}}function acHsConHeightSet(){var hcCo=$("#hcCo");var hcCoPadding=parseInt(hcCo.css("paddingTop"))+parseInt(hcCo.css("paddingBottom"));hsConOrgHeight=hcCo[0].offsetHeight-hcCoPadding}function accessCtrlConFit(vigConIdStr){var hcCo=$("#hcCo");var hcCoPadding=parseInt(hcCo.css("paddingTop"))+parseInt(hcCo.css("paddingBottom"));var hcCoHeight=hcCo[0].offsetHeight-hcCoPadding;var vigCon=$("#"+vigConIdStr+" div.hsVignette");var tmp=218+vigCon[0].offsetHeight+20;hcCo[0].style.height=(tmp>hcCoHeight?tmp:hcCoHeight)+"px";window.scrollTo(0,90)}function accessCtrlHostEdit(){hostVignetteInit();var oldBlock=id(BLOCK_LABEL[EDIT_BOX_HOST].oldBlockId);var newBlock=id(BLOCK_LABEL[EDIT_BOX_HOST].newBlockId);var newEntryDiv=id(BLOCK_LABEL[EDIT_BOX_HOST].newAddBlockId);var hostIndex,td,index,scrollIndex;hostNum=getDataListLen(accessCtrl,"h");setHostNum(hostNum);td=dataGridLs.getActiveTr().cells[2];index=td.getAttribute("listIndex");hostIndex=(index!=null?index:hostNum-1);if(0==hostNum){oldBlock.style.display="none";newEntryDiv.style.display="none";newBlock.style.display="block";hostModeSelectChange(HOST_MODE_IP)}else{oldBlock.style.display="block";newEntryDiv.style.display="block";newBlock.style.display="none"}initHostSelect(hostIndex);id("hostEditPanel").style.display="block";accessCtrlConFit("hostEditPanel");scrollIndex=(hostIndex>0?hostIndex:0);hostListScroll.scrollTo(subListItemHeight*($("#hostInfo li").length-1-scrollIndex))}function accessCtrlObjEdit(){objVignetteInit();var oldBlock=id(BLOCK_LABEL[EDIT_BOX_OBJ].oldBlockId);var newBlock=id(BLOCK_LABEL[EDIT_BOX_OBJ].newBlockId);var newEntryDiv=id(BLOCK_LABEL[EDIT_BOX_OBJ].newAddBlockId);var objIndex,td,index,scrollIndex;objNum=getDataListLen(accessCtrl,"t");setObjNum(objNum);td=dataGridLs.getActiveTr().cells[3];index=td.getAttribute("listIndex");objIndex=(index!=null?index:objNum-1);if(0==objNum){oldBlock.style.display="none";newEntryDiv.style.display="none";newBlock.style.display="block";objModeSelectChange(OBJ_MODE_IP);objServiceSelectChange(OBJ_SERVICE_PLSSEL)}else{oldBlock.style.display="block";newEntryDiv.style.display="block";newBlock.style.display="none"}id("objEditPanel").style.display="block";accessCtrlConFit("objEditPanel");initObjSelect(objIndex);scrollIndex=(objIndex>0?objIndex:0);objListScroll.scrollTo(subListItemHeight*($("#visitObjInfo li").length-1-scrollIndex))}function accessCtrlPlanEdit(){planVignetteInit();var oldBlock=id(BLOCK_LABEL[EDIT_BOX_PLAN].oldBlockId);var newBlock=id(BLOCK_LABEL[EDIT_BOX_PLAN].newBlockId);var newEntryDiv=id(BLOCK_LABEL[EDIT_BOX_PLAN].newAddBlockId);var planIndex,td,index,scrollIndex;planNum=getDataListLen(accessCtrl,"s");setPlanNum(planNum);td=dataGridLs.getActiveTr().cells[4];index=td.getAttribute("listIndex");planIndex=(index!=null?index:planNum-1);if(0==planNum){oldBlock.style.display="none";newEntryDiv.style.display="none";newBlock.style.display="block"}else{oldBlock.style.display="block";newEntryDiv.style.display="block";newBlock.style.display="none"}id("planEditPanel").style.display="block";accessCtrlConFit("planEditPanel");initPlanSelect(planIndex);scrollIndex=(planIndex>0?planIndex:0);planListScroll.scrollTo(subListItemHeight*($("#planInfo li").length-1-scrollIndex))}function hostVignetteInit(){if(undefined==hostListScroll){id("hostEditPanel").style.display="none";hostNum=editBoxInit(EDIT_BOX_HOST,accessCtrl);setRecordNum(EDIT_BOX_HOST,hostNum);if(HOST_MAX_ENTRY_NUM==hostNum){id("newAddBtn_"+EDIT_BOX_HOST).disabled=true;id("newAddBtn_"+EDIT_BOX_HOST).nextSibling.style.color="#999999"}selectInit("hostModeSel",hostModeOptions,HOST_MODE_IP,hostModeSelectChange);hostListScroll=new NiceScroll("hostInfo");hostListScroll.scrollTipOpacity(1);hostListScroll.init();id("hostSave").onclick=onClickHostSave;id("hostUse").onclick=onClickHostUse}}function objVignetteInit(){if(undefined==objListScroll){id("objEditPanel").style.display="none";objNum=editBoxInit(EDIT_BOX_OBJ,accessCtrl);setRecordNum(EDIT_BOX_OBJ,objNum);if(OBJ_MAX_ENTRY_NUM==objNum){id("newAddBtn_"+EDIT_BOX_OBJ).disabled=true;id("newAddBtn_"+EDIT_BOX_OBJ).nextSibling.style.color="#999999"}selectInit("objModeSel",objModeOptions,0,objModeSelectChange);selectInit("objProtocolSel",objProtocolOptions,0);selectInit("objServiceSel",objServiceOptions,0,objServiceSelectChange);objListScroll=new NiceScroll("visitObjInfo");objListScroll.scrollTipOpacity(1);objListScroll.init();id("objSave").onclick=onClickObjSave;id("objUse").onclick=onClickObjUse}}function planVignetteInit(){if(undefined==planListScroll){id("planEditPanel").style.display="none";planNum=editBoxInit(EDIT_BOX_PLAN,accessCtrl);setRecordNum(EDIT_BOX_PLAN,planNum);if(PLAN_MAX_ENTRY_NUM==planNum){id("newAddBtn_"+EDIT_BOX_PLAN).disabled=true;id("newAddBtn_"+EDIT_BOX_PLAN).nextSibling.style.color="#999999"}planListScroll=new NiceScroll("planInfo");planListScroll.scrollTipOpacity(1);planListScroll.init();date=new DateControl("planDate",{dateArray:[0,0,0,0,0,0,0],cellHeight:19,cellWidth:19});id("planSave").onclick=onClickPlanSave;id("planUse").onclick=onClickPlanUse}}function accessCtrlRuleInit(flag){if(1==flag){id("acAllow").checked=true}else{id("acForbid").checked=true}}function accessCtrlListFilter(){accessCtrl.tList[0].tName=label.anyTarget;accessCtrl.sList[0].sName=label.anySchedule}function accessCtrlListInit(){accessCtrlListFilter();dataGridLs=new DataGrid();dataGridLs.init({id:"accessCtrlList",data:accessCtrl.rList,head:[{field:label.ruleDesc,width:100},{field:label.hostUnderCtrl,width:100},{field:label.objToVisit,width:100},{field:label.calendarPlan,width:100}],list:[{name:"rName",maxLength:31},{name:"rHost",type:"popVig",click:accessCtrlHostEdit,popObj:{name:"hName",subList:accessCtrl.hList,indexDes:"listIndex"}},{name:"rTarget",type:"popVig",click:accessCtrlObjEdit,popObj:{name:"tName",subList:accessCtrl.tList,indexDes:"listIndex"}},{name:"rSchedule",type:"popVig",click:accessCtrlPlanEdit,popObj:{name:"sName",subList:accessCtrl.sList,indexDes:"listIndex"}}],toolBar:{id:"accessCtrlLsUl",delAll:accessCtrlDelAll,delSel:accessCtrlDelSel,save:accessCtrlSave}})}function generateNewAddBlock(editId,recordNum,oldBlockId,newBlockId,newAddBlockId){var newBlock=id(newBlockId);newBlock.style.display="none";var oldBlock=id(oldBlockId);var newAddUl=document.createElement("ul");if(0==recordNum){oldBlock.style.display="none";newAddUl.style.display="none";newBlock.style.display="block";hostModeSelectChange(HOST_MODE_IP)}oldBlock.style.display="block";newAddUl.style.display="block";newBlock.style.display="none";newAddUl.id=newAddBlockId;newAddUl.className="radioList";oldBlock.appendChild(newAddUl);var newEntryRadio=createGroupRadio(BLOCK_LABEL[editId].name+"Choose");newEntryRadio.id="newAddBtn_"+editId;newEntryRadio.type="radio";newEntryRadio.onclick=EDIT_BOX_CALLBACKS[editId].onClickAdd;newAddUl.appendChild(newEntryRadio);var newEntryLabel=document.createElement("label");newEntryLabel.innerHTML=NEW_ENTRY_LABEL[editId];newEntryLabel.htmlFor="newAddBtn_"+editId;newAddUl.appendChild(newEntryLabel)}function editBoxInit(editBoxId,data){var index=0;var recordNum=0;recordNum=EDIT_BOX_CALLBACKS[editBoxId].refreshOldRecord(data);generateNewAddBlock(editBoxId,recordNum,BLOCK_LABEL[editBoxId].oldBlockId,BLOCK_LABEL[editBoxId].newBlockId,BLOCK_LABEL[editBoxId].newAddBlockId);return recordNum}function setRecordNum(editBoxId,num){EDIT_BOX_CALLBACKS[editBoxId].setNum(num)}function delSubItemHandle(index,cellIndex,handle){var td=dataGridLs.getActiveTr().cells[cellIndex];var itemIndex=td.getAttribute("listIndex");var input;if(index==itemIndex){td.innerHTML="";input=el("input");input.className="popVigBtn";input.value=btn.config;input.type="button";input.onclick=function(){handle()};td.appendChild(input);td.removeAttribute("listIndex")}}function getDataListLen(data,nameTag){var listName=nameTag+"List";var propName=nameTag+"Name";var list=data[listName];var len=list.length,i=0,tmp;for(i=0;i<len;i++){tmp=list[i][propName];if((undefined==tmp)||(0==tmp.length)){break}}return i}function initSelect(index,editId,radioTag){var selRadio=id(radioTag+index);if(selRadio!=undefined){selRadio.checked=true;selRadio.onclick()}else{EDIT_BOX_CALLBACKS[editId].onClickAdd()}}function onClickHostSave(){var ins;var hostName=id("oldHostDesc").value;var hostMode=(id("hostModeSel").value==HOST_MODE_IP)?1:0;var hostIpStart="0.0.0.0";var hostIpEnd="0.0.0.0";var hostMac="00-00-00-00-00-00";var data;var result=ENONE;if(""==hostName){return errHandle(EHOSTNAMEEMP,"oldHostDesc")}if(NEW_ADD==hostEditIndex){ins="advanced bm host -add "}else{ins="advanced bm host -edit index:"+hostEditIndex+" "}ins+="name:"+encodeURL(hostName)+" ip:"+hostMode+" ";if(1==hostMode){hostIpStart=id("hostIpInputBegin").value;hostIpEnd=id("hostIpInputEnd").value;if((0==hostIpStart.length)&&(0==hostIpEnd.length)){return errHandle(EHOSTALLEMPTY,"hostIpInputBegin")}if((0!=hostIpStart.length)&&(ENONE!=(result=checkIp(hostIpStart)))){return errHandle(result,"hostIpInputBegin")}if((0!=hostIpEnd.length)&&(ENONE!=(result=checkIp(hostIpEnd)))){return errHandle(result,"hostIpInputEnd")}if((0!=hostIpStart.length)&&(subnet!=(transIp(hostIpStart)&transIp(lanData.mask)))){return errHandle(ENOTLANSUBNET,"hostIpInputBegin")}if((0!=hostIpEnd.length)&&(subnet!=(transIp(hostIpEnd)&transIp(lanData.mask)))){return errHandle(ENOTLANSUBNET,"hostIpInputEnd")}}else{hostMac=id("hostMacInput").value;if(hostMac.length==0){errHandle(EINVMACNULL,"hostMacInput");return}if(errHandle(checkMac(hostMac),"hostMacInput")){return true}}ins+="ips:"+hostIpStart+" ipe:"+hostIpEnd+" mac:"+hostMac;if(false==errHandle($.instr(ins).errorno)){data=$.readEx(BEHAVMANG_CONFIG_DATA_ID);hostNum=hostInfoListRefresh(data);setHostNum(hostNum);if(HOST_MAX_ENTRY_NUM==hostNum){id("newAddBtn_"+EDIT_BOX_HOST).disabled=true;id("newAddBtn_"+EDIT_BOX_HOST).nextSibling.style.color="#999999"}id(BLOCK_LABEL[EDIT_BOX_HOST].newAddBlockId).style.display="block";if(NEW_ADD==hostEditIndex){initHostSelect(hostNum-1)}else{initHostSelect(hostEditIndex)}id("hostMacInput").value=hostMac.toUpperCase()}}function onClickHostUse(){var ins,activeTr,td;var hostName=id("oldHostDesc").value;var hostMode=(id("hostModeSel").value==HOST_MODE_IP)?1:0;var hostIpStart="0.0.0.0";var hostIpEnd="0.0.0.0";var hostMac="00-00-00-00-00-00";var editIndex=hostEditIndex;if(""==hostName){return errHandle(EHOSTNAMEEMP,"oldHostDesc")}if(NEW_ADD==hostEditIndex){ins="advanced bm host -add ";hostEditIndex=$("#hostInfo li").length}else{ins="advanced bm host -edit index:"+hostEditIndex+" "}ins+="name:"+encodeURL(hostName)+" ip:"+hostMode+" ";if(1==hostMode){hostIpStart=id("hostIpInputBegin").value;hostIpEnd=id("hostIpInputEnd").value;if((0==hostIpStart.length)&&(0==hostIpEnd.length)){hostEditIndex=editIndex;return errHandle(EHOSTALLEMPTY,"hostIpInputBegin")}if((0!=hostIpStart.length)&&(ENONE!=(result=checkIp(hostIpStart)))){hostEditIndex=editIndex;return errHandle(result,"hostIpInputBegin")}if((0!=hostIpEnd.length)&&(ENONE!=(result=checkIp(hostIpEnd)))){hostEditIndex=editIndex;return errHandle(result,"hostIpInputEnd")}if((0!=hostIpStart.length)&&(subnet!=(transIp(hostIpStart)&transIp(lanData.mask)))){hostEditIndex=editIndex;return errHandle(ENOTLANSUBNET,"hostIpInputBegin")}if((0!=hostIpEnd.length)&&(subnet!=(transIp(hostIpEnd)&transIp(lanData.mask)))){hostEditIndex=editIndex;return errHandle(ENOTLANSUBNET,"hostIpInputEnd")}}else{hostMac=id("hostMacInput").value;if(hostMac.length==0){errHandle(EINVMACNULL,"hostMacInput");hostEditIndex=editIndex;return}if(errHandle(checkMac(hostMac),"hostMacInput")){hostEditIndex=editIndex;return true}}ins+="ips:"+hostIpStart+" ipe:"+hostIpEnd+" mac:"+hostMac.toUpperCase();if(false==errHandle($.instr(ins).errorno)){id("hostEditPanel").style.display="none";closeAlert();$.read(BEHAVMANG_CONFIG_DATA_ID);hostNum=hostInfoListRefresh(accessCtrl);setHostNum(hostNum);if(HOST_MAX_ENTRY_NUM==hostNum){id("newAddBtn_"+EDIT_BOX_HOST).disabled=true;id("newAddBtn_"+EDIT_BOX_HOST).nextSibling.style.color="#999999"}activeTr=dataGridLs.getActiveTr();td=activeTr.cells[2];addListToTd(td,hostEditIndex,accessCtrl.hList[hostEditIndex].hName,accessCtrlHostEdit)}else{hostEditIndex=editIndex}}function addListToTd(td,index,listName,clickHandle){var span=el("span");var showSize,cellWidth;var fontSize=parseInt($(td).css("font-size"));removeChildNodes(td);span.className="dataGridPopVigDes";span.title=listName;cellWidth=td.offsetWidth;showSize=parseInt(cellWidth/(fontSize*0.65));span.innerHTML=htmlEscape(getStrInMax(listName,showSize));span.onclick=function(){clickHandle()};td.setAttribute("listIndex",index);td.appendChild(span)}function onClickNewHost(){hostEditIndex=NEW_ADD;id("oldHostDesc").value="";id("hostIpInputBegin").value="";id("hostIpInputEnd").value="";id("hostMacInput").value="";id("newHost").style.display="block";id("hostModeSel").changeSel(HOST_MODE_IP);hostModeSelectChange(HOST_MODE_IP);accessCtrlConFit("hostEditPanel")}function hostModeSelectChange(value){var ipInput=id("hostIpInputDiv");var macInput=id("hostMacInputDiv");if(""==value){value=0}switch(value){case HOST_MODE_IP:ipInput.style.display="block";macInput.style.display="none";break;case HOST_MODE_MAC:ipInput.style.display="none";macInput.style.display="block";break;default:}accessCtrlConFit("hostEditPanel")}function hostInfoListRefresh(data){var i=0,recordNum=0;var hostData=data.hList;var oldHostList=id("hostInfo");var ul,li,hostRadio,descLabel,imgDel;accessCtrlListFilter();i=getDataListLen(data,"h");recordNum=i;oldHostList.innerHTML="";ul=document.createElement("ul");ul.className="radioList";for(i--;i>=0;i--){li=document.createElement("li");hostRadio=createGroupRadio("hostChoose");hostRadio.id="oldHostList"+i;hostRadio.type="radio";hostRadio.onclick=(function(index){return function(){var item=accessCtrl.hList[index];var isIp=(item.hIsIp==1);var mode=(isIp?HOST_MODE_IP:HOST_MODE_MAC);onClickNewHost();id("oldHostDesc").value=item.hName;id("hostModeSel").changeSel(mode);if(isIp){id("hostIpInputBegin").value=item.hIpStart;id("hostIpInputEnd").value=item.hIpEnd;id("hostMacInput").value=""}else{id("hostIpInputBegin").value="";id("hostIpInputEnd").value="";id("hostMacInput").value=item.hMac.toUpperCase()}hostEditIndex=index}})(i);li.appendChild(hostRadio);descLabel=document.createElement("label");descLabel.innerHTML=htmlEscape(hostData[i].hName);descLabel.htmlFor="oldHostList"+i;li.appendChild(descLabel);imgDel=document.createElement("i");imgDel.className="delBtn delBtnHost";imgDel.onmouseover=function(){this.style.background="url(../images/advance_me.png) no-repeat -117px -179px"};imgDel.onmouseout=function(){this.style.background="url(../images/advance_me.png) no-repeat -98px -179px"};imgDel.onclick=(function(index){return function(){var itemIndex,hostDelResult;var input,td;hostDelResult=errHandle($.instr("advanced bm host -delete index:"+index).errorno);if(hostDelResult==false){$.read(BEHAVMANG_CONFIG_DATA_ID);hostNum=hostInfoListRefresh(accessCtrl);setHostNum(hostNum);if(HOST_MAX_ENTRY_NUM>hostNum){id("newAddBtn_"+EDIT_BOX_HOST).disabled=false;id("newAddBtn_"+EDIT_BOX_HOST).nextSibling.style.color="#000000"}initHostSelect(hostNum-1);if(0>=hostNum){id("oldHost").style.display="none";hostEditIndex=NEW_ADD;id("oldHostDesc").value="";id("hostIpInputBegin").value="";id("hostIpInputEnd").value="";id("hostMacInput").value="";id("hostModeSel").changeSel(HOST_MODE_IP);hostModeSelectChange(HOST_MODE_IP)}delSubItemHandle(index,2,accessCtrlHostEdit);accessCtrlConFit("hostEditPanel")}}})(i);li.appendChild(imgDel);ul.appendChild(li)}oldHostList.appendChild(ul);return recordNum}function initHostSelect(index){initSelect(index,EDIT_BOX_HOST,"oldHostList")}function setHostNum(num){var hostInfo=id("hostInfo");var tmp=num;var oldHostList=id("oldHost");if(num<=0){hostInfo.style.height="0px";oldHostList.style.display="none";return}oldHostList.style.display="block";if(num>=(visiableLineNum+1)){tmp=visiableLineNum}hostInfo.style.height=(tmp*subListItemHeight+"px")}function objModeSelectChange(value){var ipInput=id("objIpInputDiv");var ipArgs=id("objIpModeArgsDiv");var domainsInput=id("objDomainsInputDiv");if(""==value){value=0}switch(value){case OBJ_MODE_IP:ipInput.style.display="block";ipArgs.style.display="block";domainsInput.style.display="none";break;case OBJ_MODE_DOMAIN:ipInput.style.display="none";ipArgs.style.display="none";domainsInput.style.display="block";break;default:}accessCtrlConFit("objEditPanel")}function objServiceSelectChange(value){var portInputBegin=id("objPortInputBegin");var portInputEnd=id("objPortInputEnd");var protocolSelect=id("objProtocolSel");if(OBJ_SERVICE_PLSSEL==value){return}portInputBegin.value=objServiceOptions[value].port;portInputEnd.value="";protocolSelect.changeSel(objServiceOptions[value].proto)}function visitObjInfoListRefresh(data){var ul,li,objRadio,descLabel,imgDel;var objData=data.tList;var oldObjList=id("visitObjInfo");var recordNum=0,i=0;accessCtrlListFilter();i=getDataListLen(data,"t");recordNum=i;oldObjList.innerHTML="";ul=document.createElement("ul");ul.className="radioList";for(i--;i>=0;i--){li=document.createElement("li");objRadio=createGroupRadio("objChoose");objRadio.id="oldObjList"+i;objRadio.type="radio";objRadio.onclick=(function(index){return function(){var item=accessCtrl.tList[index];var isIp=(item.tType==1);var mode=(isIp?OBJ_MODE_IP:OBJ_MODE_DOMAIN);onClickNewObj();if(0==index){id("oldObjDesc").value=item.tName;id("newVisitObj").style.display="none";id("objSave").style.display="none";objEditIndex=index;return}id("oldObjDesc").value=item.tName;id("objModeSel").changeSel(mode);if(isIp){id("objIpInputBegin").value=("0.0.0.0"==item.tIpStart)?"":item.tIpStart;id("objIpInputEnd").value=("0.0.0.0"==item.tIpEnd)?"":item.tIpEnd;for(var j=0;j<4;j++){id("objDomainsInput"+(j+1)).value=""}id("objPortInputBegin").value=(0==item.tPortStart)?"":item.tPortStart;id("objPortInputEnd").value=(0==item.tPortEnd)?"":item.tPortEnd;id("objProtocolSel").changeSel(item.tProto);objServiceSelectChange(OBJ_SERVICE_PLSSEL)}else{id("objIpInputBegin").value="";id("objIpInputEnd").value="";id("objDomainsInput1").value=item.tUrl0;id("objDomainsInput2").value=item.tUrl1;id("objDomainsInput3").value=item.tUrl2;id("objDomainsInput4").value=item.tUrl3}objEditIndex=index}})(i);li.appendChild(objRadio);descLabel=document.createElement("label");descLabel.innerHTML=htmlEscape(objData[i].tName);descLabel.htmlFor="oldObjList"+i;li.appendChild(descLabel);if(0!=i){imgDel=document.createElement("i");imgDel.className="delBtn delBtnObj";imgDel.onmouseover=function(){this.style.background="url(../images/advance_me.png) no-repeat -117px -179px"};imgDel.onmouseout=function(){this.style.background="url(../images/advance_me.png) no-repeat -98px -179px"};imgDel.onclick=(function(index){return function(){var i=0,objDelResult;objDelResult=errHandle($.instr("advanced bm target -delete index:"+index).errorno);if(false==objDelResult){$.read(BEHAVMANG_CONFIG_DATA_ID);objNum=visitObjInfoListRefresh(accessCtrl);setRecordNum(EDIT_BOX_OBJ,objNum);if(OBJ_MAX_ENTRY_NUM>objNum){id("newAddBtn_"+EDIT_BOX_OBJ).disabled=false;id("newAddBtn_"+EDIT_BOX_OBJ).nextSibling.style.color="#000000"}initObjSelect(objNum-1);if(0>=objNum){id("oldVisitObj").style.display="none";objEditIndex=NEW_ADD;id("oldObjDesc").value="";id("objIpInputBegin").value="";id("objIpInputEnd").value="";for(i=0;i<4;i++){id("objDomainsInput"+(i+1)).value=""}id("objPortInputBegin").value="";id("objPortInputEnd").value="";id("objModeSel").changeSel(0);objModeSelectChange(0);id("objProtocolSel").changeSel(0);id("objServiceSel").changeSel(0);objServiceSelectChange(0)}delSubItemHandle(index,3,accessCtrlObjEdit);accessCtrlConFit("objEditPanel")}}})(i);li.appendChild(imgDel)}ul.appendChild(li)}oldObjList.appendChild(ul);return recordNum}function onClickNewObj(){var i=0;objEditIndex=NEW_ADD;id("oldObjDesc").value="";id("objIpInputBegin").value="";id("objIpInputEnd").value="";for(i=0;i<4;i++){id("objDomainsInput"+(i+1)).value=""}id("objPortInputBegin").value="";id("objPortInputEnd").value="";id("newVisitObj").style.display="block";id("objSave").style.display="inline-block";id("objModeSel").changeSel(0);objModeSelectChange(0);id("objProtocolSel").changeSel(0);id("objServiceSel").changeSel(0);objServiceSelectChange(0);accessCtrlConFit("objEditPanel")}function onClickObjSave(){var ins,data,value,checkRelt=ENONE;var objName=id("oldObjDesc").value;var objMode=(id("objModeSel").value==OBJ_MODE_IP)?1:0;var objIpStart="0.0.0.0";var objIpEnd="0.0.0.0";var tempDomainStr="";var objPortStart=0;var objPortEnd=0;var objProto=0;var isDomainAllNull=true;var result=ENONE;if(""==objName){return errHandle(EOBJNAMEEMP,"oldObjDesc")}if(NEW_ADD==objEditIndex){ins="advanced bm target -add "}else{ins="advanced bm target -edit index:"+objEditIndex+" "}ins+="name:"+encodeURL(objName)+" ip:"+objMode+" ";if(1==objMode){objIpStart=id("objIpInputBegin").value;objIpEnd=id("objIpInputEnd").value;objPortStart=id("objPortInputBegin").value;objPortEnd=id("objPortInputEnd").value;objProto=id("objProtocolSel").value;if((0==objIpStart.length)&&(0==objIpEnd.length)&&(0==objPortStart.length)&&(0==objPortEnd.length)){return errHandle(EOBJALLEMPTY,"objIpInputBegin")}if((0!=objIpStart.length)&&(ENONE!=(result=checkIp(objIpStart)))){return errHandle(result,"objIpInputBegin")}if((0!=objIpEnd.length)&&(ENONE!=(result=checkIp(objIpEnd)))){return errHandle(result,"objIpInputEnd")}if(0!=objPortStart.length){if(false==checkNum(objPortStart)){return errHandle(EILLEGALPORT,"objPortInputBegin")}if(!checkNumRange(objPortStart,65535,1)){return errHandle(EINVPORT,"objPortInputBegin")}}if(0!=objPortEnd.length){if(false==checkNum(objPortEnd)){return errHandle(EILLEGALPORT,"objPortInputEnd")}if(!checkNumRange(objPortEnd,65535,1)){return errHandle(EINVPORT,"objPortInputEnd")}}}else{for(var i=0;i<4;i++){value=id("objDomainsInput"+(i+1)).value;if(value.length!=0){checkRelt=checkDomain(value);if(ENONE!=checkRelt){return errHandle(checkRelt,"objDomainsInput"+(i+1))}tempDomainStr+=(value+"/");isDomainAllNull=false}}if(true==isDomainAllNull){return errHandle(EOBJDOMAINALLEMP,"objDomainsInput1")}}ins+="ips:"+objIpStart+" ipe:"+objIpEnd+" ports:"+objPortStart+" porte:"+objPortEnd+" ptc:"+objProto+" url:"+tempDomainStr.substring(0,tempDomainStr.length-1);if(false==errHandle($.instr(ins).errorno)){data=$.readEx(BEHAVMANG_CONFIG_DATA_ID);objNum=visitObjInfoListRefresh(data);setObjNum(objNum);if(OBJ_MAX_ENTRY_NUM==objNum){id("newAddBtn_"+EDIT_BOX_OBJ).disabled=true;id("newAddBtn_"+EDIT_BOX_OBJ).nextSibling.style.color="#999999"}id(BLOCK_LABEL[EDIT_BOX_OBJ].newAddBlockId).style.display="block";if(NEW_ADD==objEditIndex){initObjSelect(objNum-1)}else{initObjSelect(objEditIndex)}}}function onClickObjUse(){var ins,checkRelt=ENONE;var objName=id("oldObjDesc").value;var objMode=(id("objModeSel").value==OBJ_MODE_IP)?1:0;var objIpStart="0.0.0.0";var objIpEnd="0.0.0.0";var objDomain1="";var objDomain2="";var objDomain3="";var objDomain4="";var domainArray=[];var tempDomainStr="";var isDomainAllNull=true;var objPortStart=0;var objPortEnd=0;var objProto=0;var activeTr,td,value;var editIndex=objEditIndex;if(""==objName){return errHandle(EOBJNAMEEMP,"oldObjDesc")}if(NEW_ADD==objEditIndex){ins="advanced bm target -add ";objEditIndex=$("#visitObjInfo li").length}else{if(0!=objEditIndex){ins="advanced bm target -edit index:"+objEditIndex+" "}else{id("objEditPanel").style.display="none";closeAlert();activeTr=dataGridLs.getActiveTr();td=activeTr.cells[3];addListToTd(td,objEditIndex,label.anyTarget,accessCtrlObjEdit);return true}}ins+="name:"+encodeURL(objName)+" ip:"+objMode+" ";if(1==objMode){objIpStart=id("objIpInputBegin").value;objIpEnd=id("objIpInputEnd").value;objPortStart=id("objPortInputBegin").value;objPortEnd=id("objPortInputEnd").value;objProto=id("objProtocolSel").value;if((0==objIpStart.length)&&(0==objIpEnd.length)&&(0==objPortStart.length)&&(0==objPortEnd.length)){objEditIndex=editIndex;return errHandle(EOBJALLEMPTY,"objIpInputBegin")}if((0!=objIpStart.length)&&(ENONE!=(result=checkIp(objIpStart)))){objEditIndex=editIndex;return errHandle(result,"objIpInputBegin")}if((0!=objIpEnd.length)&&(ENONE!=(result=checkIp(objIpEnd)))){objEditIndex=editIndex;return errHandle(result,"objIpInputEnd")}if(0!=objPortStart.length){if(false==checkNum(objPortStart)){objEditIndex=editIndex;return errHandle(EILLEGALPORT,"objPortInputBegin")}if(!checkNumRange(objPortStart,65535,1)){objEditIndex=editIndex;return errHandle(EINVPORT,"objPortInputBegin")}}if(0!=objPortEnd.length){if(false==checkNum(objPortEnd)){objEditIndex=editIndex;return errHandle(EILLEGALPORT,"objPortInputEnd")}if(!checkNumRange(objPortEnd,65535,1)){objEditIndex=editIndex;return errHandle(EINVPORT,"objPortInputEnd")}}}else{for(var i=0;i<4;i++){value=id("objDomainsInput"+(i+1)).value;domainArray[i]=value;if(value.length!=0){checkRelt=checkDomain(value);if(ENONE!=checkRelt){return errHandle(checkRelt,"objDomainsInput"+(i+1))}tempDomainStr+=(value+"/");isDomainAllNull=false}}if(true==isDomainAllNull){objEditIndex=editIndex;return errHandle(EOBJDOMAINALLEMP,"objDomainsInput1")}}ins+="ips:"+objIpStart+" ipe:"+objIpEnd+" ports:"+objPortStart+" porte:"+objPortEnd+" ptc:"+objProto+" url:"+tempDomainStr.substring(0,tempDomainStr.length-1);if(false==errHandle($.instr(ins).errorno)){id("objEditPanel").style.display="none";closeAlert();$.read(BEHAVMANG_CONFIG_DATA_ID);objNum=visitObjInfoListRefresh(accessCtrl);setObjNum(objNum);if(OBJ_MAX_ENTRY_NUM==objNum){id("newAddBtn_"+EDIT_BOX_OBJ).disabled=true;id("newAddBtn_"+EDIT_BOX_OBJ).nextSibling.style.color="#999999"}activeTr=dataGridLs.getActiveTr();td=activeTr.cells[3];addListToTd(td,objEditIndex,accessCtrl.tList[objEditIndex].tName,accessCtrlObjEdit)}else{objEditIndex=editIndex}}function initObjSelect(index){initSelect(index,EDIT_BOX_OBJ,"oldObjList")}function setObjNum(num){var objInfo=id("visitObjInfo");var tmp=num;var oldObjList=id("oldVisitObj");if(num<=0){objInfo.style.height="0px";oldObjList.style.display="none";return}oldObjList.style.display="block";if(num>=(visiableLineNum+1)){tmp=visiableLineNum}objInfo.style.height=(tmp*subListItemHeight+"px");return}function planInfoListRefresh(data){var ul,li,objRadio,descLabel,imgDel;var planData=data.sList;var oldPlanList=id("planInfo");var recordNum=0,i=0;accessCtrlListFilter();i=getDataListLen(data,"s");recordNum=i;oldPlanList.innerHTML="";ul=document.createElement("ul");ul.className="radioList";for(i--;i>=0;i--){li=document.createElement("li");planRadio=createGroupRadio("planChoose");planRadio.id="oldPlanList"+i;planRadio.type="radio";planRadio.onclick=(function(index){return function(){var dataList,item=accessCtrl.sList[index];var plan=[];onClickNewPlan();if(0==index){id("oldPlanDesc").value=item.sName;id("newPlan").style.display="none";id("planSave").style.display="none";planEditIndex=index;return}id("oldPlanDesc").value=item.sName;plan[0]=item.sMon;plan[1]=item.sTue;plan[2]=item.sWed;plan[3]=item.sThu;plan[4]=item.sFri;plan[5]=item.sSat;plan[6]=item.sSun;date.reset(plan);planEditIndex=index}})(i);li.appendChild(planRadio);descLabel=document.createElement("label");descLabel.innerHTML=htmlEscape(planData[i].sName);descLabel.htmlFor="oldPlanList"+i;li.appendChild(descLabel);if(0!=i){imgDel=document.createElement("i");imgDel.className="delBtn delBtnplan";imgDel.onmouseover=function(){this.style.background="url(../images/advance_me.png) no-repeat -117px -179px"};imgDel.onmouseout=function(){this.style.background="url(../images/advance_me.png) no-repeat -98px -179px"};imgDel.onclick=(function(index){return function(){var planDelResult;planDelResult=errHandle($.instr("advanced bm schedule -delete index:"+index).errorno);if(false==planDelResult){$.read(BEHAVMANG_CONFIG_DATA_ID);planNum=planInfoListRefresh(accessCtrl);setRecordNum(EDIT_BOX_PLAN,planNum);if(PLAN_MAX_ENTRY_NUM>planNum){id("newAddBtn_"+EDIT_BOX_PLAN).disabled=false;id("newAddBtn_"+EDIT_BOX_PLAN).nextSibling.style.color="#000000"}initPlanSelect(planNum-1);if(0>=planNum){id("oldPlan").style.display="none";planEditIndex=NEW_ADD;id("oldPlanDesc").value="";date.reset([0,0,0,0,0,0,0]);id(BLOCK_LABEL[EDIT_BOX_PLAN].newAddBlockId).style.display="block"}delSubItemHandle(index,4,accessCtrlPlanEdit);accessCtrlConFit("planEditPanel")}}})(i);li.appendChild(imgDel)}ul.appendChild(li)}oldPlanList.appendChild(ul);return recordNum}function initPlanSelect(index){initSelect(index,EDIT_BOX_PLAN,"oldPlanList")}function setPlanNum(num){var planInfo=id("planInfo");var tmp=num;var oldPlanList=id("oldPlan");if(num<=0){planInfo.style.height="0px";oldPlanList.style.display="none";return}oldPlanList.style.display="block";if(num>=(visiableLineNum+1)){tmp=visiableLineNum}planInfo.style.height=(tmp*subListItemHeight+"px");return}function onClickPlanSave(){var ins,data,i=0;var planName=id("oldPlanDesc").value;var dateArray=date.getSelDate();if(""==planName){return errHandle(EPLANNAMEEMP,"oldPlanDesc")}if(NEW_ADD==planEditIndex){ins="advanced bm schedule -add "}else{ins="advanced bm schedule -edit index:"+planEditIndex+" "}ins+=("name:"+encodeURL(planName)+" smask:"+dateArray.join("-"));if(false==errHandle($.instr(ins).errorno)){data=$.readEx(BEHAVMANG_CONFIG_DATA_ID);planNum=planInfoListRefresh(data);setPlanNum(planNum);if(PLAN_MAX_ENTRY_NUM==planNum){id("newAddBtn_"+EDIT_BOX_PLAN).disabled=true;id("newAddBtn_"+EDIT_BOX_PLAN).nextSibling.style.color="#999999"}id(BLOCK_LABEL[EDIT_BOX_PLAN].newAddBlockId).style.display="block";if(NEW_ADD==planEditIndex){initPlanSelect(planNum-1)}else{initPlanSelect(planEditIndex)}}}function onClickPlanUse(){var ins,i=0,activeTr,td;var planName=id("oldPlanDesc").value;var dateArray=date.getSelDate();var editIndex=planEditIndex;if(""==planName){return errHandle(EPLANNAMEEMP,"oldPlanDesc")}if(NEW_ADD==planEditIndex){ins="advanced bm schedule -add ";planEditIndex=$("#planInfo li").length}else{if(0!=planEditIndex){ins="advanced bm schedule -edit index:"+planEditIndex+" "}else{id("planEditPanel").style.display="none";closeAlert();activeTr=dataGridLs.getActiveTr();td=activeTr.cells[4];addListToTd(td,planEditIndex,label.anySchedule,accessCtrlPlanEdit);return true}}ins+=("name:"+encodeURL(planName)+" smask:"+dateArray.join("-"));if(false==errHandle($.instr(ins).errorno)){id("planEditPanel").style.display="none";closeAlert();$.read(BEHAVMANG_CONFIG_DATA_ID);planNum=planInfoListRefresh(accessCtrl);setPlanNum(planNum);if(PLAN_MAX_ENTRY_NUM==planNum){id("newAddBtn_"+EDIT_BOX_PLAN).disabled=true;id("newAddBtn_"+EDIT_BOX_PLAN).nextSibling.style.color="#999999"}activeTr=dataGridLs.getActiveTr();td=activeTr.cells[4];addListToTd(td,planEditIndex,accessCtrl.sList[planEditIndex].sName,accessCtrlPlanEdit)}else{planEditIndex=editIndex}}function onClickNewPlan(){var i=0;planEditIndex=NEW_ADD;id("oldPlanDesc").value="";id("newPlan").style.display="block";id("planSave").style.display="inline-block";date.reset([0,0,0,0,0,0,0]);id(BLOCK_LABEL[EDIT_BOX_PLAN].newAddBlockId).style.display="block";accessCtrlConFit("planEditPanel")}var hostNum,objNum,planNum;var hostEditIndex=NEW_ADD;var objEditIndex=NEW_ADD;var planEditIndex=NEW_ADD;var hostListScroll,objListScroll,planListScroll;var accessCtrl=$.readEx(BEHAVMANG_CONFIG_DATA_ID);var date;var lanData=$.readEx(LAN_DATA_ID);var subnet=transIp(lanData.ip)&transIp(lanData.mask);new Switch("switchCon",accessCtrl.bhavEnable,bSwitchState);accessCtrlRuleInit(accessCtrl.bhavRule);id("acAllow").onclick=function(){accessCtrl.bhavRule=1;errHandle($.write($.toText(accessCtrl),$.block))};id("acForbid").onclick=function(){accessCtrl.bhavRule=0;errHandle($.write($.toText(accessCtrl),$.block))};accessCtrlListInit();acHsConHeightSet();$("i.hsVigClose").bind("click",function(){var hcCo=$("#hcCo");this.parentNode.parentNode.parentNode.style.display="none";hcCo.css("height",hsConOrgHeight);closeAlert()})}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleB">
+		<label class="title"><%menuStr.actionControl%></label>
+			<div id="switchCon" class="switchCon switchConHs">
+				<i class="switchBg"></i>
+				<i class="switchBall"></i>
+			</div>
+		<i class="helpBtn" helpStr="accessCtrlHelp"></i>
+	</div>
+	<p class="subMenu acPaddingA"><%label.fillRules%></p>
+	<ul class="radioList acPaddingD">
+		<li><input id="acAllow" type="radio" name="accessCtrlEnable" /><label for="acAllow"><%label.allowCtrlInList%></label></li>
+		<li><input id="acForbid" type="radio" name="accessCtrlEnable" /><label for="acForbid"><%label.forbidCtrlInList%></label></li>
+	</ul>
+	<div class="blockTable">
+		<table id="accessCtrlList" class="dataGrid"></table>
+		<div id="accessCtrlLsUl" class="blockFuncA blockFuncTable">
+			<span gridType="add" class="add"><i class="subBtnLg"></i><label><%btn.add%></label></span>
+			<span gridType="delAll" class="delAll"><i class="subBtnLg"></i><label><%btn.deleteAll%></label></span>
+			<span gridType="delSel" class="delSel"><i class="subBtnLg"></i><label><%btn.deleteSel%></label></span>
+		</div>
+	</div>
+
+	<div class="hsVignetteCon hsVignetteConAC" id="hostEditPanel">
+		<div class="hsVignetteConBg"></div>
+		<div class="hsVignette vigHost">
+			<p class="hsVigTtop"><%label.hostUnderCtrl%><i class="hsVigClose"></i></p>
+			<p class="hsVigTtopBom"></p>
+			<div id="oldHost" class="acPaddingB">
+				<div id="hostInfo" class="hostBlock"></div>
+			</div>
+			<div id="newHost" class="acPaddingC">
+				<ul class="hsInputUl hsInputUlC">
+					<li class="hsInputLi hsInputLiE">
+						<label for="oldHostDesc"><%label.hostDesc%><i></i></label><input id="oldHostDesc" maxLength="31" type="text" />
+					</li>
+				</ul>
+				<ul class="hsInputUl hsInputUlC">
+					<li class="hsInputLi hsInputLiE">
+						<label class="inputLiLbl"><%label.hostMode%><i></i></label>
+						<span class="highSetSelect">
+							<span id="hostModeSel" class="select">
+								<span class="value"></span><i class="hsArrowM"></i>
+							</span>
+						</span>
+					</li>
+				</ul>
+				<div id="hostIpInputDiv">
+					<ul class="hsInputUl hsInputUlC">
+						<li class="hsInputLi hsInputLiE hsInputLiSegment">
+							<span class="hsInputSegment">
+								<label for="hostIpInputBegin"><%label.ipAddrRange%><i></i></label>
+							</span>
+							<input id="hostIpInputBegin" maxLength="15" type="text" />
+							<span class="ipSeperator"></span>
+							<input id="hostIpInputEnd" maxLength="15" type="text" />
+						</li>
+					</ul>
+				</div>
+				<div id="hostMacInputDiv">
+					<ul class="hsInputUl hsInputUlC">
+						<li class="hsInputLi hsInputLiE">
+							<label for="hostMacInput"><%label.mac%><i></i></label><input id="hostMacInput" maxLength="17" type="text" />
+						</li>
+					</ul>
+				</div>
+			</div>
+			<div class="block centerBtnBlock acPaddingC">
+				<input id="hostSave" type="button" value="<%btn.save%>" class="subBtnRect accessVigBtn" />
+				<input id="hostUse" type="button" value="<%btn.use%>" class="subBtnRect accessVigBtn" />
+			</div>
+		</div>
+	</div>
+
+	<div class="hsVignetteCon hsVignetteConAC" id="objEditPanel">
+		<div class="hsVignetteConBg"></div>
+		<div class="hsVignette vigHost">
+			<p class="hsVigTtop"><%label.objToVisit%><i class="hsVigClose"></i></p>
+			<p class="hsVigTtopBom"></p>
+			<div id="oldVisitObj" class="acPaddingB">
+				<div id="visitObjInfo" class="hostBlock"></div>
+			</div>
+			<div id="newVisitObj" class="acPaddingC">
+				<ul class="hsInputUl hsInputUlC">
+					<li class="hsInputLi hsInputLiE">
+						<label for="oldObjDesc"><%label.objDesc%><i></i></label><input id="oldObjDesc" maxLength="31" type="text" />
+					</li>
+				</ul>
+				<ul class="hsInputUl hsInputUlC">
+					<li class="hsInputLi hsInputLiE">
+						<label class="inputLiLbl"><%label.objMode%><i></i></label>
+						<span class="highSetSelect">
+							<span id="objModeSel" class="select">
+								<span class="value"></span><i class="hsArrowM"></i>
+							</span>
+						</span>
+					</li>
+				</ul>
+				<div id="objIpInputDiv">
+					<ul class="hsInputUl hsInputUlC">
+						<li class="hsInputLi hsInputLiE hsInputLiSegment">
+							<span class="hsInputSegment">
+								<label for="objIpInputBegin"><%label.ipAddrRange%><i></i></label>
+							</span>
+							<input id="objIpInputBegin" maxLength="15" type="text" />
+							<span class="ipSeperator"></span>
+							<input id="objIpInputEnd" maxLength="15" type="text" />
+						</li>
+					</ul>
+				</div>
+				<div id="objDomainsInputDiv">
+					<ul class="hsInputUl hsInputUlC">
+						<li class="hsInputLi hsInputLiE">
+							<label for="objDomainsInput1"><%label.websiteDomain%>1<i></i></label><input id="objDomainsInput1" maxLength="31" type="text" />
+						</li>
+					</ul>
+					<ul class="hsInputUl hsInputUlC">
+						<li class="hsInputLi hsInputLiE">
+							<label for="objDomainsInput2"><%label.websiteDomain%>2<i></i></label><input id="objDomainsInput2" maxLength="31" type="text" />
+						</li>
+					</ul>
+					<ul class="hsInputUl hsInputUlC">
+						<li class="hsInputLi hsInputLiE">
+							<label for="objDomainsInput3"><%label.websiteDomain%>3<i></i></label><input id="objDomainsInput3" maxLength="31" type="text" />
+						</li>
+					</ul>
+					<ul class="hsInputUl hsInputUlC">
+						<li class="hsInputLi hsInputLiE">
+							<label for="objDomainsInput4"><%label.websiteDomain%>4<i></i></label><input id="objDomainsInput4" maxLength="31" type="text" />
+						</li>
+					</ul>
+				</div>
+				<div id="objIpModeArgsDiv">
+					<ul class="hsInputUl hsInputUlC">
+						<li class="hsInputLi hsInputLiE">
+							<label class="inputLiLbl"><%label.commonService%><i></i></label>
+							<span class="highSetSelect">
+								<span id="objServiceSel" class="select">
+									<span class="value"></span><i class="hsArrowM"></i>
+								</span>
+							</span>
+						</li>
+					</ul>
+					<ul class="hsInputUl hsInputUlC">
+						<li class="hsInputLi hsInputLiE hsInputLiSegment">
+							<span class="hsInputSegment">
+								<label for="objPortInputBegin"><%label.objPort%><i></i></label>
+							</span>
+							<input id="objPortInputBegin" maxLength="5" type="text" />
+							<span class="ipSeperator"></span>
+							<input id="objPortInputEnd" maxLength="5" type="text" />
+						</li>
+					</ul>
+					<ul class="hsInputUl hsInputUlC">
+						<li class="hsInputLi hsInputLiE">
+							<label class="inputLiLbl"><%label.protocol%><i></i></label>
+							<span class="highSetSelect">
+								<span id="objProtocolSel" class="select">
+									<span class="value"></span><i class="hsArrowM"></i>
+								</span>
+							</span>
+						</li>
+					</ul>
+				</div>
+			</div>
+			<div class="block centerBtnBlock acPaddingC">
+				<input id="objSave" type="button" value="<%btn.save%>" class="subBtnRect accessVigBtn" />
+				<input id="objUse" type="button" value="<%btn.use%>" class="subBtnRect accessVigBtn" />
+			</div>
+		</div>
+	</div>
+
+	<div class="hsVignetteCon hsVignetteConAC" id="planEditPanel">
+		<div class="hsVignetteConBg"></div>
+			<div class="hsVignette vigPlan">
+				<p class="hsVigTtop"><%label.calendarPlan%><i class="hsVigClose"></i></p>
+				<p class="hsVigTtopBom"></p>
+				<div id="oldPlan" class="acPaddingB">
+					<div id="planInfo" class="planBlock"></div>
+				</div>
+				<div id="newPlan" class="acPaddingE">
+					<ul class="hsInputUl hsInputUlC">
+						<li class="hsInputLi hsInputLiE">
+							<label for="oldPlanDesc"><%label.planDesc%><i></i></label><input id="oldPlanDesc" maxLength="31" type="text" />
+						</li>
+					</ul>
+					<div id="planDate"></div>
+					<p class="pcTimeDemo">
+						<span><%label.calendarTime%><%label.colon%></span><i></i>
+					</p>
+				</div>
+				<div class="block centerBtnBlock acPaddingE">
+					<input id="planSave" type="button" value="<%btn.save%>" class="subBtnRect accessVigBtn" />
+					<input id="planUse" type="button" value="<%btn.use%>" class="subBtnRect accessVigBtn" />
+				</div>
+			</div>
+		</div>
+	</div>
+</div>

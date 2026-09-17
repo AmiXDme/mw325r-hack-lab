@@ -1,0 +1,68 @@
+<style type="text/css">
+	div.bWlSwitchCon{
+		margin-left:105px;
+		padding:40px 0 20px;
+	}
+	span.bWlStateDes{
+		width:170px;
+		color:#FF555C;
+		font-size:14px;
+		display:inline-block;
+		text-align:left;
+		vertical-align:middle;
+	}
+	div.securitystrength{
+		width:161px;
+	}
+	div.securitystrength p.pwdDepC{
+		width:155px !important;
+		margin-left:5px !important;
+		line-height:30px !important;
+	}
+	div.securitystrength div.pwdDepL{
+		width:75px;
+		height:4px;
+		font-size:0px;
+		margin-left:5px;
+		background:#FFFFFF;
+	}
+}
+</style>
+﻿<script type="text/javascript">function init(){var EINVSSIDNULL=10000;function errHandle(errNo){switch(errNo){case ENONE:return true;case EINVSSIDLEN:showAlert(errStr.wlanSsidLenErr);break;case EINVSSIDNULL:showAlert(errStr.wlanSsidErr);break;case EPWDBLANK:showAlert(errStr.wlanPwdNull);break;case EINVPSKLEN:showAlert(errStr.wlanPwdLenValid);break;case EINVWLANPWD:showAlert(errStr.wlanPwdInvalid);break;default:showAlert(errStr.unknown+errNo);break}return false}function bWlSwitchState(state){var bWlLogoS=id("bmWirelssSetLgS");bEptWlanSet(state,wlanMBssidData.cSsid);if(state==1){bWlLogoS.style.background="url(../images/basic_me.png) no-repeat scroll -64px -345px"}else{bWlLogoS.style.background="url(../images/basic_me.png) no-repeat scroll -33px -345px"}if(wlanMBssidData.bEnable!=state){wlanMBssidData.bEnable=state;errNo=$.write($.toText(wlanMBssidData),$.block);if(ENONE!=errNo){return errHandle(errNo)}}}function checkSsidInput(){closeNote("wlanSsidNote");if(0==ssid.value.length){showNote("wlanSsidNote");return false}closeNote("wlanSsidNote");return true}function checkWlanPwdInput(){closeNote("wlanPwdNote");closeNote("pwdDepNote");var errorNo=checkWlanPwd(wlanPwd.value);if(EINVWLANPWD==errorNo){showNote("wlanPwdNote",errStr.wlanWzdPwdInvalid);return false}else{if(EINVPSKLEN==errorNo){showNote("wlanPwdNote",errStr.wlanWzdPwdLenValid);return false}}closeNote("wlanPwdNote");return true}function pwdCheckMixChars(str){var hasNum=false;var hasLetter=false;var hasSymbol=false;hasNum=/\d/g.test(str);hasLetter=/[a-zA-Z]/g.test(str);hasSymbol=/[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e\s]/g.test(str);return hasNum&&hasSymbol&&hasLetter}function checkWlanPwdDep(){var width=25,tip="";var lgPwdlessTip="none";var pwdValue=wlanPwd.value;var len=pwdValue.length;var lgPwdNoteDis=(isIESix||isIESeven)?"inline":"inline-block";if(false==checkWlanPwdInput()){return}if(0==pwdValue.length){lgPwdNoteDis="none"}if(/^\d+$/.test(pwdValue)||/^[\x21-\x2f\x3a-\x40\x5b-\x60\x7b-\x7e\s]+$/.test(pwdValue)||/^[a-zA-Z]+$/.test(pwdValue)){if(len<=12){tip=label.weak;width=width}else{tip=label.media;width=width*2}}else{if(true==pwdCheckMixChars(pwdValue)){tip=label.strong;width=width*3}else{if(len<=12){tip=label.media;width=width*2}else{tip=label.strong;width=width*3}}}id("pwdDepNote").style.display=lgPwdNoteDis;id("pwdDep").innerHTML=tip;id("chgPwdDep").style.width=width+"px"}function onSave(){var errNo;var secEnable;var wlanPwdValue=wlanPwd.value;if((false==checkSsidInput())||(false==checkWlanPwdInput())){return}if(0==wlanPwdValue.length){secEnable=0}else{secEnable=1}if(wlanMBssidData.cSsid!=ssid.value||wlanMBssidData.cPskSecret!=wlanPwd.value||wlanMBssidData.bSecurityEnable!=secEnable){wlanMBssidData.cSsid=ssid.value;wlanMBssidData.bSecurityEnable=secEnable;wlanMBssidData.uAuthType=3;wlanMBssidData.uPSKSecOpt=3;wlanMBssidData.uPSKEncryptType=3;if(1==secEnable){wlanMBssidData.cPskSecret=wlanPwdValue;wlanMBssidData.bSecCheck=0}else{wlanMBssidData.bSecCheck=1}setLoadingId("saveImg");errNo=$.write($.toText(wlanMBssidData),$.block);if(ENONE!=errNo){errHandle(errNo)}else{bEptWlanSet(wlanMBssidData.bEnable,wlanMBssidData.cSsid)}}}$.read(WLAN_BASIC_DATA_ID+"#"+MBSSID_MAIN_DATA_ID+"#"+MBSSID_GUESTNET_DATA_ID);var wlanMBssidData=$.findBlock(MBSSID_MAIN_DATA_ID);var wlanGusetData=$.findBlock(MBSSID_GUESTNET_DATA_ID);var bWlSwitch=new Switch("switchCon",wlanMBssidData.bEnable,bWlSwitchState);var ssid=id("ssid");var wlanPwd=id("bWlPwd");var bWlStateDes=id("bWlStateDes");ssid.value=wlanMBssidData.cSsid;ssid.onblur=checkSsidInput;if(1==wlanMBssidData.bSecurityEnable){wlanPwd.value=wlanMBssidData.cPskSecret}else{wlanPwd.value=""}wlanPwd.onblur=checkWlanPwdInput;wlanPwd.onkeyup=checkWlanPwdDep;if(1==wlanGusetData.bEnable){bWlStateDes.innerHTML=menuStr.wifiHost}else{bWlStateDes.innerHTML=label.wirelessState}id("saveImg").onclick=onSave;$("div.bFunc")[0].style.visibility="visible"}init();</script>
+<div class="bWlSwitchCon">
+	<span id="bWlStateDes" class="bWlStateDes"><%label.wirelessState%></span>
+	<div id="switchCon" class="switchCon">
+		<i class="switchBg"></i>
+		<i class="switchBall"/></i>
+	</div>
+</div>
+<ul class="bcInputUl">
+	<li class="bcInputLi">
+		<label><%label.wirelessName%><i></i></label><input id="ssid" maxlength="32" value="" type="text" />
+	</li>
+	<li id="wlanSsidNote" class="note">
+		<i class="arrowL"></i>
+		<div class="noteCon"><p><%errStr.wlanSsidErr%></p></div>
+	</li>
+</ul>
+<ul class="bcInputUl">
+	<li class="bcInputLi">
+		<label><%label.wirelessPwd%><i></i></label><input id="bWlPwd" class="imeModeN" maxlength="63" value="" type="text" />
+	</li>
+	<li id="wlanPwdNote" class="note">
+		<i class="arrowL"></i><div  class="noteCon"><p><%errStr.wlanWzdPwdLenValid%></p></div>
+	</li>
+	<li id="pwdDepNote" class="note">
+		<i class="arrowL"></i>
+		<div id="securitystrength"class="noteCon securitystrength">
+			<p id="pwddepclangth"class="pwdDepC"><%label.chgPwdDep%><%label.colon%><label id="pwdDep"><%label.weak%></label></p>
+			<div class="pwdDepL"><label id="chgPwdDep"></label></div>
+		</div>
+	</li>
+</ul>
+<div class="bFunc">
+	<span id="saveImg">
+		<i class="applyBtn"></i>
+		<label><%btn.save%></label>
+	</span>
+</div>

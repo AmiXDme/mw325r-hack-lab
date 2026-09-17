@@ -1,0 +1,182 @@
+<style type="text/css">
+	div.titleD {
+		text-align: center;
+	}
+	ul.gridLineDia{ 
+		color:#000000;
+		height:30px;
+		line-height:30px;
+		margin-top:8px;
+		margin-bottom:8px;
+		vertical-align:middle;
+	}
+	@media screen and (-webkit-min-device-pixel-ratio:0)
+	{
+		ul.blockFuncDiag input.textDiag{
+			line-height:0px !important;
+		}
+		ul.blockFuncDiag input.textDia{
+			line-height:0px !important;
+		}
+	}
+	label.labelDiag{
+		width:80px;
+		margin-left:5px;
+		display:inline-block;
+		vertical-align:middle;
+	}
+	input.inputDiag{
+		margin-left:20px;
+		vertical-align:middle;
+	}
+	label.labelDiagB{
+		margin-left:5px;
+	}
+	p.divDiagnoseA{
+		width:630px;
+		color:#000000;
+		margin:30px auto 0;
+		text-align:left;
+	}
+	div.divDiagnoseB{
+		border:1px solid #FF6060;
+		width:630px;
+		margin:5px auto;
+	}
+	#sendpingnum, #pingsizeidd, #tracertmaxhops, #pingovertimeidd{
+		width:250px;
+	}
+	li.twoLineWidth{
+		width:150px;
+	}
+	fieldset.fieldsetDiag{
+		border: 1px dashed #FF6060;
+		height:250px;
+		margin:5px;
+	}
+	#textareaDiagCon{
+		height:222px; 
+		width:600px;
+		margin:5px auto;
+		overflow:hidden;
+		word-break:break-all;
+		word-wrap:break-word;
+	}
+	#diagnostResult{
+		color:#000000;
+		font-size:12px;
+		text-align:left;
+		white-space:pre-wrap;
+	}
+	#diagnostResult pre{
+		white-space:pre-wrap;
+		word-break:keep-all;
+		word-wrap:break-word;
+	}
+	p.pDiag{
+		color:#000000;
+		margin-top:15px;
+		padding-left:5px;
+		text-align:left;
+	}
+	label.diagVa{
+		vertical-align:middle;
+	}
+	input.diagVb{
+		padding:0;
+		vertical-align:middle;
+	}
+	div.blockFuncDiag{
+		margin:0 auto;
+		width:400px;
+	}
+	label.oneLineNoteDia{
+		width:159px;
+		text-indent:10px;
+		background-color:#7A7A7A;
+		border-radius:5px;
+		color:#FFFFFF;
+		display:inline-block;
+		font-size:12px;
+		height:39px;
+		line-height:39px;
+		margin-left:6px;
+	}
+	#start{
+		width: 120px;
+		margin: auto;
+	}
+	ul.hsInputUlB {
+		width: 500px;
+		margin: 0 auto 13px auto !important;
+	}
+	li.hsInputLiC {
+		width: 335px !important;
+	}
+</style>
+<script type="text/javascript">function init(){var subBtnId="start";var doType1Id="doType1";var doType2Id="doType2";var sendNumId="sendNum";var pingSizeId="pSize";var pingOverTimeId="overTime";var tracertHopsId="trHops";var addrId="addr";var icmpId=null;var cmdType;var DIAGNOSE_START=0,DIAGNOSE_STOP=1,DIAGNOSE_LOOKUP=2;function updateResult(){var cmd;if(null==icmpId){id(subBtnId).value=btn.start;return}cmd="systool "+cmdType+" code:"+DIAGNOSE_LOOKUP+" icmpId:"+icmpId;$.instr(cmd,function(result){var pos,finished,diagResult;if(ENONE!=result.errorno){id(subBtnId).value=btn.start;return}pos=result.data.indexOf("\r\n");finished=result.data.substring(0,pos);diagResult=result.data.substring(pos+2,result.data.length);id("diagnostResult").innerHTML="<pre>"+diagResult.replace(/\r\n/gi,"<br />")+"</pre>";listScroll.scrollTo(id("diagnostResult").offsetHeight);if(1==finished){subBtn=id(subBtnId);subBtn.value=btn.start;cmd="systool "+cmdType+" code:"+DIAGNOSE_STOP+" icmpId:"+icmpId;if(ENONE==$.instr(cmd).errorno){icmpId=null}return}$.setTimeout(updateResult,1000)})}function chooseSwitch(){var dis=id(doType2Id).checked;disableInput(sendNumId,dis);disableInput(pingSizeId,dis);disableInput(pingOverTimeId,dis);disableInput(tracertHopsId,!dis)}function addrSub(event){event=event||window.event;var keyCode=event.keyCode;if(13==keyCode){doSub()}}function checkPara(){var error;var addrValue=addr.value;if(addrValue.length==0){showAlert(errStr.inputIpErr,addr);return false}if(/[a-zA-z]/g.test(addrValue)==true){if(ENONE!=checkDomain(addrValue)){showAlert(errStr.domainErr,addr);return false}}else{if(ENONE!=validIpFormat(addrValue)){showAlert(errStr.ipAddrFmtErr,addr);return false}if(ENONE!=validIpAddr(addrValue)){showAlert(errStr.ipAddrNetErr,addr);return false}}if(id(doType1Id).checked){if(true!=checkNumRange(id(sendNumId).value,50,1)){showAlert(errStr.pingNumErr,sendNumId);return false}if(true!=checkNumRange(id(pingSizeId).value,1472,4)){showAlert(errStr.pingSizeErr,pingSizeId);return false}if(true!=checkNumRange(id(pingOverTimeId).value,2000,100)){showAlert(errStr.overtimeErr,pingOverTimeId);return false}}if(id(doType2Id).checked){if(true!=checkNumRange(id(tracertHopsId).value,30,1)){showAlert(errStr.hopsErr,tracertHopsId);return false}}return true}function loginDomainIp(domain){var login=$.findBlock(TPDOMAIN_DATA_ID);var lan=$.findBlock(LAN_DATA_ID);return domain==login.name?lan.ip:domain}function doSub(){var subBtn,cmd,result,diagnoseResult=id("diagnostResult");subBtn=id(subBtnId);if((btn.start==subBtn.value)&&(false!=checkPara())){subBtn.value=btn.end;if(id(doType1Id).checked){cmd="systool ping code:"+DIAGNOSE_START+" target:"+loginDomainIp(addr.value)+" size:"+id(pingSizeId).value+" metric:"+id(sendNumId).value+" timeout:"+id(pingOverTimeId).value;cmdType="ping"}else{cmd="systool tracert code:"+DIAGNOSE_START+" target:"+loginDomainIp(addr.value)+" metric:"+id(tracertHopsId).value;cmdType="tracert"}setLoadingId(subBtnId);result=$.instr(cmd);if(ENONE==result.errorno){icmpId=parseInt(result.data);diagnoseResult.innerHTML="<pre></pre>";updateResult()}}else{if(btn.end==subBtn.value){subBtn.value=btn.start;cmd="systool "+cmdType+" code:"+DIAGNOSE_STOP+" icmpId:"+icmpId;setLoadingId(subBtnId);if(ENONE==$.instr(cmd).errorno){icmpId=null;diagnoseResult.innerHTML=(diagnoseResult.innerHTML).replace(/<\/pre>/gi,"<br />***** User canceled *****<br /></pre>");listScroll.scrollTo(diagnoseResult.offsetHeight)}}}}$.read(TPDOMAIN_DATA_ID+"#"+LAN_DATA_ID);var addr=id(addrId);id(sendNumId).value=4;id(pingSizeId).value=64;id(pingOverTimeId).value=800;id(tracertHopsId).value=20;id(doType1Id).checked="true";chooseSwitch();id(doType1Id).onclick=chooseSwitch;id(doType2Id).onclick=chooseSwitch;id(subBtnId).onclick=doSub;addr.onkeyup=addrSub;addr.focus();var n=0;var listScroll;listScroll=new NiceScroll("textareaDiagCon");listScroll.scrollTipOpacity(1);listScroll.init()}init();</script>
+<div id="diagnosTc" class="hcCo">
+	<div class="title titleD">
+		<label class="title"><%menuStr.diagnostic%></label>
+	</div>
+	<div class="block">
+		<p class="divDiagnoseA"><%label.diagnoseTitle%></p>
+		<div class="divDiagnoseB">
+			<p class="pDiag"><%label.paraSet%></p>
+			<ul class="gridLineDia">
+				<label class="labelDiag"><%label.selOperate%></label>
+				<input class="diagVb" name="doType" id="doType1" type="radio" value="ping"/><label class="diagVa" for="doType1">Ping</label>
+				<input class="inputDiag" name="doType" id="doType2" type="radio" value="tracert"/><label class="diagVa" for="doType2">Tracert</label>
+			</ul>
+			<ul class="hsInputUl hsInputUlB">
+				<li id="ipaddrname" class="hsInputLi">
+					<label id="ipaddr" for="addr"><%label.ipAddrDoname%><i></i></label><input id="addr" class="imeModeN" maxLength="50" type="text" />
+				</li>
+			</ul>
+			<ul id="number" class="hsInputUl hsInputUlB">
+				<li class="hsInputLi hsInputLiC">
+					<label id="sendpingnum" for="sendNum"><%label.pingNum%><i></i></label><input id="sendNum" maxLength="2" type="text" />
+				</li>
+				<li id="twoLineWidthid" class="twoLineWidth">
+					<label class="oneLineNoteDia"><%label.numRange%></label>
+				</li>
+			</ul>
+			<ul id="size" class="hsInputUl hsInputUlB">
+				<li class="hsInputLi hsInputLiC">
+					<label id="pingsizeidd" for="pSize"><%label.pingSize%><i></i></label><input id="pSize" maxLength="4" type="text" />
+				</li>
+				<li class="twoLineWidth">
+					<label class="oneLineNoteDia"><%label.sizeRange%></label>
+				</li>
+			</ul>
+			<ul id="timeout" class="hsInputUl hsInputUlB">
+				<li class="hsInputLi hsInputLiC">
+					<label id="pingovertimeidd" for="overTime"><%label.pingOvertime%><i></i></label><input id="overTime" maxLength="4" type="text" />
+				</li>
+				<li class="twoLineWidth">
+					<label class="oneLineNoteDia"><%label.overtimeRange%></label>
+				</li>
+			</ul>
+			<ul id="hops" class="hsInputUl hsInputUlB">
+				<li class="hsInputLi hsInputLiC">
+					<label id="tracertmaxhops"for="trHops"><%label.trHops%><i></i></label><input id="trHops" maxLength="2" type="text" />
+				</li>
+				<li class="twoLineWidth">
+					<label class="oneLineNoteDia"><%label.hopsRange%></label>
+				</li>
+			</ul>
+		</div>
+		<div class="divDiagnoseB">
+			<p class="pDiag"><%label.diagnoseResult%></p>
+			<fieldset class="fieldsetDiag">
+				<div id="textareaDiagCon">
+					<div id="diagnostResult"><%label.routerReady%></div>
+				</div>
+			</fieldset>
+		</div>
+		<div class="blockFuncA blockFuncDiag">
+			<input id="start" class="sysToolBtn sysToolBtnEn" type="button" value="<%btn.start%>" />
+		</div>
+	</div>
+</div>
+

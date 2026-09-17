@@ -1,0 +1,93 @@
+<style type="text/css">
+	div.bakNRstrBlock{
+		color:#000000;
+		font-size:12px;
+		margin-bottom:60px;
+		padding:0 0 0 140px;
+		text-align:left;
+	}
+	p.systip{
+		font-size:14px;
+	}
+	#restoreIf{
+		top:-9999px;
+		position:absolute;
+		visibility:hidden;
+	}
+	p.bakNRstr{
+		margin-top:10px;
+	}
+	#sysBackup{
+		margin-left:0px !important;
+	}
+	#sysRestore{
+		margin-left:0px !important;
+	}
+	p.restoreDesTi{
+		margin-top:20px;
+	}
+	ol.restoreNotice{
+		margin:0 50px 0 15px;
+	}
+	div.SysRestBlock{
+		margin-top:30px;
+		text-align:left;
+		padding-left:140px;
+		margin-bottom:60px;
+	}
+	p.sysResetF{
+		color:#000000;
+		font-size:14px;
+		margin-top:10px;
+	}
+	#sysReset{
+		width:130px;
+	}
+</style>
+<script type="text/javascript">function init(){function checkFile(){var fileName=file.value;if(fileName==""){showAlert(label.backupWarn);return false}else{if(fileName.search(/\.bin$/)==-1){showAlert(errStr.fileFmttErr);return false}}return true}function restoreTimeout(){restoreTimeoutTag=true;id("restoreIf").onload=null;showAlert(errStr.bakNRestoreFail)}function upLoadCallBack(errorno){var lanIp,domain,lclPort;clearTimeout(restoreTimeoutHd);restoreTimeoutHd=null;if(true==restoreTimeoutTag){return}if(ENONE!=errorno){showAlert(errStr.bakNRestoreFail);return}$.read(LAN_DATA_ID+"#"+TPDOMAIN_DATA_ID+"#"+LCLPORT_DATA_ID);lanIp=$.findBlock(LAN_DATA_ID);domain=$.findBlock(TPDOMAIN_DATA_ID);lclPort=$.findBlock(LCLPORT_DATA_ID);showProgressNum(14000,undefined,function(){$.setTimeout(function(){window.location.href=((location.href.toString()).indexOf(domain.name)==-1)?("http://"+lanIp.ip+":"+lclPort.port):("http://"+domain.name+":"+lclPort.port)},1000)})}function BNREventBind(){file.onchange=function(){var tempStr=this.value;tempStr=tempStr.substring(tempStr.lastIndexOf("\\")+1);id("textfield").value=tempStr};if(USER_GROUP_REMOTE==$.group){disableBtn(sysRestore,true,"sysToolBtnEn","sysToolBtnUn");disableBtn(sysBackup,true,"sysToolBtnEn","sysToolBtnUn")}else{sysRestore.onclick=function(){if(checkFile()){showConfirm(label.upConfig,function(choose){if(true==choose){setLoadingId("sysRestore");$.readEx(SYSTEM_DATA_ID);$("#restoreIf").one("load",function(){iFrmOnload("restoreIf",upLoadCallBack)});formObj.action=$.orgURL($.domainUrl+"?code="+TDDP_CONFIG+"&asyn=0");formObj.submit();formObj.reset();restoreTimeoutTag=false;restoreTimeoutHd=$.setTimeout(restoreTimeout,2000)}})}};sysBackup.onclick=function(){var configname="";var deviceInf=$.readEx(DEVICE_DATA_ID);var softver=deviceInf.softVer;var hardver=deviceInf.hardVer;var count=0;for(var i=0;i<deviceInf.hardVer.length;i++){if(hardver[i]==" "){break}count++}var model=hardver.substring(0,count);var versioncount=count+1;for(var i=count;i<deviceInf.hardVer.length;i++){if(hardver[i]=="."){break}count++}var version=hardver.substring(versioncount,count);var buildcount=softver.indexOf("Build");var relcount=softver.indexOf("Rel.");buildcount+=6;relcount+=4;count=buildcount;for(var i=buildcount;i<deviceInf.softVer.length;i++){if(softver[i]==" "){break}count++}var Build=softver.substring(buildcount,count);count=relcount;for(var i=relcount;i<deviceInf.softVer.length;i++){if(softver[i]=="n"){break}count++}var Rel=softver.substring(relcount,count);var ending="n.bin";configname=model+"V"+version+Build+Rel+ending;var url=$.domainUrl+configname+"?code="+TDDP_INSTRUCT+"&asyn=0";location.href=($.orgURL(url));return true}}}function sysResetInit(){var sysReset=id("sysReset");if(USER_GROUP_REMOTE==$.group){disableBtn(sysReset,true,"sysToolBtnEn","sysToolBtnUn")}else{sysReset.onclick=function(){showConfirm(label.resetConfirm,function(choose){if(true==choose){var factory,domain;setLoadingId("sysReset");$.read(FACTORY_DATA_ID+"#"+TPDOMAIN_DATA_ID);factory=$.findBlock(FACTORY_DATA_ID),domain=$.findBlock(TPDOMAIN_DATA_ID);if($.reset().errorno==ENONE){$.setResetSign(0);showProgressNum(15000,label.reseting,function(){$.setLgPwd("");window.location.href=((location.href.toString()).indexOf(domain.name)==-1)?("http://"+factory.lanIp):("http://"+domain.name)})}}})}}}var formObj=document.forms[0];var file=id("fileName");var sysRestore=id("sysRestore");var sysBackup=id("sysBackup");var restoreTimeoutHd;var restoreTimeoutTag=false;BNREventBind();sysResetInit()}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleA">
+		<label class="title"><%label.backup%></label>
+	</div>
+	<div class="block bakNRstrBlock">
+		<p class="systip"><%label.backupTip%></p>
+		<p class="bakNRstr">
+			<input id="sysBackup" class="sysToolBtn sysToolBtnEn" type="button" value="<%btn.backup%>" />
+		</p>
+	</div>
+
+	<p class="hsTitleLine"></p>
+	<div class="title titleA">
+		<label class="title"><%btn.upConfig%></label>
+	</div>
+	<div class="block bakNRstrBlock">
+		<p class="systip"><%label.restoreTip%></p>
+		<form enctype="multipart/form-data" id="upFileForm" method="post" target="restoreIf">
+			<div class="fileDiv">
+				<input type="text" id="textfield" class="fileTxt" readonly="true" />
+				<input type="button" value="<%btn.browse%>" class="subBtnRect fileBrowse" />
+				<input type="file" class="file" name="fileName" id="fileName" />
+				<iframe id="restoreIf" name="restoreIf"></iframe>
+			</div>
+		</form>
+		<p class="bakNRstr">
+			<input id="sysRestore" class="sysToolBtn sysToolBtnEn" type="button" value="<%btn.upConfig%>" />
+		</p>
+		<p class="restoreDesTi"><%label.caution%><%label.colon%><span></span></p>
+		<ol class="restoreNotice">
+			<li><%label.restoreNotice1%></li>
+			<li><%label.restoreNotice2%></li>
+			<li><%label.restoreNotice3%></li>
+		</ol>
+	</div>
+	<p class="hsTitleLine"></p>
+	<div class="title titleA">
+		<label class="title"><%menuStr.restore%></label>
+	</div>
+	<div class="block SysRestBlock">
+		<p class="sysResetF"><%label.resetWarn%></p>
+		<p class="bakNRstr">
+			<input id="sysReset" class="sysToolBtn sysToolBtnEn" type="button" value="<%btn.restore%>" />
+		</p>
+	</div>
+</div>

@@ -1,0 +1,152 @@
+<style type="text/css">
+#basicContent {
+	height: 980px;
+}
+.switchRadio {
+	vertical-align: middle;
+}
+ul.gridLine {
+	margin-left: 195px;
+}
+ul.gridLineA {
+	margin-bottom: 15px;
+}
+ul.bcInputUl {
+	margin-left: 150px;
+}
+
+ul.bcInputUl li.bcInputLi {
+	width: 550px;
+}
+ul.bcInputUl li.bcInputLi label {
+	width: 295px;
+}
+ul.bcInputUlDes {
+	margin-left: 150px;
+	margin-bottom: 20px;
+	padding: 0;
+}
+ul.bcInputUlDes li.bcInputLiDes {
+	width: 565px;
+	border-bottom: 1px solid #ff6060;
+}
+.bcInputLiDes label {
+	color: #ff0000;
+	display: inline-block;
+	font-size: 12px;
+	vertical-align: middle;
+}
+.bcInputLiDes label.desLbl {
+	height: 30px;
+	line-height: 30px;
+	text-align: right;
+	width: 272px;
+}
+.bcInputLiDes label.noteLbl {
+	padding-left: 52px;
+	text-align: left;
+}
+#swGridLine {
+    width: 852px;
+    margin-left: 0px;
+    text-align: center;
+}
+</style>
+<script type="text/javascript">function init(){var updateTimerHandle;function errHandle(errNo,objOrId){var errNote="";switch(errNo){case ENONE:return false;case EINVNET:errNote=errStr.ipAddrNetErr;break;case EINVIP:errNote=errStr.ipAddrErr;break;case EINVIPFMT:errNote=errStr.ipAddrFmtNoteErr;break;case EINVGROUPIP:errNote=errStr.ipAddrGroupErr;break;case EINVLOOPIP:errNote=errStr.ipAddrLoopErr;break;case EINVMASK:errNote=errStr.maskErr;break;case EINVNETID:case EINVHOSTID:case EINVIPMASKPAIR:errNote=errStr.ipAddrMaskNotMatchNote;break;case ECOMFLICTNET:errNote=errStr.ipAddrLanWanConflictShortNote;break;case EINVGTW:errNote=errStr.gatewayErr;break;case EINVFDNSVR:errNote=errStr.wzdPrimDnsErr;break;case EINVSDNSVR:errNote=errStr.wzdSeDnsErr;break;default:break}if(errNote!=""){showAlert(errNote,objOrId)}return true}function updateStatus(){clearTimeout(updateTimerHandle);$.readNonBlock(LINK_STATUS_DATA_ID,function(result){var ipAddr=id("pppIp");var dnsAddr=id("pppDns");var status=$.findBlock(LINK_STATUS_DATA_ID);ipAddr.innerHTML="0.0.0.0";dnsAddr.innerHTML="0.0.0.0, 0.0.0.0";bEptNetWorkSet(status.status,linkType[LINK_TYPE_PPTP]);switch(parseInt(status.status)){case LINK_UP:var dnsStr="";ipAddr.innerHTML=status.ip;dnsStr=status.dns[0]+", "+status.dns[1];if("0.0.0.0"==status.dns[0]&&"0.0.0.0"==status.dns[1]){dnsStr+=(" "+label.dnsException)}dnsAddr.innerHTML=dnsStr;break;case LINK_DOWN:if(status.code>=LINK_CODE_UNKNOWN){id("bNwNote").innerHTML=linkCode[status.code]}break;case LINKING_UP:case LINKING_DOWN:default:break}if(parseInt(pptp.bDhcp)!=0){id("dynIp").innerHTML=status.dualIp;id("dynMask").innerHTML=status.dualMask;id("dynGateway").innerHTML=status.dualGateway;id("dynDns").innerHTML=status.dualDns[0]+", "+status.dualDns[1];if("0.0.0.0"==status.dualDns[0]&&"0.0.0.0"==status.dualDns[1]){id("dynDns").innerHTML+=(" "+label.dnsException)}}updateTimerHandle=$.setTimeout(updateTimer,2000)})}function updateTimer(){if(LINK_TYPE_PPTP==parseInt(link.linkType)){updateStatus()}}function checkDomainIp(domainIp){var errNote="";if(domainIp.length==0){errNote=errStr.inputIpErr}else{if(/[a-zA-Z]/g.test(domainIp)==true){if(ENONE!=checkDomain(domainIp)){errNote=errStr.domainErr}}else{if(ENONE!=validIpFormat(domainIp)){errNote=errStr.ipAddrFmtNoteErr}else{if(ENONE!=validIpAddr(domainIp)){errNote=errStr.ipAddrNetErr}}}}if(errNote!=""){showAlert(errNote,domainIp);return false}return true}function checkLanConflict(ipVal,maskVal){var lanIp=transIp(lan.ip),lanMask=transIp(lan.mask);var stcIp=transIp(ipVal),stcMask=transIp(maskVal);return(0==((lanIp^stcIp)&lanMask&stcMask))?ECOMFLICTNET:ENONE}function checkGateway(value){return ENONE!=checkIp(value)?EINVGTW:ENONE}function checkPrimDns(value){if(lan.ip==value){return EINVFDNSVR}return ENONE!=checkIp(value)?EINVFDNSVR:ENONE}function checkSndDns(value){if(""==value||"0.0.0.0"==value){id("stcDns1").value="0.0.0.0";return ENONE}if(lan.ip==value){return EINVSDNSVR}return ENONE!=checkIp(value)?EINVSDNSVR:ENONE}function commitData(){var nameVal=id("name").value;var pswVal=id("psw").value;var domainIpVal=id("domainIp").value;var ipVal=id("stcIp").value;var maskVal=id("stcMask").value;var gatewayVal=id("stcGateway").value;var primDnsVal=id("stcDns0").value;var sndDnsVal=id("stcDns1").value;var dhcpEnabled=(id("sndSwitchDyn").checked?1:0);link.linkType=LINK_TYPE_PPTP;pptp.userName=nameVal;pptp.passwd=pswVal;pptp.domainIp=domainIpVal;pptp.bDhcp=dhcpEnabled;if(0==dhcpEnabled){pptp.ip=ipVal;pptp.mask=maskVal;pptp.gateway=gatewayVal;pptp.dns[0]=primDnsVal;pptp.dns[1]=sndDnsVal}setLoadingId("saveImg",true);errNo=$.write($.toText(pptp)+$.toText(link),$.block);if(ENONE!=errNo){$.read(PPTP_DATA_ID+"#"+LINK_DATA_ID);return}updateStatus()}function onSave(){var errNo=ENONE;var nameVal=id("name").value;var pswVal=id("psw").value;var domainIpVal=id("domainIp").value;var ipVal=id("stcIp").value;var maskVal=id("stcMask").value;var gatewayVal=id("stcGateway").value;var primDnsVal=id("stcDns0").value;var sndDnsVal=id("stcDns1").value;var dhcpEnabled=(id("sndSwitchDyn").checked?1:0);if(!checkDomainIp(domainIpVal)){return}if(0==dhcpEnabled){if(errHandle(checkIp(ipVal),"stcIp")||errHandle(checkMask(maskVal),"stcMask")||errHandle(checkIpMask(ipVal,maskVal),"stcMask")||errHandle(checkLanConflict(ipVal,maskVal),"stcIp")||errHandle(checkGateway(gatewayVal),"stcGateway")||errHandle(checkPrimDns(primDnsVal),"stcDns0")||errHandle(checkSndDns(sndDnsVal),"stcDns1")){return}}if(LINK_TYPE_PPTP==link.linkType&&nameVal==pptp.userName&&domainIpVal==pptp.domainIp&&pswVal==pptp.passwd&&(dhcpEnabled==parseInt(pptp.bDhcp))){if((1==dhcpEnabled)||((0==dhcpEnabled)&&(pptp.ip==ipVal&&pptp.mask==maskVal&&pptp.gateway==gatewayVal&&pptp.dns[0]==primDnsVal&&pptp.dns[1]==sndDnsVal))){errNo=$.instr("wan -linkUp").errorno;updateStatus();return}}if(0==nameVal.length||0==pswVal.length){showConfirm(label.accPwdNullTip,function(confirm){if(true==confirm){commitData()}})}else{commitData()}}function switchSndConn(connType){if(connType==1){id("sndSwitchStc").checked=false;id("sndSwitchDyn").checked=true;$("#stc").hide();$("#dyn").show()}else{id("sndSwitchStc").checked=true;id("sndSwitchDyn").checked=false;$("#stc").show();$("#dyn").hide()}}$.read(LAN_DATA_ID+"#"+LINK_DATA_ID);var link=$.findBlock(LINK_DATA_ID);var pptp=$.readEx(PPTP_DATA_ID);var lan=$.findBlock(LAN_DATA_ID);id("name").value=pptp.userName;id("psw").value=pptp.passwd;id("domainIp").value=pptp.domainIp;id("stcIp").value=pptp.ip;id("stcMask").value=pptp.mask;id("stcGateway").value=pptp.gateway;id("stcDns0").value=pptp.dns[0];id("stcDns1").value=pptp.dns[1];switchSndConn(parseInt(pptp.bDhcp)!=0);id("saveImg").onclick=onSave;id("sndSwitchStc").onclick=function(){switchSndConn(0)};id("sndSwitchDyn").onclick=function(){switchSndConn(1)};$("div.bFunc")[0].style.visibility="visible";updateTimer()}init();</script>
+<ul class="bcInputUl">
+	<li class="bcInputLi">
+		<label for=""><%label.netAccount%><i></i></label>
+		<input id="name" maxLength="255" type="text" />
+	</li>
+</ul>
+<ul class="bcInputUl">
+	<li class="bcInputLi" >
+		<label for=""><%label.netPwd%><i></i></label>
+		<input id="psw" maxLength="255" type="password" />
+	</li>
+</ul>
+<ul class="bcInputUl">
+	<li class="bcInputLi">
+		<label for="domainIp"><%label.serverIp%><i></i></label>
+		<input id="domainIp" maxLength="63" type="text" />
+	</li>
+</ul>
+<ul class="bcInputUlDes">
+	<li class="bcInputLiDes">
+		<label class="desLbl"><%label.internetIp%><i></i></label>
+		<label id="pppIp" class="noteLbl">0.0.0.0</label>
+	</li>
+</ul>
+<ul class="bcInputUlDes">
+	<li class="bcInputLiDes">
+		<label class="desLbl"><%label.internetDns%><i></i></label>
+		<label id="pppDns" class="noteLbl">0.0.0.0</label>
+	</li>
+</ul>
+
+<ul class="gridLine gridLineA gridLineRadio" id="swGridLine">
+	<input id="sndSwitchDyn" name="switch" class="switchRadio" type="radio" />
+	<label class="noteLbl" for="SwitchDyn"><%label.wdynamic%></label>
+	<input id="sndSwitchStc" name="switch" class="switchRadio" type="radio" style="margin-left: 50px;" />
+	<label class="noteLbl" for="SwitchStc"><%label.wstatic%></label>
+</ul>
+
+<div id="dyn">
+	<ul class="bcInputUlDes">
+	<li class="bcInputLiDes">
+		<label class="desLbl"><%label.ipAddr%><i></i></label>
+		<label id="dynIp" class="noteLbl">0.0.0.0</label>
+	</li>
+	</ul>
+	<ul class="bcInputUlDes">
+	<li class="bcInputLiDes">
+		<label class="desLbl"><%label.mask%><i></i></label>
+		<label id="dynMask" class="noteLbl">0.0.0.0</label>
+	</li>
+	</ul>
+	<ul class="bcInputUlDes">
+	<li class="bcInputLiDes">
+		<label class="desLbl"><%label.gateway%><i></i></label>
+		<label id="dynGateway" class="noteLbl">0.0.0.0</label>
+	</li>
+	</ul>
+	<ul class="bcInputUlDes">
+	<li class="bcInputLiDes">
+		<label class="desLbl"><%label.dns%><i></i></label>
+		<label id="dynDns" class="noteLbl">0.0.0.0</label>
+	</li>
+	</ul>
+</div>
+
+<div id="stc">
+	<ul class="bcInputUl">
+		<li class="bcInputLi" >
+			<label for="stcIp"><%label.ipAddr%><i></i></label>
+			<input id="stcIp" maxLength="15" /><i class="tip"></i>
+		</li>
+	</ul>
+	<ul class="bcInputUl">
+		<li class="bcInputLi" >
+			<label for="stcMask"><%label.mask%><i></i></label>
+			<input id="stcMask" maxLength="15" />
+		</li>
+	</ul>
+	<ul class="bcInputUl">
+		<li class="bcInputLi" >
+			<label for="stcGateway"><%label.gateway%><i></i></label>
+			<input id="stcGateway" maxLength="15" /><i class="tip"></i>
+		</li>
+	</ul>
+	<ul class="bcInputUl">
+		<li class="bcInputLi" >
+			<label for="stcDns0"><%label.dns0%><i></i></label>
+			<input id="stcDns0" maxLength="15" /><i class="tip"></i>
+		</li>
+	</ul>
+	<ul class="bcInputUl">
+		<li class="bcInputLi" >
+			<label for="stcDns1"><%label.dns1%><i></i></label>
+			<input id="stcDns1" maxLength="15" /><i class="tip"></i>
+		</li>
+	</ul>
+</div>

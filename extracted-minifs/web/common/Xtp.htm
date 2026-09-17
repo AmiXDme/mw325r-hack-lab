@@ -1,0 +1,220 @@
+<style type="text/css">
+	ul.gridLineRadio{
+		text-align:center;
+	}
+	li.wanLinkLi{
+		margin-left:78px;
+	}
+	li.hsInputLiB{
+		height:39px;
+	}
+	span.selectB{
+		cursor:pointer;
+		display:inline-block;
+		height:39px;
+		line-height:39px;
+		margin-left:25px;
+		vertical-align:middle;
+		width:327px;
+	}
+	span.hsValueB{
+		width:310px;
+	}
+	label.offtimeMin{
+		color:#000000;
+		font-size:12px;
+		margin-left:4px;
+	}
+	ul.gridLineRadio{
+		margin-left:0px;
+	}
+	ul.gridLineRadio input, ul.gridLineRadio label{
+		vertical-align:middle;
+	}
+</style>
+<script type="text/javascript">function init(){var CONN_TYPE=menuArgs.connType;var StrXtpMtuErr=CONN_TYPE==LINK_TYPE_PPTP?errStr.pptpMtuErr:errStr.l2tpMtuErr;var LINK_TYPE_XTP=CONN_TYPE==LINK_TYPE_PPTP?LINK_TYPE_PPTP:LINK_TYPE_L2TP;var XTP_DATA_ID=CONN_TYPE==LINK_TYPE_PPTP?PPTP_DATA_ID:L2TP_DATA_ID;var XTP_MAX_MTU=CONN_TYPE==LINK_TYPE_PPTP?1420:1460;if(CONN_TYPE!=LINK_TYPE_PPTP){$(".pptpHelp")[0].style.display="none";id("pptpAdv").style.display="none";id("pptpmtuNote").style.display="none";$(".l2tpHelp")[0].style.display="block";id("l2tpAdv").style.display="block";id("l2tpmtuNote").style.display="inline-block"}var linkOptions=[{str:label.demand,value:0},{str:label.auto,value:1},{str:label.manual,value:3}];var updateTimerHandle;var EINHOSTNAME=-100;var UPDATE_DHCP=true;function errHandle(errNo,objOrId){var showStr="";switch(errNo){case ENONE:return false;case EOUTOFRANGE:showStr=errStr.dhcpcHostNameErr;break;case EINVMTU:showStr=StrXtpMtuErr;break;case EINVFDNSVR:showStr=errStr.primDnsErr;break;case EINVSDNSVR:showStr=errStr.seDnsErr;break;case EINHOSTNAME:showStr=errStr.hostNameErr;break;case ENOLINK:showStr=errStr.wanLinkDown;break;case EINVNET:showStr=errStr.ipAddrNetErr;break;case EINVIP:showStr=errStr.ipAddrErr;break;case EINVIPFMT:showStr=errStr.ipAddrFmtErr;break;case EINVGROUPIP:showStr=errStr.ipAddrGroupErr;break;case EINVLOOPIP:showStr=errStr.ipAddrLoopErr;break;case EINVMASK:showStr=errStr.maskErr;break;case EINVNETID:showStr=errStr.ipAddrNetIdErr;break;case EINVHOSTID:showStr=errStr.ipAddrHostIdErr;break;case EINVIPMASKPAIR:showStr=errStr.ipAddrMaskNotMatch;break;case ECOMFLICTNET:showStr=errStr.ipAddrLanWanConflict;break;case EINVGTW:showStr=errStr.gatewayErr;break;case EINVTIME:showStr=errStr.pppoeOffTimeErr;break;default:showStr=errStr.unknown+errNo;break}showAlert(showStr,objOrId);return true}function checkLanConflict(ipVal,maskVal){var lanIp=transIp(lan.ip),lanMask=transIp(lan.mask);var stcIp=transIp(ipVal),stcMask=transIp(maskVal);return(0==((lanIp^stcIp)&lanMask&stcMask))?ECOMFLICTNET:ENONE}function checkGateway(value){return ENONE!=checkIp(value)?EINVGTW:ENONE}function checkPrimDns(value){if(lan.ip==value){return EINVFDNSVR}return ENONE!=checkIp(value)?EINVFDNSVR:ENONE}function checkSeDns(value){if(/^\s*$/.test(value)||"0.0.0.0"==value){id("stcDns1").value="0.0.0.0";return ENONE}if(lan.ip==value){return EINVSDNSVR}return ENONE!=checkIp(value)?EINVSDNSVR:ENONE}function checkDomainIp(){var domainIp=id("domainIp").value;if(domainIp.length==0){showAlert(errStr.inputIpErr,"domainIp");return false}if(/[a-zA-Z]/g.test(domainIp)==true){if(ENONE!=checkDomain(domainIp)){showAlert(errStr.domainErr,"domainIp");return false}}else{if(ENONE!=validIpFormat(domainIp)){showAlert(errStr.ipAddrFmtErr,"domainIp");return false}if(ENONE!=validIpAddr(domainIp)){showAlert(errStr.ipAddrNetErr,"domainIp");return false}}return true}function checkHostName(value){if(/[^0-9a-z\-]/gi.test(value)==true){return EINHOSTNAME}return ENONE}function checkOffTime(value,max,min){if((false==checkNum(value))||(false==checkNumRange(parseInt(value),max,min))){return EINVTIME}return ENONE}function linkUp(){var errNo=ENONE;if(LINK_TYPE_XTP==link.linkType){errHandle($.instr("wan -linkUp").errorno);updateStatus();return}link.linkType=LINK_TYPE_XTP;errNo=$.write($.toText(link),$.block);if(errHandle(errNo)){$.read(XTP_DATA_ID);return}updateStatus()}function linkDown(){if(LINK_TYPE_XTP==link.linkType){errHandle($.instr("wan -linkDown").errorno);updateStatus()}}function updateStatus(){clearTimeout(updateTimerHandle);$.readNonBlock(LINK_STATUS_DATA_ID,function(){var status=$.findBlock(LINK_STATUS_DATA_ID);switch(parseInt(status.status)){case LINK_DOWN:id("pppIp").innerHTML="0.0.0.0";id("pppDns").innerHTML="0.0.0.0, 0.0.0.0";disableBtn("disconnect",true,"delAll","delAllUn");if((LINK_CODE_MANUAL!=status.code)&&(LINK_CODE_NORMAL!=status.code)){hsStatSet("error",linkCode[status.code]);break}hsStatSet("error",linkStatus[LINK_DOWN]);break;case LINK_UP:var dnsStr="";disableBtn("disconnect",false,"delAllUn","delAll",linkDown);hsStatSet("correct",linkStatus[LINK_UP]);id("pppIp").innerHTML=status.ip;dnsStr=status.dns[0]+" , "+status.dns[1];if("0.0.0.0"==status.dns[0]&&"0.0.0.0"==status.dns[1]){dnsStr+=(" "+label.dnsException)}id("pppDns").innerHTML=dnsStr;break;case LINKING_DOWN:disableBtn("disconnect",true,"delAll","delAllUn");hsStatSet("link",linkStatus[LINKING_DOWN]);id("pppIp").innerHTML="0.0.0.0";id("pppDns").innerHTML="0.0.0.0, 0.0.0.0";break;case LINKING_UP:disableBtn("disconnect",false,"delAllUn","delAll",linkDown);hsStatSet("link",linkStatus[LINKING_UP]);break;default:break}if(xtp.bDhcp&&UPDATE_DHCP){id("dynIp").innerHTML=status.dualIp;id("dynMask").innerHTML=status.dualMask;id("dynGateway").innerHTML=status.dualGateway;dnsStr=status.dualDns[0]+" , "+status.dualDns[1];if("0.0.0.0"!=status.dualIp.trim()&&"0.0.0.0"==status.dualDns[0]&&"0.0.0.0"==status.dualDns[1]){dnsStr+=(" "+label.dnsException)}id("dynDns").innerHTML=dnsStr}updateTimerHandle=$.setTimeout(updateTimer,2000)})}function updateTimer(){if(LINK_TYPE_XTP==parseInt(link.linkType)){updateStatus()}}function commitData(saveLinkMode,saveMtu,loadingId){var errNo=ENONE;var nameVal=id("name").value,pswVal=id("psw").value;var domainIp=id("domainIp").value;var secLinkMode=(id("SwitchDyn").checked?1:0);var ipVal=id("stcIp").value,maskVal=id("stcMask").value,gatewayVal=id("stcGateway").value;var stcPriDnsVal=id("stcDns0").value;var stcSecDnsVal=id("stcDns1").value;link.linkType=LINK_TYPE_XTP;xtp.userName=nameVal;xtp.passwd=pswVal;xtp.domainIp=domainIp;if((xtp.bDhcp&&0==secLinkMode)||(!xtp.bDhcp&&1==secLinkMode)){id("dynIp").innerHTML="0.0.0.0";id("dynMask").innerHTML="0.0.0.0";id("dynGateway").innerHTML="0.0.0.0";id("dynDns").innerHTML="0.0.0.0 , 0.0.0.0";UPDATE_DHCP=false;setTimeout(function(){UPDATE_DHCP=true},2500)}xtp.bDhcp=secLinkMode;if(0==secLinkMode){xtp.ip=ipVal;xtp.mask=maskVal;xtp.gateway=gatewayVal;xtp.dns[0]=stcPriDnsVal;xtp.dns[1]=stcSecDnsVal}if(saveLinkMode){var connTypeVal=id("wanLinkSel").value,offTimeVal=id("offTime").value;xtp.linkType=connTypeVal;switch(parseInt(connTypeVal)){case 0:case 3:xtp.maxIdleTime=offTimeVal;break;default:break}}if(saveMtu){link.linkMode=id("wanRateSel").value;xtp.mtu=id("mtu").value}closeAlert();setLoadingId(loadingId);errNo=$.write($.toText(xtp)+$.toText(link),$.block);if(errHandle(errNo)){$.read(XTP_DATA_ID+"#"+LINK_DATA_ID);return false}updateStatus();return true}function commitSettings(handleChange,handleUnchange,handleFail){var nameVal=id("name").value,pswVal=id("psw").value;var domainIp=id("domainIp").value;var secLinkMode=(id("SwitchDyn").checked?1:0);var ipVal=id("stcIp").value,maskVal=id("stcMask").value,gatewayVal=id("stcGateway").value;var stcPriDnsVal=id("stcDns0").value;var stcSecDnsVal=id("stcDns1").value;if(handleChange==undefined){handleChange=function(){commitData(false,false,"connect");return true}}if(handleUnchange==undefined){handleUnchange=function(){linkUp();return true}}if(handleFail==undefined){handleFail=function(){return false}}if(!checkDomainIp()){return handleFail()}if(0==secLinkMode){if(errHandle(checkIp(ipVal),"stcIp")||errHandle(checkMask(maskVal),"stcMask")||errHandle(checkIpMask(ipVal,maskVal),"stcMask")||errHandle(checkLanConflict(ipVal,maskVal),"stcIp")||errHandle(checkGateway(gatewayVal),"stcGateway")||errHandle(checkPrimDns(stcPriDnsVal),"stcDns0")||errHandle(checkSeDns(stcSecDnsVal),"stcDns1")){return handleFail()}}if(nameVal==xtp.userName&&domainIp==xtp.domainIp&&pswVal==xtp.passwd&&(secLinkMode==parseInt(xtp.bDhcp))){if((1==secLinkMode)||(0==secLinkMode&&ipVal==xtp.ip&&maskVal==xtp.mask&&gatewayVal==xtp.gateway&&stcPriDnsVal==xtp.dns[0]&&stcSecDnsVal==xtp.dns[1])){if(LINK_TYPE_XTP==link.linkType){return handleUnchange()}else{return handleChange()}}}if(0==nameVal.length||0==pswVal.length){showConfirm(label.accPwdNullTip,function(confirm){if(true==confirm){return handleChange()}else{return handleFail()}});return true}return handleChange()}function onConnect(){commitSettings()}function onSaveParam(){var saveMtu=function(basicSettingChanged){var linkModeVal=id("wanRateSel").value;var mtuVal=id("mtu").value;if(errHandle(checkMtu(mtuVal,XTP_MAX_MTU,576),"mtu")){return false}if(false==basicSettingChanged&&linkModeVal==link.linkMode&&mtuVal==xtp.mtu){return true}commitData(false,true,"save");return true};commitSettings(function(){saveMtu(true)},function(){saveMtu(false)})}function onSaveLinkMode(){var saveLinkMode=function(basicSettingChanged){var connTypeVal=id("wanLinkSel").value,offTimeVal=id("offTime").value;switch(parseInt(connTypeVal)){case 0:case 3:if(errHandle(checkOffTime(offTimeVal,99,0),"offTime")){return false}break;default:break}if(false==basicSettingChanged&&connTypeVal==xtp.linkType&&offTimeVal==xtp.maxIdleTime){return true}commitData(true,false,"saveLinkMode");return true};commitSettings(function(){saveLinkMode(true)},function(){saveLinkMode(false)})}function doLinkTypeSet(type){switch(parseInt(type)){case 0:case 3:id("ulOffTime").style.display="block";break;default:id("ulOffTime").style.display="none";break}}function changeSwitch(){if(true==id("SwitchStc").checked){id("dyn").style.display="none";id("stc").style.display="block"}else{if(0==xtp.bDhcp){id("dynIp").innerHTML="0.0.0.0";id("dynMask").innerHTML="0.0.0.0";id("dynGateway").innerHTML="0.0.0.0";id("dynDns").innerHTML="0.0.0.0 , 0.0.0.0"}id("dyn").style.display="block";id("stc").style.display="none"}}var link=$.findBlock(LINK_DATA_ID);var xtp=$.readEx(XTP_DATA_ID);var lan=$.readEx(LAN_DATA_ID);disableBtn("disconnect",true,"delAll","delAllUn");selectInit("wanSel",wanOptions,LINK_TYPE_XTP,wanSelectChange);selectInit("wanRateSel",rateOptions,link.linkMode,undefined,30);selectInit("wanLinkSel",linkOptions,xtp.linkType,doLinkTypeSet);id("name").value=xtp.userName;id("psw").value=xtp.passwd;id("domainIp").value=xtp.domainIp;id("offTime").value=xtp.maxIdleTime;id("mtu").value=xtp.mtu;id("stcIp").value=xtp.ip;id("stcMask").value=xtp.mask;id("stcGateway").value=xtp.gateway;id("stcDns0").value=xtp.dns[0]||"";id("stcDns1").value=xtp.dns[1]||"";id("dynIp").innerHTML="0.0.0.0";id("dynMask").innerHTML="0.0.0.0";id("dynGateway").innerHTML="0.0.0.0";id("dynDns").innerHTML="0.0.0.0 , 0.0.0.0";id("connect").onclick=onConnect;id("disconnect").onclick=linkDown;id("save").onclick=onSaveParam;id("SwitchDyn").onclick=changeSwitch;id("SwitchStc").onclick=changeSwitch;id("saveLinkMode").onclick=onSaveLinkMode;id("SwitchDyn").checked=xtp.bDhcp==0?false:true;id("SwitchStc").checked=xtp.bDhcp==0?true:false;doLinkTypeSet(xtp.linkType||0);changeSwitch();updateTimer()}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="hsHelp"></div>
+	<div class="title titleA" id="stateDiv">
+		<label class="title"><%menuStr.wanSet%></label>
+		<div id="netSetState" class="handleRelCon">
+			<i class="state"></i>
+			<span class="state"></span>
+		</div>
+		<i class="helpBtn pptpHelp" helpStr="pptpHelp"></i>
+		<i class="helpBtn l2tpHelp" helpStr="l2tpHelp" style="display:none"></i>
+	</div>
+	<div class="block" id="xtpbasic">
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label class="inputLiLbl"><%label.netMode%><i></i></label>
+				<span class="highSetSelect">
+					<span id="wanSel" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		
+		
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label for="name"><%label.userName%><i></i></label><input id="name" maxLength="255" type="text" />
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="psw"><%label.password%><i></i></label><input id="psw" maxLength="255" type="password" />
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label for="name"><%label.serverIp%><i></i></label><input id="domainIp" maxLength="63" type="text" />
+			</li>
+		</ul>
+		<ul class="hsInputUlDes">
+			<li class="hsInputLiDes">
+				<label class="desLbl"><%label.internetIp%><i></i></label>
+				<label id="pppIp" class="noteLbl">0.0.0.0</label>
+			</li>
+		</ul>
+		<ul class="hsInputUlDes">
+			<li class="hsInputLiDes">
+				<label class="desLbl"><%label.internetDns%><i></i></label>
+				<label id="pppDns" class="noteLbl">0.0.0.0 , 0.0.0.0</label>
+			</li>
+		</ul>
+		<ul class="gridLine gridLineA gridLineRadio">
+			<input id="SwitchDyn" name="switch" class="switchRadio" type="radio" /><label class="noteLbl" for="SwitchDyn"><%label.wdynamic%></label>
+			<input id="SwitchStc" name="switch" class="switchRadio" type="radio" style="margin-left: 50px;" /><label class="noteLbl" for="SwitchStc"><%label.wstatic%></label>
+		</ul>
+		<div id="dyn">
+			<ul class="hsInputUlDes">
+			<li class="hsInputLiDes">
+				<label class="desLbl"><%label.ipAddr%><i></i></label>
+				<label id="dynIp" class="noteLbl">0.0.0.0</label>
+			</li>
+			</ul>
+			<ul class="hsInputUlDes">
+			<li class="hsInputLiDes">
+				<label class="desLbl"><%label.mask%><i></i></label>
+				<label id="dynMask" class="noteLbl">0.0.0.0</label>
+			</li>
+			</ul>
+			<ul class="hsInputUlDes">
+			<li class="hsInputLiDes">
+				<label class="desLbl"><%label.gateway%><i></i></label>
+				<label id="dynGateway" class="noteLbl">0.0.0.0</label>
+			</li>
+			</ul>
+			<ul class="hsInputUlDes">
+			<li class="hsInputLiDes">
+				<label class="desLbl"><%label.dns%><i></i></label>
+				<label id="dynDns" class="noteLbl">0.0.0.0 , 0.0.0.0</label>
+			</li>
+			</ul>
+		</div>
+		<div id="stc">
+			<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="svcName"><%label.ipAddr%><i></i></label><input id="stcIp" maxLength="15" /><i class="tip"></i>
+			</li>
+			</ul>
+			<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="svcName"><%label.mask%><i></i></label><input id="stcMask" maxLength="15" /><i class="tip"></i>
+			</li>
+			</ul>
+			<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="svcName"><%label.gateway%><i></i></label><input id="stcGateway" maxLength="15" /><i class="tip"></i>
+			</li>
+			</ul>
+			<ul class="hsInputUl">
+			<li class="hsInputLi" >
+				<label for="stcDns0"><%label.dns0%><i></i></label><input id="stcDns0" maxLength="15" /><i class="tip"></i>
+			</li>
+			</ul>
+			<ul class="hsInputUl">
+				<li class="hsInputLi" >
+					<label for="stcDns1"><%label.dns1%><i></i></label><input id="stcDns1" maxLength="15" /><i class="tip"></i>
+				</li>
+				<li>
+					<label class="oneLineNote"><%label.optional%></label>
+				</li>
+			</ul>
+		</div>
+
+		
+		
+		
+		<div class="blockFuncA">
+			<span id="disconnect" class="delAll"><i class="subBtnLg"></i><label><%btn.disconnect%></label></span>
+			<span id="connect" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+	
+	<p class="hsTitleLine"></p>
+	<div class="title titleA">
+		<label class="title"><%label.linkMode%></label>
+	</div>
+	<div class="block">
+		<ul class="hsInputUl">
+			<li class="hsInputLi hsInputLiB">
+				<span id="wanLinkSel" class="selectB">
+					<span class="value hsValueB"></span><i class="hsArrowM"></i>
+				</span>
+			</li>
+		</ul>
+		<ul id="ulOffTime" class="hsInputUl">
+			<li class="hsInputLi hsInputLiC" id="offTimeLi">
+				<label for="offTime" id="offTimeLabel"><%label.offTime%><i></i></label><input id="offTime" maxLength="2" />
+			</li>
+			<li>
+				<label class="offtimeMin"><%label.minute%></label>
+				<label class="oneLineNote"><%label.offTimeComment%></label>
+			</li>
+		</ul>
+		<div class="blockFuncA">
+			<span id="saveLinkMode" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+	<p class="hsTitleLine"></p>
+	<div class="title titleA" id="pptpAdv">
+		<label class="title"><%label.pptpHighSet%></label>
+		<i class="helpBtn" helpStr="pptpAdvHelp"></i>
+	</div>
+	<div class="title titleA" id="l2tpAdv" style="display:none">
+		<label class="title"><%label.l2tpHighSet%></label>
+		<i class="helpBtn" helpStr="l2tpAdvHelp"></i>
+	</div>
+	<div class="block">
+		
+		<ul class="hsInputUl">
+			<li class="hsInputLi hsInputLiC" >
+				<label for="mtu"><%label.mtu%><i></i></label><input id="mtu" maxLength="4" />
+			</li>
+			<li class="twoLineWidth" id="pptpmtuNote">
+				<label class="twoLineNote"><%label.pptpMtuComment%></label>
+			</li>
+			<li class="twoLineWidth" id="l2tpmtuNote" style="display:none">
+				<label class="twoLineNote"><%label.l2tpMtuComment%></label>
+			</li>
+		</ul>
+		<ul class="hsInputUl">
+			<li class="hsInputLi">
+				<label class="inputLiLbl"><%label.wanRateSet%><i></i></label>
+				<span class="highSetSelect">
+					<span id="wanRateSel" class="select">
+						<span class="value"></span><i class="hsArrowM"></i>
+					</span>
+				</span>
+			</li>
+		</ul>
+		
+		
+		<div class="blockFuncA">
+			<span id="save" class="subBtnSv"><i class="subBtnLg"></i><label><%btn.save%></label></span>
+		</div>
+	</div>
+</div>

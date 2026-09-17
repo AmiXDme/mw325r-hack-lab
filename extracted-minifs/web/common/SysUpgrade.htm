@@ -1,0 +1,48 @@
+<style type="text/css">
+	div.sysUpBlock{
+		color:#000000;
+		font-size:12px;
+		padding-left:140px;
+		text-align:left;
+	}
+	#uploadIf{
+		top:-9999px;
+		position:absolute;
+		visibility:hidden;
+	}
+	p.sysUpgrade{
+		margin-top:10px;
+	}
+	p.upDesTiTop{
+		margin-top:25px;
+	}
+	p.upDesTi{
+		margin-top:6px;
+	}
+	p.sysUpTip{
+		font-size:14px;
+	}
+</style>
+<script type="text/javascript">function init(){function checkFile(){var fileName=file.value;if(fileName==""){showAlert(label.upWarn);return false}else{if(fileName.search(/\.bin$/)==-1){showAlert(errStr.fileFmttErr);return false}}return true}function upgradeTimeout(){upgradeTimeoutTag=true;id("uploadIf").onload=null;closeProgressNum();showAlert(errStr.upGradeFail)}function upLoadCallBack(errorno){var lanIp,domain;clearTimeout(upgradeTimeoutHd);upgradeTimeoutHd=null;if(true==upgradeTimeoutTag){return}if(ENONE!=errorno){showAlert(errStr.upGradeFail);return}$.read(LAN_DATA_ID+"#"+TPDOMAIN_DATA_ID);lanIp=$.findBlock(LAN_DATA_ID),domain=$.findBlock(TPDOMAIN_DATA_ID);showProgressNum(14000,undefined,function(){$.setTimeout(function(){window.location.href=((location.href.toString()).indexOf(lanIp.ip)==-1)?("http://"+domain.name):("http://"+lanIp.ip)},1500)})}function uploadEventBind(){file.onchange=function(){var tempStr=this.value;tempStr=tempStr.substring(tempStr.lastIndexOf("\\")+1);id("textfield").value=tempStr};if(USER_GROUP_REMOTE==$.group){disableBtn(sysUpgrade,true,"sysToolBtnEn","sysToolBtnUn")}else{sysUpgrade.onclick=function(){if(checkFile()){showConfirm(label.upConfirm,function(choose){if(true==choose){setLoadingId("sysUpgrade");$.readEx(DEVICE_DATA_ID);$("#uploadIf").one("load",function(){iFrmOnload("uploadIf",upLoadCallBack)});formObj.action=$.orgURL($.domainUrl+"?code="+TDDP_UPLOAD+"&asyn=0");formObj.submit();formObj.reset();showProgressNum(5000,label.upgrading);upgradeTimeoutTag=false;upgradeTimeoutHd=$.setTimeout(upgradeTimeout,20000)}})}}}}var deviceInf=$.readEx(DEVICE_DATA_ID);var formObj=document.forms[0];var file=id("fileName");var sysUpgrade=id("sysUpgrade");var upgradeTimeoutHd;var upgradeTimeoutTag=false;id("softwareVer").innerHTML=deviceInf.softVer;id("hardwareVer").innerHTML=deviceInf.hardVer;uploadEventBind()}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleA">
+		<label class="title"><%menuStr.upgrade%></label>
+		<i class="helpBtn" helpStr="sysUpgradeHelp"></i>
+	</div>
+	<div class="block sysUpBlock">
+		<p class="sysUpTip"><%label.upgradeTip%></p>
+		<form enctype="multipart/form-data" id="upFileForm" method="post" target="uploadIf">
+			<div class="fileDiv">
+				<input type="file" class="file" name="fileName" id="fileName" />
+				<input type="text" id="textfield" class="fileTxt" readonly="true" />
+				<input type="button" value="<%btn.browse%>" class="subBtnRect fileBrowse" />
+				<iframe id="uploadIf" name="uploadIf"></iframe>
+			</div>
+		</form>
+		<p class="sysUpgrade">
+			<input id="sysUpgrade" class="sysToolBtn sysToolBtnEn" type="button" value="<%btn.upgrade%>" />
+		</p>
+		<p class="upDesTiTop"><%label.upCurrHard%><%label.colon%><span id="hardwareVer"></span></p>
+		<p class="upDesTi"><%label.upCurrSoft%><%label.colon%><span id="softwareVer"></span></p>
+	</div>
+</div>

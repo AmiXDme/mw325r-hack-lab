@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MW325R Modern Panel</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: linear-gradient(135deg, #0d1117, #131a26); color: #e6edf3;
+         font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; padding: 24px; }
+  .wrap { max-width: 960px; margin: 0 auto; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  header .logo { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg,#1f6feb,#3fb950);
+                 display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  header h1 { font-size: 22px; } header p { color: #8b949e; font-size: 13px; }
+  .pill { margin-left: auto; font-size: 12px; padding: 6px 12px; border-radius: 20px; background: #21262d; border: 1px solid #30363d; }
+  .pill.on { color: #3fb950; border-color: #3fb950; } .pill.off { color: #f85149; border-color: #f85149; }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
+  .card { background: rgba(22,27,34,.9); border: 1px solid #30363d; border-radius: 14px; padding: 18px; }
+  .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #8b949e; margin-bottom: 12px; }
+  .row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #21262d; font-size: 14px; }
+  .row:last-child { border-bottom: none; }
+  .row .k { color: #8b949e; } .row .v { font-weight: 600; font-family: Consolas, monospace; }
+  .ok { color: #3fb950; } .bad { color: #f85149; } .warn { color: #d29922; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { text-align: left; color: #8b949e; font-weight: 500; padding: 6px 4px; border-bottom: 1px solid #30363d; }
+  td { padding: 7px 4px; border-bottom: 1px solid #21262d; font-family: Consolas, monospace; }
+  #login { max-width: 380px; margin: 60px auto; text-align: center; }
+  #login input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #30363d;
+                 background: #0d1117; color: #e6edf3; font-size: 15px; }
+  button { background: #1f6feb; color: #fff; border: none; border-radius: 8px; padding: 12px 20px;
+           font-size: 15px; cursor: pointer; width: 100%; }
+  button:hover { background: #388bfd; } button:disabled { opacity: .5; }
+  #err { color: #f85149; margin-top: 10px; font-size: 14px; min-height: 20px; }
+  .note { margin-top: 16px; font-size: 12px; color: #6e7681; text-align: center; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">📶</div>
+    <div><h1>MW325R Modern Panel</h1><p>Local control UI &bull; talks to your router via PC backend</p></div>
+    <div class="pill off" id="conn">disconnected</div>
+  </header>
+
+  <div id="login">
+    <div class="card">
+      <h3>Router login</h3>
+      <input type="password" id="pw" placeholder="Admin password" autocomplete="off">
+      <button id="go" onclick="login()">Connect</button>
+      <div id="err"></div>
+      <p class="note">Password stays in this PC's memory only. Nothing is written to disk.</p>
+    </div>
+  </div>
+
+  <div id="panel" class="hidden">
+    <div class="grid">
+      <div class="card"><h3>📡 Device</h3><div id="c-dev"></div></div>
+      <div class="card"><h3>📶 WiFi</h3><div id="c-wifi"></div></div>
+      <div class="card"><h3>🛡️ Security</h3><div id="c-sec"></div></div>
+    </div>
+    <div class="card" style="margin-top:14px"><h3>💻 Connected devices (<span id="ncli">0</span>)</h3>
+      <table><thead><tr><th>Name</th><th>IP</th><th>MAC</th></tr></thead><tbody id="c-cli"></tbody></table>
+    </div>
+    <p class="note">v1 is read-only. Change actions (WiFi key, WPS/UPnP toggles) arrive after your approval.</p>
+  </div>
+</div>
+<script>
+const API = 'http://127.0.0.1:8100';
+const $ = id => document.getElementById(id);
+async function login() {
+  $('err').textContent = ''; $('go').disabled = true;
+  try {
+    const r = await fetch(API + '/api/login', {method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({password: $('pw').value})});
+    const d = await r.json();
+    if (d.ok) { $('login').classList.add('hidden'); $('panel').classList.remove('hidden');
+      $('conn').textContent = 'connected'; $('conn').className = 'pill on'; load(); }
+    else $('err').textContent = 'Login failed (error ' + d.errorno + '). Try again.';
+  } catch(e) { $('err').textContent = 'Backend not running. Start router_api.py first.'; }
+  $('go').disabled = false;
+}
+$('pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
+function row(k, v, c) { return `<div class="row"><span class="k">${k}</span><span class="v ${c||''}">${v}</span></div>`; }
+async function load() {
+  const d = await (await fetch(API + '/api/overview')).json();
+  if (!d.ok) { $('err').textContent = 'Read failed: ' + d.error; return; }
+  const o = d.overview;
+  $('c-dev').innerHTML = row('Model', o.model) + row('Firmware', o.firmware) + row('MAC', o.mac);
+  $('c-wifi').innerHTML = row('SSID', o.ssid) + row('Key', o.wifiKey) +
+    row('Radio', o.wifiEnabled === '1' ? 'ON' : 'OFF', o.wifiEnabled === '1' ? 'ok' : 'bad') +
+    row('Broadcast', o.broadcast === '1' ? 'visible' : 'hidden');
+  $('c-sec').innerHTML =
+    row('WPS', o.wpsEnabled === '1' ? 'ON — turn off!' : 'OFF', o.wpsEnabled === '1' ? 'bad' : 'ok') +
+    row('UPnP :1900', 'OPEN, no auth', 'bad') +
+    row('Admin page', 'HTTP only', 'warn');
+  $('ncli').textContent = o.clients.length;
+  $('c-cli').innerHTML = o.clients.map(c =>
+    `<tr><td>${c.host}</td><td>${c.ip}</td><td>${c.mac}</td></tr>`).join('') || '<tr><td colspan="3">none</td></tr>';
+}
+</script>
+</body>
+</html>

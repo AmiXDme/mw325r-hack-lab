@@ -1,0 +1,28 @@
+<style type="text/css">
+	div.SysRebootBlock{
+		margin-top:30px;
+		text-align:left;
+		padding-left:140px;
+	}
+	#sysReboot{
+		padding-top:6px;
+		padding-bottom:6px;
+		*padding-top:6px;
+		*padding-bottom:4px;
+	}
+	p.sysrebootF{
+		color:#000000;
+		font-size:14px;
+		margin-top:10px;
+	}
+</style>
+<script type="text/javascript">function init(){id("sysReboot").onclick=function(){showConfirm(label.rebootConfirm,function(choose){if(true==choose){setLoadingId("sysReboot");if($.reboot().errorno==ENONE){showProgressNum(14000,undefined,function(){window.location.reload()})}}})}}init();</script>
+<div id="hcCo" class="hcCo">
+	<div class="title titleA">
+		<label class="title"><%menuStr.reboot%></label>
+	</div>
+	<div class="block SysRebootBlock">
+		<input id="sysReboot" class="sysToolBtn sysToolBtnEn" type="button" value="<%menuStr.reboot%>" />
+		<p class="sysrebootF"><%label.reboottWarn%></p>
+	</div>
+</div>
