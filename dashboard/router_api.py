@@ -331,6 +331,112 @@ def do_fwd(op, idx=None, ip="", lport="", start="", end="", ptc="0"):
     return {"ok": o.get("errorno") == 0, "errorno": o.get("errorno")}
 
 
+ALLOWED_INSTR = ("systool ", "forward ", "advanced ", "main ",
+                   "wan ", "wlan ", "arpMap")
+
+
+def do_instr(cmd):
+    """TDDP INSTRUCT passthrough (whitelisted prefixes only)."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    if not isinstance(cmd, str) or not cmd.startswith(ALLOWED_INSTR):
+        return {"ok": False, "error": "blocked-prefix"}
+    if len(cmd) > 300:
+        return {"ok": False, "error": "too-long"}
+    r = cdp_eval("JSON.stringify($.instr(" + json.dumps(cmd) + "))")
+    try:
+        o = json.loads(r)
+    except Exception:
+        return {"ok": False, "error": "bad-response"}
+    return {"ok": o.get("errorno") == 0, "errorno": o.get("errorno"),
+            "data": o.get("data")}
+
+
+def do_traffic():
+    """Sample WAN counters twice -> live up/down rates."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    import time as _t
+    a = cdp_eval("JSON.stringify($.readEx(23))")
+    _t.sleep(2)
+    b = cdp_eval("JSON.stringify($.readEx(23))")
+    try:
+        A, B = json.loads(a), json.loads(b)
+        dt = 2.0
+        up = (int(B.get("outOctets", 0)) - int(A.get("outOctets", 0))) * 8 / dt
+        down = (int(B.get("inOctets", 0)) - int(A.get("inOctets", 0))) * 8 / dt
+        return {"ok": True, "up_bps": max(0, int(up)),
+                "down_bps": max(0, int(down)),
+                "wanIp": B.get("ip", ""), "uptime": B.get("upTime", ""),
+                "totUpMB": round(int(B.get("outOctets", 0)) / 1e6, 1),
+                "totDownMB": round(int(B.get("inOctets", 0)) / 1e6, 1)}
+    except Exception as e:
+        return {"ok": False, "error": f"parse: {e}"}
+
+
+def do_speedtest(mb=10):
+    """PC-side download speed test (honest label: measures THIS pc's net)."""
+    import time as _t
+    mb = max(1, min(int(mb), 50))
+    url = f"https://cachefly.cachefly.net/{mb}mb.test"
+    try:
+        t0 = _t.time()
+        req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0"})
+        n = 0
+        with urllib.request.urlopen(req, timeout=60) as r:
+            while True:
+                chunk = r.read(65536)
+                if not chunk:
+                    break
+                n += len(chunk)
+        dt = max(_t.time() - t0, 0.01)
+        return {"ok": True, "mbps": round(n * 8 / dt / 1e6, 1),
+                "mb": round(n / 1e6, 1), "sec": round(dt, 1)}
+    except Exception as e:
+        return {"ok": False, "error": str(e)[:120]}
+
+
+def do_dns(dns1, dns2="", auto=False):
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    import re as _re
+    ipre = r"^\d{1,3}(\.\d{1,3}){3}$"
+    if auto:
+        fields = {"manualDns": "0"}
+    else:
+        if not _re.match(ipre, dns1 or ""):
+            return {"ok": False, "error": "bad-dns1"}
+        if dns2 and not _re.match(ipre, dns2):
+            return {"ok": False, "error": "bad-dns2"}
+        fields = {"manualDns": "1", "dns.0": dns1,
+                  "dns.1": dns2 or "0.0.0.0"}
+    return do_write_fields(25, fields)
+
+
+def do_device(op, mac="", name="", up="0", down="0", blocked=None):
+    """Device block/rename/limit via staMgt instr (block 13 is read-only)."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    import urllib.parse as _up
+    mac = (mac or "").upper()
+    import re as _re
+    if not _re.match(r"^([0-9A-F]{2}-){5}[0-9A-F]{2}$", mac):
+        return {"ok": False, "error": "bad-mac"}
+    if op in ("block", "unblock", "rename", "limit", "set"):
+        cmd = (f"main staMgt -add mac:{mac} name:{_up.quote(name or '')} "
+               f"upload:{up} download:{down}")
+        if op == "block" or (op == "set" and str(blocked) == "1"):
+            cmd += " blocked"
+    else:
+        return {"ok": False, "error": "bad-op"}
+    r = cdp_eval("JSON.stringify($.instr(" + json.dumps(cmd) + "))")
+    try:
+        o = json.loads(r)
+    except Exception:
+        return {"ok": False, "error": "bad-response"}
+    return {"ok": o.get("errorno") == 0, "errorno": o.get("errorno")}
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "MW325R-Panel/1.0"
 
@@ -396,6 +502,20 @@ class Handler(BaseHTTPRequestHandler):
                     data.get("op"), data.get("idx"), data.get("ip", ""),
                     data.get("lport", ""), data.get("start", ""),
                     data.get("end", ""), data.get("ptc", "0")))
+            if u.path == "/api/instr":
+                return self._json(do_instr(data.get("cmd", "")))
+
+            if u.path == "/api/speedtest":
+                return self._json(do_speedtest(data.get("mb", 10)))
+            if u.path == "/api/dns":
+                return self._json(do_dns(data.get("dns1", ""),
+                                         data.get("dns2", ""),
+                                         data.get("auto", False)))
+            if u.path == "/api/device":
+                return self._json(do_device(
+                    data.get("op"), data.get("mac", ""),
+                    data.get("name", ""), data.get("up", "0"),
+                    data.get("down", "0"), data.get("blocked")))
             if u.path == "/api/diag":
                 return self._json(do_diag(
                     data.get("action"), data.get("type", "ping"),
@@ -423,6 +543,11 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": f"backend-error: {e}"}, 500)
         elif u.path == "/api/health":
             self._json({"ok": True, "authed": bool(_state["enc_pwd"])})
+        elif u.path == "/api/traffic":
+            try:
+                self._json(do_traffic())
+            except Exception as e:
+                self._json({"ok": False, "error": f"backend-error: {e}"}, 500)
         elif u.path == "/api/backup":
             try:
                 r = do_backup_url()

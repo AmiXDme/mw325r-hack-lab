@@ -99,17 +99,28 @@ async function login() {
 }
 $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 
-const TABS = [['status','📊 Status'],['wifi','📶 WiFi'],['net','🌐 Network'],['wan','🌍 Internet'],['fwd','🚪 Forwarding'],['sec','🛡️ Security'],['sys','⚙️ System'],['tools','🔧 Tools'],['fw','🧬 Firmware'],['raw','🧰 Blocks']];
+const TABS = [['status','📊 Status'],['wifi','📶 WiFi'],['net','🌐 Network'],['wan','🌍 Internet'],['dev','👥 Devices'],['mod','🚀 Modern'],['fwd','🚪 Forwarding'],['sec','🛡️ Security'],['sys','⚙️ System'],['tools','🔧 Tools'],['fw','🧬 Firmware'],['raw','🧰 Blocks']];
 function buildTabs() {
   $('tabs').innerHTML = TABS.map(([id, label], i) =>
     `<div class="tab${i === 0 ? ' active' : ''}" id="tab-${id}" onclick="showTab('${id}')">${label}</div>`).join('');
 }
+let _tabQ = Promise.resolve(), _curTab = null;
 async function showTab(id) {
+  _curTab = id;
   document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-  $('tab-' + id).classList.add('active');
-  $('tabbody').innerHTML = '<div class="card">Loading…</div>';
-  try { await ({status: tabStatus, wifi: tabWifi, net: tabNet, wan: tabWan, fwd: tabFwd, sec: tabSec, sys: tabSys, tools: tabTools, fw: tabFw, raw: tabRaw})[id](); }
-  catch(e) { $('tabbody').innerHTML = `<div class="card"><span class="bad">Failed: ${esc(e.message)}. Reload + log in again.</span></div>`; }
+  const el = $('tab-' + id);
+  if (el) el.classList.add('active');
+  const run = async () => {
+    if (_curTab !== id) return; // superseded while queued
+    $('tabbody').innerHTML = '<div class="card">Loading…</div>';
+    try { await ({status: tabStatus, wifi: tabWifi, net: tabNet, wan: tabWan, dev: tabDev, mod: tabMod, fwd: tabFwd, sec: tabSec, sys: tabSys, tools: tabTools, fw: tabFw, raw: tabRaw})[id](); }
+    catch(e) {
+      if (_curTab !== id) return;
+      $('tabbody').innerHTML = `<div class="card"><span class="bad">Failed: ${esc(e.message)}. Reload + log in again.</span></div>`;
+    }
+  };
+  _tabQ = _tabQ.then(run, run);
+  return _tabQ;
 }
 function say(id, html, ok) { const el = $(id); if (el) el.innerHTML = `<span class="${ok === false ? 'bad' : 'ok'}">${html}</span>`; }
 
@@ -289,6 +300,121 @@ async function rawRead() {
   $('rawout').textContent = d.ok ? JSON.stringify(d.block, null, 1) : 'Failed: ' + JSON.stringify(d);
 }
 
+async function tabDev() {
+  const d = await get('/api/block?id=13');
+  if (!d.ok) throw new Error(d.error);
+  const all = (d.block.list || []).map((c, i) => ({i, ...c}))
+    .filter(c => c.mac && c.mac !== '00-00-00-00-00-00');
+  window._devs = all;
+  $('tabbody').innerHTML =
+    `<div class="card"><h3>👥 Devices — block, rename, limit (${all.length})</h3>
+      <table><thead><tr><th>Name</th><th>IP</th><th>MAC</th><th>State</th><th>Up/Down KB</th><th>Limit KB/s</th><th>Actions</th></tr></thead><tbody>${
+        all.map(c => `<tr><td>${esc(c.name || '(unnamed)')}</td><td>${esc(c.ip)}</td><td>${esc(c.mac)}</td>
+          <td>${c.blocked === '1' ? '<span class="bad">BLOCKED</span>' : (c.online === '1' ? '<span class="ok">online</span>' : 'offline')}</td>
+          <td>${Math.round((+c.up || 0) / 1024)}/${Math.round((+c.down || 0) / 1024)}</td>
+          <td>${esc(c.upLimit || '0')}</td>
+          <td><button onclick="devBlock(${c.i})" style="padding:6px 10px">${c.blocked === '1' ? 'Unblock' : 'Block'}</button>
+          <button onclick="devRename(${c.i})" style="padding:6px 10px">Name</button>
+          <button onclick="devLimit(${c.i})" style="padding:6px 10px">Limit</button></td></tr>`).join('') || '<tr><td colspan="7">none</td></tr>'
+      }</tbody></table><div class="msg" id="devmsg"></div>
+      <p class="note">Limits in KB/s per device (0 = unlimited). Blocking drops the device instantly; unblock restores it.</p></div>`;
+}
+function devByIdx(i) { return window._devs.find(c => c.i === i); }
+async function devBlock(i) {
+  const c = devByIdx(i);
+  const to = c.blocked === '1' ? 'unblock' : 'block';
+  if (!confirm((to === 'block' ? 'BLOCK ' : 'Unblock ') + (c.name || c.mac) + '?')) return;
+  say('devmsg', 'Working…');
+  const d = await post('/api/device', {op: to, mac: c.mac, name: c.name || '', up: c.upLimit || '0', down: c.downLimit || '0'});
+  say('devmsg', d.ok ? 'Done.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(tabDev, 1500);
+}
+async function devRename(i) {
+  const c = devByIdx(i);
+  const n = prompt('Name for ' + c.mac + ':', c.name || '');
+  if (n === null) return;
+  say('devmsg', 'Working…');
+  const d = await post('/api/device', {op: 'rename', mac: c.mac, name: n.slice(0, 32), up: c.upLimit || '0', down: c.downLimit || '0'});
+  say('devmsg', d.ok ? 'Renamed.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(tabDev, 1500);
+}
+async function devLimit(i) {
+  const c = devByIdx(i);
+  const kb = prompt('Max KB/s up+down for this device (0 = unlimited):', Math.round((+c.downLimit || 0) / 1024) || '0');
+  if (kb === null || isNaN(+kb) || +kb < 0) return;
+  say('devmsg', 'Working…');
+  const v = String(Math.round(+kb * 1024));
+  const d = await post('/api/device', {op: 'limit', mac: c.mac, name: c.name || '', up: v, down: v});
+  say('devmsg', d.ok ? 'Limit applied.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(tabDev, 1500);
+}
+
+async function tabMod() {
+  $('tabbody').innerHTML =
+    `<div class="card"><h3>🚀 Internet speed (this PC)</h3>
+      <div class="btnrow"><button onclick="runSpeed()">Run speed test (~10 MB download)</button></div>
+      <div class="msg" id="spmsg"></div></div>
+    <div class="card"><h3>📈 Live router traffic</h3>
+      <div class="btnrow"><button onclick="runTraffic()">Measure now (2 s sample)</button>
+      <button onclick="trafficLoop()">Auto every 5 s</button>
+      <button onclick="trafficStop()">Stop</button></div>
+      <div class="msg" id="trmsg"></div></div>
+    <div class="card"><h3>👤 Guest WiFi</h3><div id="guestbox">Loading…</div></div>
+    <div class="card"><h3>🌐 Custom DNS</h3>
+      <div class="kv"><label>Primary DNS</label><input id="dns1" value="8.8.8.8"></div>
+      <div class="kv"><label>Secondary DNS</label><input id="dns2" value="8.8.4.4"></div>
+      <div class="btnrow"><button onclick="setDns(false)">Use custom DNS</button>
+      <button onclick="setDns(true)">Back to auto (ISP)</button></div>
+      <div class="msg" id="dnsmsg"></div></div>
+    <div class="card"><h3>🔌 WAN connection</h3>
+      <div class="btnrow"><button onclick="wanCtl('linkUp')">Reconnect internet</button>
+      <button onclick="wanCtl('linkDown')" style="background:#9e6a03">Disconnect internet</button></div>
+      <div class="msg" id="wanmsg"></div></div>`;
+  const g = (await get('/api/block?id=34')).block;
+  $('guestbox').innerHTML =
+    `<div class="kv"><label>Enabled</label><select id="g-en"><option value="1"${g.bEnable === '1' ? ' selected' : ''}>ON</option><option value="0"${g.bEnable !== '1' ? ' selected' : ''}>OFF</option></select></div>
+     <div class="kv"><label>Guest SSID</label><input id="g-ssid" value="${esc(g.cSsid)}"></div>
+     <div class="kv"><label>Guest key (8-63)</label><input id="g-key" value="${esc(g.cPskSecret)}"></div>
+     <div class="btnrow"><button onclick="saveGuest()">Apply guest WiFi</button></div>
+     <div class="msg" id="gmsg"></div>`;
+}
+async function runSpeed() {
+  say('spmsg', 'Downloading test file…');
+  const d = await post('/api/speedtest', {mb: 10});
+  say('spmsg', d.ok ? `⬇ ${d.mbps} Mbps (${d.mb} MB in ${d.sec}s)` : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+let _trTimer = null;
+async function runTraffic() {
+  say('trmsg', 'Sampling 2 s…');
+  const d = await get('/api/traffic');
+  if (!d.ok) { say('trmsg', 'Failed: ' + JSON.stringify(d), false); return; }
+  const fmt = b => b > 1e6 ? (b / 1e6).toFixed(1) + ' Mbps' : Math.round(b / 1e3) + ' Kbps';
+  say('trmsg', `⬇ ${fmt(d.down_bps)} &nbsp; ⬆ ${fmt(d.up_bps)} &nbsp; (WAN ${esc(d.wanIp)}, up ${esc(d.uptime)})`, true);
+}
+function trafficLoop() { trafficStop(); runTraffic(); _trTimer = setInterval(runTraffic, 5000); }
+function trafficStop() { if (_trTimer) clearInterval(_trTimer); _trTimer = null; }
+async function saveGuest() {
+  const key = $('g-key').value.trim();
+  if (key && (key.length < 8 || key.length > 63)) { say('gmsg', 'Key must be 8-63 chars (or empty with radio off).', false); return; }
+  if (!confirm('Apply guest WiFi settings?')) return;
+  say('gmsg', 'Working…');
+  const d = await post('/api/write_fields', {id: 34, fields: {
+    bEnable: $('g-en').value, cSsid: $('g-ssid').value.trim(), cPskSecret: key}});
+  say('gmsg', d.ok ? 'Guest WiFi updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+async function setDns(auto) {
+  if (!confirm(auto ? 'Back to ISP DNS?' : 'Switch to custom DNS? Pages may pause briefly.')) return;
+  say('dnsmsg', 'Working…');
+  const d = await post('/api/dns', auto ? {auto: true} : {dns1: $('dns1').value.trim(), dns2: $('dns2').value.trim()});
+  say('dnsmsg', d.ok ? 'DNS updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+async function wanCtl(op) {
+  if (!confirm(op === 'linkUp' ? 'Reconnect the internet?' : 'DISCONNECT the internet for everyone?')) return;
+  say('wanmsg', 'Working…');
+  const d = await post('/api/instr', {cmd: 'wan -' + op});
+  say('wanmsg', d.ok ? 'Command sent.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+
 async function tabWan() {
   const st = (await get('/api/block?id=23')).block;
   const link = (await get('/api/block?id=22')).block;
@@ -412,13 +538,6 @@ async function loadLog() {
   if (!d.ok) { $('logout').textContent = 'Failed.'; return; }
   const list = (d.block.list || []).slice(-25).reverse();
   $('logout').textContent = list.map(e => `[${e.days || 0}d ${e.hours || 0}:${e.mins || 0}:${e.secs || 0}] ${e.msg || ''}`).join('\n') || '(empty)';
-}
-
-async function rawRead() {
-  const id = $('rawid').value;
-  $('rawout').textContent = 'Reading…';
-  const d = await get('/api/block?id=' + id);
-  $('rawout').textContent = d.ok ? JSON.stringify(d.block, null, 1) : 'Failed: ' + JSON.stringify(d);
 }
 </script>
 </body>
