@@ -3,44 +3,59 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>MW325R Modern Panel</title>
+<title>MW325R Modern Panel v2</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { background: linear-gradient(135deg, #0d1117, #131a26); color: #e6edf3;
          font-family: 'Segoe UI', system-ui, sans-serif; min-height: 100vh; padding: 24px; }
-  .wrap { max-width: 960px; margin: 0 auto; }
-  header { display: flex; align-items: center; gap: 12px; margin-bottom: 20px; }
+  .wrap { max-width: 1020px; margin: 0 auto; }
+  header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
   header .logo { width: 44px; height: 44px; border-radius: 12px; background: linear-gradient(135deg,#1f6feb,#3fb950);
                  display: flex; align-items: center; justify-content: center; font-size: 22px; }
   header h1 { font-size: 22px; } header p { color: #8b949e; font-size: 13px; }
-  .pill { margin-left: auto; font-size: 12px; padding: 6px 12px; border-radius: 20px; background: #21262d; border: 1px solid #30363d; }
+  .pill { margin-left: auto; font-size: 12px; padding: 6px 12px; border-radius: 20px; background: #21262d; border: 1px solid #30363d; white-space: nowrap; }
   .pill.on { color: #3fb950; border-color: #3fb950; } .pill.off { color: #f85149; border-color: #f85149; }
+  .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 14px; }
+  .tab { padding: 10px 16px; border-radius: 10px 10px 0 0; background: #161b22; border: 1px solid #30363d;
+         border-bottom: none; cursor: pointer; font-size: 14px; color: #8b949e; }
+  .tab.active { background: #1f6feb; color: #fff; border-color: #1f6feb; }
   .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; }
-  .card { background: rgba(22,27,34,.9); border: 1px solid #30363d; border-radius: 14px; padding: 18px; }
+  .card { background: rgba(22,27,34,.9); border: 1px solid #30363d; border-radius: 14px; padding: 18px; margin-bottom: 14px; }
   .card h3 { font-size: 13px; text-transform: uppercase; letter-spacing: 1px; color: #8b949e; margin-bottom: 12px; }
-  .row { display: flex; justify-content: space-between; padding: 7px 0; border-bottom: 1px solid #21262d; font-size: 14px; }
+  .row { display: flex; justify-content: space-between; gap: 12px; padding: 7px 0; border-bottom: 1px solid #21262d; font-size: 14px; }
   .row:last-child { border-bottom: none; }
-  .row .k { color: #8b949e; } .row .v { font-weight: 600; font-family: Consolas, monospace; }
-  .ok { color: #3fb950; } .bad { color: #f85149; } .warn { color: #d29922; }
+  .row .k { color: #8b949e; flex-shrink: 0; } .row .v { font-weight: 600; font-family: Consolas, monospace; text-align: right; word-break: break-all; }
+  .ok { color: #3fb950; } .bad { color: #f85149; } .warn { color: #d29922; } .info { color: #58a6ff; }
   table { width: 100%; border-collapse: collapse; font-size: 14px; }
   th { text-align: left; color: #8b949e; font-weight: 500; padding: 6px 4px; border-bottom: 1px solid #30363d; }
   td { padding: 7px 4px; border-bottom: 1px solid #21262d; font-family: Consolas, monospace; }
   #login { max-width: 380px; margin: 60px auto; text-align: center; }
-  #login input { width: 100%; padding: 12px; margin: 10px 0; border-radius: 8px; border: 1px solid #30363d;
-                 background: #0d1117; color: #e6edf3; font-size: 15px; }
-  button { background: #1f6feb; color: #fff; border: none; border-radius: 8px; padding: 12px 20px;
-           font-size: 15px; cursor: pointer; width: 100%; }
+  input, select { padding: 11px; margin: 6px 0; border-radius: 8px; border: 1px solid #30363d;
+                  background: #0d1117; color: #e6edf3; font-size: 14px; }
+  #login input { width: 100%; }
+  button { background: #1f6feb; color: #fff; border: none; border-radius: 8px; padding: 11px 18px;
+           font-size: 14px; cursor: pointer; }
   button:hover { background: #388bfd; } button:disabled { opacity: .5; }
+  button.danger { background: #9e6a03; } button.red { background: #a40e26; }
+  .btnrow { display: flex; gap: 10px; flex-wrap: wrap; margin: 8px 0; }
+  .btnrow button { flex: 1; min-width: 150px; width: auto; }
+  #login button { width: 100%; }
   #err { color: #f85149; margin-top: 10px; font-size: 14px; min-height: 20px; }
+  .msg { margin-top: 10px; font-size: 14px; min-height: 22px; }
   .note { margin-top: 16px; font-size: 12px; color: #6e7681; text-align: center; }
   .hidden { display: none; }
+  pre { background: #010409; border: 1px solid #30363d; border-radius: 8px; padding: 12px;
+        font-size: 12px; max-height: 380px; overflow: auto; white-space: pre-wrap; }
+  .kv { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
+  .kv label { min-width: 170px; color: #8b949e; font-size: 14px; }
+  .kv input, .kv select { flex: 1; min-width: 180px; }
 </style>
 </head>
 <body>
 <div class="wrap">
   <header>
     <div class="logo">📶</div>
-    <div><h1>MW325R Modern Panel</h1><p>Local control UI &bull; talks to your router via PC backend</p></div>
+    <div><h1>MW325R Modern Panel <span style="font-size:12px;color:#8b949e">v2</span></h1><p>Every page of the old UI, rebuilt modern — local only</p></div>
     <div class="pill off" id="conn">disconnected</div>
   </header>
 
@@ -55,50 +70,223 @@
   </div>
 
   <div id="panel" class="hidden">
-    <div class="grid">
-      <div class="card"><h3>📡 Device</h3><div id="c-dev"></div></div>
-      <div class="card"><h3>📶 WiFi</h3><div id="c-wifi"></div></div>
-      <div class="card"><h3>🛡️ Security</h3><div id="c-sec"></div></div>
-    </div>
-    <div class="card" style="margin-top:14px"><h3>💻 Connected devices (<span id="ncli">0</span>)</h3>
-      <table><thead><tr><th>Name</th><th>IP</th><th>MAC</th></tr></thead><tbody id="c-cli"></tbody></table>
-    </div>
-    <p class="note">v1 is read-only. Change actions (WiFi key, WPS/UPnP toggles) arrive after your approval.</p>
+    <div class="tabs" id="tabs"></div>
+    <div id="tabbody"></div>
+    <p class="note">Write actions confirm first. Session expiry → reload + log in again.</p>
   </div>
 </div>
 <script>
 const API = 'http://127.0.0.1:8100';
 const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+function row(k, v, c) { return `<div class="row"><span class="k">${k}</span><span class="v ${c||''}">${esc(v)}</span></div>`; }
+async function post(path, body) {
+  const r = await fetch(API + path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body || {})});
+  return r.json();
+}
+async function get(path) { return (await fetch(API + path)).json(); }
+
 async function login() {
   $('err').textContent = ''; $('go').disabled = true;
   try {
-    const r = await fetch(API + '/api/login', {method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({password: $('pw').value})});
-    const d = await r.json();
+    const d = await post('/api/login', {password: $('pw').value});
     if (d.ok) { $('login').classList.add('hidden'); $('panel').classList.remove('hidden');
-      $('conn').textContent = 'connected'; $('conn').className = 'pill on'; load(); }
-    else $('err').textContent = 'Login failed (error ' + d.errorno + '). Try again.';
+      $('conn').textContent = 'connected'; $('conn').className = 'pill on';
+      buildTabs(); showTab('status');
+    } else $('err').textContent = 'Login failed (error ' + d.errorno + '). Try again.';
   } catch(e) { $('err').textContent = 'Backend not running. Start router_api.py first.'; }
   $('go').disabled = false;
 }
 $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
-function row(k, v, c) { return `<div class="row"><span class="k">${k}</span><span class="v ${c||''}">${v}</span></div>`; }
-async function load() {
-  const d = await (await fetch(API + '/api/overview')).json();
-  if (!d.ok) { $('err').textContent = 'Read failed: ' + d.error; return; }
+
+const TABS = [['status','📊 Status'],['wifi','📶 WiFi'],['net','🌐 Network'],['sec','🛡️ Security'],['sys','⚙️ System'],['fw','🧬 Firmware'],['raw','🧰 Blocks']];
+function buildTabs() {
+  $('tabs').innerHTML = TABS.map(([id, label], i) =>
+    `<div class="tab${i === 0 ? ' active' : ''}" id="tab-${id}" onclick="showTab('${id}')">${label}</div>`).join('');
+}
+async function showTab(id) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  $('tab-' + id).classList.add('active');
+  $('tabbody').innerHTML = '<div class="card">Loading…</div>';
+  try { await ({status: tabStatus, wifi: tabWifi, net: tabNet, sec: tabSec, sys: tabSys, fw: tabFw, raw: tabRaw})[id](); }
+  catch(e) { $('tabbody').innerHTML = `<div class="card"><span class="bad">Failed: ${esc(e.message)}. Reload + log in again.</span></div>`; }
+}
+function say(id, html, ok) { const el = $(id); if (el) el.innerHTML = `<span class="${ok === false ? 'bad' : 'ok'}">${html}</span>`; }
+
+async function tabStatus() {
+  const d = await get('/api/overview'); if (!d.ok) throw new Error(d.error);
   const o = d.overview;
-  $('c-dev').innerHTML = row('Model', o.model) + row('Firmware', o.firmware) + row('MAC', o.mac);
-  $('c-wifi').innerHTML = row('SSID', o.ssid) + row('Key', o.wifiKey) +
-    row('Radio', o.wifiEnabled === '1' ? 'ON' : 'OFF', o.wifiEnabled === '1' ? 'ok' : 'bad') +
-    row('Broadcast', o.broadcast === '1' ? 'visible' : 'hidden');
-  $('c-sec').innerHTML =
-    row('WPS', o.wpsEnabled === '1' ? 'ON — turn off!' : 'OFF', o.wpsEnabled === '1' ? 'bad' : 'ok') +
-    row('UPnP :1900', 'OPEN, no auth', 'bad') +
-    row('Admin page', 'HTTP only', 'warn');
-  $('ncli').textContent = o.clients.length;
-  $('c-cli').innerHTML = o.clients.map(c =>
-    `<tr><td>${c.host}</td><td>${c.ip}</td><td>${c.mac}</td></tr>`).join('') || '<tr><td colspan="3">none</td></tr>';
+  $('tabbody').innerHTML =
+    `<div class="grid">
+      <div class="card"><h3>📡 Device</h3>${row('Model', o.model)}${row('Firmware', o.firmware)}${row('MAC', o.mac)}</div>
+      <div class="card"><h3>📶 WiFi</h3>${row('SSID', o.ssid)}${row('Key', o.wifiKey)}${row('Radio', o.wifiEnabled === '1' ? 'ON' : 'OFF', o.wifiEnabled === '1' ? 'ok' : 'bad')}</div>
+      <div class="card"><h3>🛡️ At a glance</h3>${row('WPS', o.wpsEnabled === '1' ? 'ON — turn off!' : 'OFF', o.wpsEnabled === '1' ? 'bad' : 'ok')}${row('UPnP :1900', 'OPEN, no auth', 'bad')}${row('Admin page', 'HTTP only', 'warn')}</div>
+    </div>
+    <div class="card"><h3>💻 Connected devices (${o.clients.length})</h3>
+      <table><thead><tr><th>Name</th><th>IP</th><th>MAC</th></tr></thead><tbody>${
+        o.clients.map(c => `<tr><td>${esc(c.host)}</td><td>${esc(c.ip)}</td><td>${esc(c.mac)}</td></tr>`).join('') || '<tr><td colspan="3">none</td></tr>'
+      }</tbody></table></div>`;
+}
+
+async function tabWifi() {
+  const b = (await get('/api/block?id=33')).block, r = (await get('/api/block?id=32')).block;
+  const chanMap = {'0': 'Auto', '1': '1', '2': '2', '3': '3', '4': '4', '5': '5', '6': '6', '7': '7', '8': '8', '9': '9', '10': '10', '11': '11', '12': '12', '13': '13'};
+  const modeMap = {'3': '11b only', '5': '11bg mixed', '7': '11bgn mixed'};
+  $('tabbody').innerHTML =
+    `<div class="card"><h3>📶 Wireless settings (live)</h3>
+      <div class="kv"><label>SSID</label><input id="w-ssid" value="${esc(b.cSsid)}"></div>
+      <div class="kv"><label>Password (8–63)</label><input id="w-key" value="${esc(b.cPskSecret)}"></div>
+      <div class="kv"><label>Channel</label><select id="w-ch">${Object.entries(chanMap).map(([v, l]) => `<option value="${v}"${String(r.uChannel) === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="kv"><label>Mode</label><select id="w-mode">${Object.entries(modeMap).map(([v, l]) => `<option value="${v}"${String(r.uBgnMode) === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="kv"><label>Broadcast SSID</label><select id="w-bc"><option value="1"${b.bBcastSsid === '1' ? ' selected' : ''}>visible</option><option value="0"${b.bBcastSsid !== '1' ? ' selected' : ''}>hidden</option></select></div>
+      <div class="kv"><label>Radio</label><select id="w-en"><option value="1"${b.bEnable === '1' ? ' selected' : ''}>ON</option><option value="0"${b.bEnable !== '1' ? ' selected' : ''}>OFF</option></select></div>
+      <div class="btnrow"><button onclick="saveWifi()">Apply WiFi settings</button></div>
+      <div class="msg" id="wmsg"></div></div>
+    <div class="card"><h3>🔐 Security</h3>${row('Auth', b.uAuthType)}${row('PSK cipher', b.uPSKSecOpt)}${row('Key type', b.uKeyType)}</div>`;
+}
+async function saveWifi() {
+  if (!confirm('Apply WiFi settings? Devices may need to reconnect.')) return;
+  say('wmsg', 'Working…');
+  const d = await post('/api/write_fields', {id: 33, fields: {
+    cSsid: $('w-ssid').value.trim(), cPskSecret: $('w-key').value.trim(),
+    bBcastSsid: $('w-bc').value, bEnable: $('w-en').value}});
+  if (!d.ok) { say('wmsg', 'WiFi block failed: ' + JSON.stringify(d), false); return; }
+  const ch = $('w-ch').value, mo = $('w-mode').value;
+  const d2 = await post('/api/write_fields', {id: 32, fields: {uChannel: ch, uBgnMode: mo}});
+  say('wmsg', d2.ok ? 'WiFi settings applied.' : 'Radio part failed: ' + JSON.stringify(d2), d2.ok);
+}
+
+async function tabNet() {
+  const lan = (await get('/api/block?id=11')).block;
+  const dhcp = (await get('/api/block?id=9')).block;
+  const leases = (dhcp.list || []).filter(c => c.ip && c.ip !== '0.0.0.0');
+  $('tabbody').innerHTML =
+    `<div class="card"><h3>🌐 LAN (live)</h3>
+      <div class="kv"><label>Router IP</label><input id="n-ip" value="${esc(lan.lanIp)}"></div>
+      <div class="kv"><label>Subnet mask</label><input id="n-mask" value="${esc(lan.lanMask)}"></div>
+      <div class="btnrow"><button onclick="saveLan()">Apply LAN (⚠️ you may need to reconnect)</button></div>
+      <div class="msg" id="nmsg"></div></div>
+    <div class="card"><h3>📋 DHCP leases (${leases.length})</h3>
+      <table><thead><tr><th>Name</th><th>IP</th><th>MAC</th><th>Expires</th></tr></thead><tbody>${
+        leases.map(c => `<tr><td>${esc(c.hostName || '(unnamed)')}</td><td>${esc(c.ip)}</td><td>${esc(c.mac)}</td><td>${esc(c.expires)}</td></tr>`).join('') || '<tr><td colspan="4">none</td></tr>'
+      }</tbody></table></div>`;
+}
+async function saveLan() {
+  if (!confirm('Change router IP? You must reconnect to the new address. Continue?')) return;
+  if (!confirm('Really change LAN settings?')) return;
+  say('nmsg', 'Working…');
+  const d = await post('/api/write_fields', {id: 11, fields: {lanIp: $('n-ip').value.trim(), lanMask: $('n-mask').value.trim()}});
+  say('nmsg', d.ok ? 'LAN updated. Reconnect to the new IP.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+
+async function tabSec() {
+  const w = (await get('/api/block?id=33')).block.wps || {};
+  const u = (await get('/api/block?id=19')).block;
+  window._wps = w.bEnabled; window._upnp = String(u.igdEnable) === '1';
+  $('tabbody').innerHTML =
+    `<div class="card"><h3>🛡️ Wireless + service security</h3>
+      ${row('WPS', w.bEnabled === '1' ? 'ON — turn off!' : 'OFF', w.bEnabled === '1' ? 'bad' : 'ok')}
+      ${row('WPS PIN', w.cUsrPIN || '?')}
+      ${row('UPnP IGD', window._upnp ? 'ON — turn off!' : 'OFF', window._upnp ? 'bad' : 'ok')}
+      ${row('Admin page', 'HTTP only (no HTTPS on this model)', 'warn')}
+      <div class="btnrow"><button onclick="tglWps()">${w.bEnabled === '1' ? 'Turn WPS OFF' : 'Turn WPS ON'}</button>
+      <button onclick="tglUpnp()">Turn UPnP ${window._upnp ? 'OFF' : 'ON'}</button></div>
+      <div class="msg" id="smsg"></div></div>
+    <div class="card"><h3>🔑 Admin password</h3>
+      <div class="kv"><label>Current password</label><input type="password" id="a-old"></div>
+      <div class="kv"><label>New password</label><input type="password" id="a-new"></div>
+      <div class="btnrow"><button onclick="chgAdmin()">Change admin password</button></div>
+      <div class="msg" id="amsg"></div></div>`;
+}
+async function tglWps() {
+  const to = window._wps === '1' ? '0' : '1';
+  if (!confirm('Set WPS ' + (to === '1' ? 'ON' : 'OFF') + '?')) return;
+  say('smsg', 'Working…');
+  const d = await post('/api/set_wps', {enabled: to});
+  if (d.ok) { say('smsg', 'WPS is now ' + (d.wpsEnabled === '1' ? 'ON' : 'OFF'), true); tabSec(); }
+  else say('smsg', 'Failed: ' + JSON.stringify(d), false);
+}
+async function tglUpnp() {
+  const to = window._upnp ? '0' : '1';
+  if (!confirm('Set UPnP ' + (to === '1' ? 'ON' : 'OFF') + '?')) return;
+  say('smsg', 'Working…');
+  const d = await post('/api/set_upnp', {enabled: to});
+  if (d.ok) { say('smsg', 'UPnP is now ' + (d.igdEnable === '1' ? 'ON' : 'OFF'), true); tabSec(); }
+  else say('smsg', 'Failed: ' + JSON.stringify(d), false);
+}
+async function chgAdmin() {
+  const o = $('a-old').value, n = $('a-new').value;
+  if (!o || !n) { say('amsg', 'Fill both fields.', false); return; }
+  if (!confirm('Change the admin password? Make sure you remember the new one!')) return;
+  say('amsg', 'Working…');
+  const d = await post('/api/change_admin', {old: o, new: n});
+  say('amsg', d.ok ? 'Admin password changed. Use it from now on.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+
+async function tabSys() {
+  $('tabbody').innerHTML =
+    `<div class="card"><h3>⚙️ System</h3>
+      <div class="btnrow"><button onclick="dlBackup()">⬇ Download config backup</button>
+      <button class="danger" onclick="doReboot()">Reboot router (~1 min down)</button></div>
+      <div class="btnrow"><button class="red" onclick="doReset()">Factory reset (WIPES everything)</button></div>
+      <div class="msg" id="ymsg"></div></div>
+    <div class="card"><h3>ℹ️ About these buttons</h3>
+      ${row('Backup', 'Downloads the official config file (restorable)')}
+      ${row('Reboot', 'Restarts; network returns in ~1 minute')}
+      ${row('Factory reset', 'Erases ALL settings incl. WiFi — last resort')}</div>`;
+}
+async function dlBackup() {
+  say('ymsg', 'Preparing backup…');
+  window.location = API + '/api/backup';
+  say('ymsg', 'If no download started, the session expired — reload and log in again.', true);
+}
+async function doReboot() {
+  if (!confirm('Reboot now? Network drops ~1 minute.')) return;
+  if (!confirm('Really reboot?')) return;
+  say('ymsg', 'Rebooting…');
+  const d = await post('/api/reboot', {});
+  say('ymsg', d.ok ? 'Reboot sent. Wait ~1 min, then reload.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+async function doReset() {
+  if (!confirm('FACTORY RESET erases WiFi name, password, admin login — everything. Continue?')) return;
+  if (!confirm('Second check: really wipe the router?')) return;
+  const typed = prompt('Type RESET to confirm:');
+  if (typed !== 'RESET') { say('ymsg', 'Cancelled.', false); return; }
+  say('ymsg', 'Resetting…');
+  const d = await post('/api/factory_reset', {confirm: 'YES-WIPE-MY-ROUTER'});
+  say('ymsg', d.ok ? 'Reset sent. Reconfigure via default login.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+
+async function tabFw() {
+  $('tabbody').innerHTML =
+    `<div class="card"><h3>🧬 Firmware (from forensic analysis)</h3>
+      ${row('Installed', '2.2.1 Build 201115 Rel.70272n')}
+      ${row('Latest official', 'V2_201116 (1 month newer — no urgent need)', 'ok')}
+      ${row('Bootloader', 'U-Boot 1.1.3 (Nov 2020)')}
+      ${row('OS', 'VxWorks 5.5, MIPS32LE')}
+      ${row('Web partition', 'MINIFS, 106 files, fully extracted', 'ok')}
+      ${row('Kernel region', 'Packed (imgFileEnc) — research open', 'warn')}
+      ${row('Shipped TLS key', 'Private RSA key identical in all units', 'bad')}</div>
+    <div class="card"><h3>📚 Full reports</h3>
+      ${row('Location', 'MW325R-firmware/analysis/ (23 files + master report)')}
+      ${row('Extractor', 'analysis/minifs_extract.py')}
+      ${row('GitHub', 'AmiXDme/mw325r-hack-lab')}</div>`;
+}
+
+async function tabRaw() {
+  let opts = '';
+  for (let i = 0; i < 60; i++) opts += `<option value="${i}"${i === 33 ? ' selected' : ''}>${i}</option>`;
+  $('tabbody').innerHTML =
+    `<div class="card"><h3>🧰 Raw data blocks (all 60, read-only explorer)</h3>
+      <div class="kv"><label>Block ID</label><select id="rawid">${opts}</select></div>
+      <div class="btnrow"><button onclick="rawRead()">Read block</button></div>
+      <pre id="rawout">Pick an ID and press Read block.</pre></div>`;
+}
+async function rawRead() {
+  const id = $('rawid').value;
+  $('rawout').textContent = 'Reading…';
+  const d = await get('/api/block?id=' + id);
+  $('rawout').textContent = d.ok ? JSON.stringify(d.block, null, 1) : 'Failed: ' + JSON.stringify(d);
 }
 </script>
 </body>

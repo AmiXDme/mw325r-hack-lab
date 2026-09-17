@@ -141,6 +141,121 @@ def overview():
     }}
 
 
+def do_reboot():
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    err = cdp_eval("$.reboot().errorno")
+    return {"ok": err == 0, "errorno": err}
+
+
+def do_set_wps(enabled):
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    val = "1" if str(enabled) in ("1", "true", "on") else "0"
+    err = cdp_eval(
+        "(function(){var b=$.readEx(33);b.wps.bEnabled="
+        + json.dumps(val) + ";return $.write($.toText(b),0);})()")
+    if err != 0:
+        return {"ok": False, "errorno": err}
+    cur = cdp_eval("$.readEx(33).wps.bEnabled")
+    return {"ok": cur == val, "wpsEnabled": cur, "errorno": err}
+
+
+def do_set_upnp(enabled):
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    val = 1 if str(enabled) in ("1", "true", "on") else 0
+    err = cdp_eval(
+        "(function(){var b=$.readEx(19);b.igdEnable=" + str(val) +
+        ";return $.write($.toText(b),0);})()")
+    if err != 0:
+        return {"ok": False, "errorno": err}
+    cur = cdp_eval("$.readEx(19).igdEnable")
+    ok = str(cur) == str(val)
+    return {"ok": ok, "igdEnable": cur, "errorno": err}
+
+
+def do_set_wifi(key=None, ssid=None):
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    if key is not None and not (8 <= len(key) <= 63):
+        return {"ok": False, "error": "key must be 8-63 chars"}
+    if ssid is not None and not (1 <= len(ssid) <= 32):
+        return {"ok": False, "error": "ssid must be 1-32 chars"}
+    expr = "(function(){var b=$.readEx(33);"
+    if key is not None:
+        expr += f"b.cPskSecret={json.dumps(key)};"
+    if ssid is not None:
+        expr += f"b.cSsid={json.dumps(ssid)};"
+    expr += "return $.write($.toText(b),0);})()"
+    err = cdp_eval(expr)
+    return {"ok": err == 0, "errorno": err}
+
+
+def _set_path(obj_expr, dotted, value_json):
+    parts = dotted.split(".")
+    s = obj_expr
+    for p in parts[:-1]:
+        s += f"[{json.dumps(p)}]"
+    return f"{s}[{json.dumps(parts[-1])}]={value_json};"
+
+
+def do_write_fields(bid, fields):
+    """Generic read-modify-write of one TDDP block. fields: {dotted.key: value}."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    if not isinstance(fields, dict) or not fields:
+        return {"ok": False, "error": "empty-fields"}
+    try:
+        bid = int(bid)
+    except Exception:
+        return {"ok": False, "error": "bad-id"}
+    expr = f"(function(){{var b=$.readEx({bid});"
+    for k, v in fields.items():
+        if not isinstance(k, str) or not k.replace(".", "").replace("_", "").isalnum():
+            return {"ok": False, "error": f"bad-key: {k}"}
+        expr += _set_path("b", k, json.dumps(v))
+    expr += "return $.write($.toText(b),0);})()"
+    err = cdp_eval(expr)
+    return {"ok": err == 0, "errorno": err}
+
+
+def do_change_admin(old_pw, new_pw):
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    if not old_pw or not new_pw:
+        return {"ok": False, "error": "empty-password"}
+    if len(new_pw) < 1 or len(new_pw) > 63:
+        return {"ok": False, "error": "bad-length"}
+    err = cdp_eval("$.changeSysPwd(" + json.dumps(old_pw) + "," +
+                   json.dumps(new_pw) + ").errorno")
+    return {"ok": err == 0, "errorno": err}
+
+
+def do_factory_reset():
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    err = cdp_eval("$.reset().errorno")
+    return {"ok": err == 0, "errorno": err}
+
+
+def do_backup_url():
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    return {"ok": True, "url": cdp_eval(
+        "(function(){var d=$.readEx(0);var sv=d.softVer,hv=d.hardVer,i=0,c=0;"
+        "for(i=0;i<hv.length;i++){if(hv[i]==' '){break}c++}"
+        "var model=hv.substring(0,c),vc=c+1;"
+        "for(i=c;i<hv.length;i++){if(hv[i]=='.'){break}c++}"
+        "var ver=hv.substring(vc,c),bc=sv.indexOf('Build')+6,rc=sv.indexOf('Rel.')+4;"
+        "c=bc;for(i=bc;i<sv.length;i++){if(sv[i]==' '){break}c++}"
+        "var B=sv.substring(bc,c);c=rc;"
+        "for(i=rc;i<sv.length;i++){if(sv[i]=='n'){break}c++}"
+        "var R=sv.substring(rc,c);"
+        "return $.orgURL($.domainUrl+model+\"V\"+ver+B+R+\"n.bin\""
+        "+\"?code=\"+TDDP_INSTRUCT+\"&asyn=0\");})()")}
+
+
 class Handler(BaseHTTPRequestHandler):
     server_version = "MW325R-Panel/1.0"
 
@@ -164,17 +279,47 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_POST(self):
-        if self.path != "/api/login":
-            return self._json({"ok": False, "error": "not-found"}, 404)
+        from urllib.parse import urlparse
+        u = urlparse(self.path)
         try:
             ln = int(self.headers.get("Content-Length", 0))
             data = json.loads(self.rfile.read(ln) or b"{}")
+        except Exception:
+            return self._json({"ok": False, "error": "bad-json"}, 400)
+        if u.path == "/api/login":
             pw = data.get("password", "")
             if not pw:
                 return self._json({"ok": False, "error": "empty-password"})
-            self._json(do_login(pw))
+            try:
+                return self._json(do_login(pw))
+            except Exception as e:
+                return self._json({"ok": False, "error": f"backend-error: {e}"},
+                                  500)
+        try:
+            if u.path == "/api/reboot":
+                return self._json(do_reboot())
+            if u.path == "/api/set_wps":
+                return self._json(do_set_wps(data.get("enabled")))
+            if u.path == "/api/set_upnp":
+                return self._json(do_set_upnp(data.get("enabled")))
+            if u.path == "/api/set_wifi":
+                return self._json(do_set_wifi(data.get("key"),
+                                              data.get("ssid")))
+            if u.path == "/api/write_fields":
+                return self._json(do_write_fields(data.get("id"),
+                                                  data.get("fields")))
+            if u.path == "/api/change_admin":
+                return self._json(do_change_admin(data.get("old"),
+                                                  data.get("new")))
+            if u.path == "/api/factory_reset":
+                if data.get("confirm") != "YES-WIPE-MY-ROUTER":
+                    return self._json({"ok": False,
+                                       "error": "confirm-missing"})
+                return self._json(do_factory_reset())
         except Exception as e:
-            self._json({"ok": False, "error": f"backend-error: {e}"}, 500)
+            return self._json({"ok": False, "error": f"backend-error: {e}"},
+                              500)
+        return self._json({"ok": False, "error": "not-found"}, 404)
 
     def do_GET(self):
         from urllib.parse import urlparse, parse_qs
@@ -192,6 +337,26 @@ class Handler(BaseHTTPRequestHandler):
                 self._json({"ok": False, "error": f"backend-error: {e}"}, 500)
         elif u.path == "/api/health":
             self._json({"ok": True, "authed": bool(_state["enc_pwd"])})
+        elif u.path == "/api/backup":
+            try:
+                r = do_backup_url()
+                if not r.get("ok"):
+                    self._json(r, 401)
+                else:
+                    req = urllib.request.Request(
+                        r["url"], headers={"User-Agent": "Mozilla/5.0"})
+                    blob = urllib.request.urlopen(req, timeout=30).read()
+                    self.send_response(200)
+                    self._cors()
+                    self.send_header("Content-Type",
+                                     "application/octet-stream")
+                    self.send_header("Content-Disposition",
+                                     "attachment; filename=MW325R-backup.bin")
+                    self.send_header("Content-Length", str(len(blob)))
+                    self.end_headers()
+                    self.wfile.write(blob)
+            except Exception as e:
+                self._json({"ok": False, "error": f"backend-error: {e}"}, 500)
         else:
             self._json({"ok": False, "error": "not-found"}, 404)
 
