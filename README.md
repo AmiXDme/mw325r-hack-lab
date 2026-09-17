@@ -1,5 +1,9 @@
 # mw325r-hack-lab
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
+[![verify](https://github.com/AmiXDme/mw325r-hack-lab/actions/workflows/verify.yml/badge.svg)](actions/workflows/verify.yml)
+![authorized research only](https://img.shields.io/badge/testing-authorized%20devices%20only-red.svg)
+
 A complete, honest case file: attacking, analyzing, and rebuilding the admin experience of a **Mercusys MW325R v2** (FW 2.2.1) — on the owner's own device and network. Every step from first probe to final forensic report, including the mistakes.
 
 > **Scope & ethics.** All work was done by/with the device owner on their own router. No third-party systems were touched. This repo deliberately does **not** ship the brute-force runner or wordlist — the writeup (`HISTORY.md`) describes the method and its outcome; turnkey credential-guessing tooling is left out. Do not use anything here against devices you don't own or lack explicit permission to test.
