@@ -1,0 +1,20 @@
+---
+name: Report an issue
+description: Correction, reproduction, or question
+title: "[issue]: "
+labels: []
+body:
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened / what is wrong?
+      description: Include exact versions, bytes, and steps. No passwords, MACs, or keys.
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Evidence level
+      description: Is this EXACT / OBSERVED / INFERRED? How did you verify it?
+    validations:
+      required: true

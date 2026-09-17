@@ -1,0 +1,27 @@
+name: verify
+
+on: [push, pull_request]
+
+jobs:
+  extract:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: No private keys in repo
+        run: |
+          ! grep -r "BEGIN RSA PRIVATE KEY" --exclude-dir=.git . || (echo "private key leaked" && exit 1)
+      - name: Extract MINIFS from vendor firmware
+        run: |
+          mkdir -p /tmp/opencode/fw
+          cd firmware && unzip -o MW325R_EU_V2_201116.zip -d /tmp/opencode/fw
+          python3 ../analysis/minifs_extract.py
+      - name: Assert full recovery
+        run: |
+          test "$(find /tmp/opencode/fw/minifs_out -type f | wc -l)" = "106"
+          test -f /tmp/opencode/fw/minifs_out/web/lib/Quary.js
+          test -f /tmp/opencode/fw/minifs_out/web/common/Login.htm
+          test -f /tmp/opencode/fw/minifs_out/conf/modelDesc.bin
+          echo "106/106 files + key artifacts present"

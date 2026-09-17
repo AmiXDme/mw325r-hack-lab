@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+title: mw325r-hack-lab
+message: If you use this work, please cite it as below.
+authors:
+  - alias: AmiXDme
+type: dataset
+version: 1.0.0
+date-released: 2026-09-17
+url: https://github.com/AmiXDme/mw325r-hack-lab
+keywords:
+  - router-security
+  - firmware-analysis
+  - reverse-engineering
+  - vxworks
+  - minifs
+  - mercusys
+license: MIT
