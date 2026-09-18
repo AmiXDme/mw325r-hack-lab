@@ -202,11 +202,15 @@ async function saveRadio() {
   say('wrmsg', d.ok ? 'Radio updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
 }
 async function saveWifi() {
+  const ssid = $('w-ssid').value.trim(), key = $('w-key').value.trim();
+  if (!ssid) { say('wmsg', 'SSID cannot be empty.', false); return; }
+  say('wmsg', 'Checking SSID…');
+  const chk = await post('/api/instr', {cmd: 'wlan checkSsid ssid:' + ssid});
+  if (!chk.ok) { say('wmsg', 'SSID rejected by router: ' + JSON.stringify(chk), false); return; }
   if (!confirm('Apply WiFi settings? Devices may need to reconnect.')) return;
   say('wmsg', 'Working…');
-  const d = await post('/api/write_fields', {id: 33, fields: {
-    cSsid: $('w-ssid').value.trim(), cPskSecret: $('w-key').value.trim(),
-    bBcastSsid: $('w-bc').value, bEnable: $('w-en').value}});
+  const d = await post('/api/set_wifi', {key, ssid,
+    bcast: $('w-bc').value, enable: $('w-en').value});
   if (!d.ok) { say('wmsg', 'WiFi block failed: ' + JSON.stringify(d), false); return; }
   const ch = $('w-ch').value, mo = $('w-mode').value;
   const d2 = await post('/api/write_fields', {id: 32, fields: {uChannel: ch, uBgnMode: mo}});
@@ -224,8 +228,8 @@ async function tabNet() {
       <div class="btnrow"><button onclick="saveLan()">Apply LAN (⚠️ you may need to reconnect)</button></div>
       <div class="msg" id="nmsg"></div></div>
     <div class="card"><h3>📋 DHCP leases (${leases.length})</h3>
-      <table><thead><tr><th>Name</th><th>IP</th><th>MAC</th><th>Expires</th></tr></thead><tbody>${
-        leases.map(c => `<tr><td>${esc(c.hostName || '(unnamed)')}</td><td>${esc(c.ip)}</td><td>${esc(c.mac)}</td><td>${esc(c.expires)}</td></tr>`).join('') || '<tr><td colspan="4">none</td></tr>'
+      <table><thead><tr><th>Name</th><th>IP</th><th>MAC</th><th>Expires</th><th>State</th></tr></thead><tbody>${
+        leases.map(c => `<tr><td>${esc(c.hostName || '(unnamed)')}</td><td>${esc(c.ip)}</td><td>${esc(c.mac)}</td><td>${esc(c.expires)}</td><td>${c.state === '5' ? '<span class="ok">active</span>' : esc(c.state || '?')}</td></tr>`).join('') || '<tr><td colspan="5">none</td></tr>'
       }</tbody></table></div>
     <div class="card"><h3>🌍 DDNS (block 40)</h3><div id="ddnsbox">Loading…</div></div>
     <div class="card"><h3>🔐 Remote web management (blocks 7/6)</h3><div id="rmtbox">Loading…</div></div>`;
@@ -381,10 +385,38 @@ async function tabSys() {
       <div class="btnrow"><button onclick="doRestore()">Upload + restore</button></div>
       <div class="msg" id="rsmsg"></div>
       <p class="note">Only files this router made (a few KB). Router reboots after a valid restore — wait ~2 min, session resumes by itself.</p></div>
+    <div class="card"><h3>🌐 Interface language (block 55)</h3><div id="langbox">Loading…</div></div>
+    <div class="card"><h3>⏰ Scheduled reboot (block 57)</h3><div id="schedbox">Loading…</div></div>
     <div class="card"><h3>ℹ️ About these buttons</h3>
       ${row('Backup', 'Downloads the official config file (restorable)')}
       ${row('Reboot', 'Restarts; network returns in ~1 minute')}
       ${row('Factory reset', 'Erases ALL settings incl. WiFi — last resort')}</div>`;
+  sysExtras();
+}
+async function sysExtras() {
+  const l = await get('/api/block?id=55');
+  if (l.ok) {
+    const b = l.block;
+    $('langbox').innerHTML =
+      `<div class="kv"><label>Language</label><select id="lang-sel"><option value="en_US"${b.currentLanguage === 'en_US' ? ' selected' : ''}>English</option><option value="zh_TW"${b.currentLanguage !== 'en_US' ? ' selected' : ''}>繁體中文</option></select></div>
+       <div class="btnrow"><button onclick="saveLang()">Apply language</button></div><div class="msg" id="langmsg"></div>
+       <p class="note">Also repairs a blanked stock page (wrong language blanks it).</p>`;
+  } else $('langbox').innerHTML = '<span class="bad">Failed to load.</span>';
+  const s = await get('/api/block?id=57');
+  if (s.ok) {
+    const b = s.block, days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const on = b.enable === '1';
+    $('schedbox').innerHTML =
+      row('Scheduled reboot', on ? `ARMED — ${days[+b.weekday] || 'day ' + b.weekday} ${b.hour}:${String(b.min).padStart(2, '0')}` : 'OFF — no auto reboot', on ? 'bad' : 'ok') +
+      `<p class="note">View-only: this block cannot be edited or cleared from software (factory reset is the only off-switch).</p>`;
+  } else $('schedbox').innerHTML = '<span class="bad">Failed to load.</span>';
+}
+async function saveLang() {
+  if (!confirm('Switch the router UI language? (Affects the stock page.)')) return;
+  say('langmsg', 'Working…');
+  const v = $('lang-sel').value;
+  const d = await post('/api/write_fields', {id: 55, fields: {currentLanguage: v, languageList: 'en_US,zh_TW', setByUser: '1'}});
+  say('langmsg', d.ok ? 'Language updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
 }
 async function dlBackup() {
   say('ymsg', 'Preparing backup…');
@@ -575,7 +607,15 @@ async function tabMod() {
      <div class="kv"><label>Allow guests → my LAN</label><select id="g-lan"><option value="1"${g.bLanAccess === '1' ? ' selected' : ''}>Allow</option><option value="0"${g.bLanAccess !== '1' ? ' selected' : ''}>Isolate (recommended)</option></select></div>
      <div class="kv"><label>Max upload KB/s (0=∞)</label><input id="g-up" value="${esc(g.uMaxUploadSpeed)}"></div>
      <div class="kv"><label>Max download KB/s (0=∞)</label><input id="g-down" value="${esc(g.uMaxDownloadSpeed)}"></div>
-     ${row('Open-time schedule', g.bSetOpenTime === '1' ? `ON (mode ${esc(g.uAllowTimeMode)}, ${esc(g.uDuration)} min)` : 'OFF (day-grid editable in stock UI)')}
+     <div class="kv"><label>Open window</label><select id="g-ot"><option value="0"${g.bSetOpenTime !== '1' ? ' selected' : ''}>Always open</option><option value="1"${g.bSetOpenTime === '1' ? ' selected' : ''}>Timed</option></select></div>
+     <div class="kv"><label>Timed mode</label><select id="g-otm"><option value="0"${g.uAllowTimeMode !== '1' ? ' selected' : ''}>Auto-close after hours</option><option value="1"${g.uAllowTimeMode === '1' ? ' selected' : ''}>Weekly schedule</option></select></div>
+     <div class="kv"><label>Auto-close hours (0-24)</label><input id="g-dur" value="${esc(g.uDuration) || '0'}"></div>
+     <div id="g-grid">${['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((d, i) => {
+       const m = parseInt((g.uTimeTable || [])[i] || '0');
+       const full = m === 16777215;
+       return `<div class="kv"><label>${d}</label><select id="g-d${i}"><option value="free"${m === 0 ? ' selected' : ''}>Closed</option><option value="full"${full ? ' selected' : ''}>Open all day</option><option value="custom"${m !== 0 && !full ? ' selected' : ''}>Custom hours…</option></select>
+         <span><input id="g-s${i}" style="width:70px" placeholder="from" value=""><input id="g-e${i}" style="width:70px" placeholder="to" value=""></span></div>`; }).join('')}
+       <p class="note">Custom = open hours, e.g. from 8 to 22. Bit-precise grid lives in the stock UI.</p></div>
      <div class="btnrow"><button onclick="saveGuest()">Apply guest WiFi</button></div>
      <div class="msg" id="gmsg"></div>`;
 }
@@ -598,14 +638,33 @@ async function saveGuest() {
   const key = $('g-key').value.trim(), ssid = $('g-ssid').value.trim();
   const sec = $('g-sec').value;
   if (!ssid) { say('gmsg', 'SSID cannot be empty.', false); return; }
+  say('gmsg', 'Checking SSID…');
+  const gchk = await post('/api/instr', {cmd: 'wlan checkSsid ssid:' + ssid});
+  if (!gchk.ok) { say('gmsg', 'SSID rejected by router: ' + JSON.stringify(gchk), false); return; }
   if (sec === '1' && (key.length < 8 || key.length > 63)) { say('gmsg', 'WPA2 key must be 8-63 chars (or switch Security to Open).', false); return; }
   const up = $('g-up').value.trim(), down = $('g-down').value.trim();
   if ((up && isNaN(+up)) || (down && isNaN(+down))) { say('gmsg', 'Speed caps must be numbers (0 = unlimited).', false); return; }
+  const dur = $('g-dur').value.trim();
+  if ($('g-ot').value === '1' && $('g-otm').value === '0' && (isNaN(+dur) || +dur < 0 || +dur > 24)) { say('gmsg', 'Auto-close hours must be 0-24.', false); return; }
+  const table = [];
+  for (let i = 0; i < 7; i++) {
+    const mode = $('g-d' + i).value;
+    if (mode === 'full') { table.push('16777215'); continue; }
+    if (mode === 'free') { table.push('0'); continue; }
+    const s = +($('g-s' + i).value), e = +($('g-e' + i).value);
+    if (isNaN(s) || isNaN(e) || s < 0 || e > 24 || s >= e) { say('gmsg', `Day ${i + 1}: custom needs from < to (0-24).`, false); return; }
+    let m = 0;
+    for (let h = s; h < e; h++) m += Math.pow(2, h);
+    table.push(String(m));
+  }
   if (!confirm('Apply guest WiFi settings (block 35)?')) return;
   say('gmsg', 'Working…');
-  const d = await post('/api/write_fields', {id: 35, fields: {
+  const fields = {
     bEnable: $('g-en').value, cSsid: ssid, bSecurityEnable: sec, cPskSecret: key,
-    bLanAccess: $('g-lan').value, uMaxUploadSpeed: up || '0', uMaxDownloadSpeed: down || '0'}});
+    bLanAccess: $('g-lan').value, uMaxUploadSpeed: up || '0', uMaxDownloadSpeed: down || '0',
+    bSetOpenTime: $('g-ot').value, uAllowTimeMode: $('g-otm').value, uDuration: dur || '0'};
+  table.forEach((m, i) => { fields['uTimeTable.' + i] = m; });
+  const d = await post('/api/write_fields', {id: 35, fields});
   say('gmsg', d.ok ? 'Guest WiFi updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
 }
 async function setDns(auto) {
@@ -633,6 +692,7 @@ async function tabWan() {
       ${row('Link type', types[String(link.linkType)] || link.linkType)}</div>
     <div class="card"><h3>🏭 ISP settings — WAN type, login, MTU (like the ISP technician)</h3><div id="ispbox">Loading…</div></div>
     <div class="card"><h3>📺 IPTV / VLAN (block 37)</h3><div id="iptvbox">Loading…</div></div>
+    <div class="card"><h3>🌐 IPv6 (view — off on this unit)</h3><div id="ipv6box">Loading…</div></div>
     <div class="card"><h3>🏠 DHCP server</h3><div id="dhcpcfg">Loading…</div></div>`;
   ispRefresh();
   const dh = (await get('/api/block?id=8')).block;
@@ -641,6 +701,8 @@ async function tabWan() {
      <div class="kv"><label>Pool start</label><input id="dh-s" value="${esc(dh.poolStart)}"></div>
      <div class="kv"><label>Pool end</label><input id="dh-e" value="${esc(dh.poolEnd)}"></div>
      <div class="kv"><label>Lease (minutes)</label><input id="dh-l" value="${esc(dh.leaseTime)}"></div>
+     <div class="kv"><label>Gateway (0.0.0.0 = router)</label><input id="dh-g" value="${esc(dh.gateway)}"></div>
+     <div class="kv"><label>DNS 1 / DNS 2 (0.0.0.0 = auto)</label><span><input id="dh-d1" style="width:48%" value="${esc((dh.dns || [])[0])}"> <input id="dh-d2" style="width:48%" value="${esc((dh.dns || [])[1])}"></span></div>
      <div class="btnrow"><button onclick="saveDhcp()">Apply DHCP</button></div><div class="msg" id="dhmsg"></div>`;
 }
 async function saveDhcp() {
@@ -648,7 +710,10 @@ async function saveDhcp() {
   say('dhmsg', 'Working…');
   const d = await post('/api/write_fields', {id: 8, fields: {
     enable: $('dh-en').value, poolStart: $('dh-s').value.trim(),
-    poolEnd: $('dh-e').value.trim(), leaseTime: $('dh-l').value.trim()}});
+    poolEnd: $('dh-e').value.trim(), leaseTime: $('dh-l').value.trim(),
+    gateway: $('dh-g').value.trim(),
+    'dns.0': $('dh-d1').value.trim() || '0.0.0.0',
+    'dns.1': $('dh-d2').value.trim() || '0.0.0.0'}});
   say('dhmsg', d.ok ? 'DHCP updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
 }
 async function ispRefresh() {
@@ -694,15 +759,30 @@ async function ispRefresh() {
     <div class="msg" id="ispmsg"></div>
     <p class="note">Wrong settings = no internet until fixed — but this panel keeps working over home WiFi/LAN, so you can always correct them here.</p>`;
   const svc = (iptv.uService || []).map((x, i) => `#${i} type=${x.uServiceType} vid=${x.uVid} ports=${x.uMemberPorts} tag=${x.bTagEnable}`).join('<br>');
+  const svcNames = ['Internet', 'IPTV', 'VoIP', 'Multicast'];
   $('iptvbox').innerHTML =
-    row('IPTV mode', {'0': 'OFF', '1': 'Manual', '2': 'Auto?'}[iptv.uMode] || iptv.uMode) +
+    row('IPTV mode', {'0': 'OFF', '1': 'Bridge', '3': 'Russia', '13': 'Custom 802.1Q'}[iptv.uMode] || ('mode ' + iptv.uMode)) +
     row('Bridge ports', iptv.uBridgePorts || '?') +
-    `<div class="kv"><label>Mode</label><select id="iptv-mode"><option value="0"${iptv.uMode === '0' ? ' selected' : ''}>OFF</option><option value="1"${iptv.uMode === '1' ? ' selected' : ''}>Manual</option><option value="2"${iptv.uMode === '2' ? ' selected' : ''}>Auto</option></select></div>
-    <div class="btnrow"><button onclick="iptvApply()">Apply IPTV mode</button></div>
+    `<div class="kv"><label>Mode</label><select id="iptv-mode"><option value="0"${iptv.uMode === '0' ? ' selected' : ''}>OFF</option><option value="1"${iptv.uMode === '1' ? ' selected' : ''}>Bridge</option><option value="3"${iptv.uMode === '3' ? ' selected' : ''}>Russia</option><option value="13"${iptv.uMode === '13' ? ' selected' : ''}>Custom 802.1Q</option></select></div>
+    <div class="kv"><label>Bridge ports (mode 1)</label><input id="iptv-ports" value="${esc(iptv.uBridgePorts)}"></div>
+    ${(iptv.uService || []).map((x, i) => `<div class="kv"><label>${svcNames[i] || 'Svc ' + i} VID/prio/tag</label><span><input id="iptv-vid${i}" style="width:30%" value="${esc(x.uVid)}" title="VLAN ID 0-4094"><input id="iptv-prio${i}" style="width:30%" value="${esc(x.uVlanPriority)}" title="priority 0-7"><select id="iptv-tag${i}"><option value="1"${x.bTagEnable === '1' ? ' selected' : ''}>tag</option><option value="0"${x.bTagEnable !== '1' ? ' selected' : ''}>untag</option></select></span></div>`).join('')}
+    <div class="btnrow"><button onclick="iptvApply()">Apply IPTV/VLAN</button></div>
     <div class="msg" id="iptvmsg"></div>
-    <p class="note">Service table (view):<br>${svc || '—'}</p>`;
+    <p class="note">Wrong VLAN = TV box stops, internet stays. Service table view:<br>${svc || '—'}</p>`;
   ispShowForm();
   $('isp-type').addEventListener('change', ispShowForm);
+  ipv6Refresh();
+}
+async function ipv6Refresh() {
+  const box = $('ipv6box');
+  try {
+    const [m, w] = [await get('/api/block?id=42'), await get('/api/block?id=47')];
+    const modes = {'0': 'Disabled', '1': 'Router', '2': 'Passthrough'};
+    box.innerHTML = row('Mode', modes[String(m.block.mode)] || m.block.mode) +
+      row('WAN IPv6', w.block.globalIp || '—') + row('Gateway', w.block.gateway || '—') +
+      row('Status', w.block.status === '1' ? 'up' : 'down') +
+      `<p class="note">IPv6 is dormant on this unit (ISP gives IPv4 only). Editing is intentionally not offered — a wrong mode breaks the WAN.</p>`;
+  } catch (e) { box.innerHTML = '<span class="bad">Failed to load.</span>'; }
 }
 function ispShowForm() {
   const t = $('isp-type').value;
@@ -738,10 +818,20 @@ async function ispApply() {
   if (d.ok) setTimeout(tabWan, 35000);
 }
 async function iptvApply() {
-  if (!confirm('Change IPTV/VLAN mode? TV boxes may need a re-plug.')) return;
+  if (!confirm('Change IPTV/VLAN settings? Wrong VLAN stops the TV box (internet stays).')) return;
+  const mode = $('iptv-mode').value, f = {uMode: mode};
+  if (mode === '1') f.uBridgePorts = $('iptv-ports').value.trim();
+  if (mode === '13') {
+    for (let i = 0; i < 4; i++) {
+      const vid = $('iptv-vid' + i).value.trim(), prio = $('iptv-prio' + i).value.trim();
+      if (isNaN(+vid) || +vid < 0 || +vid > 4094 || isNaN(+prio) || +prio < 0 || +prio > 7) { say('iptvmsg', 'VID 0-4094, priority 0-7.', false); return; }
+      f[`uService.${i}.uVid`] = vid; f[`uService.${i}.uVlanPriority`] = prio;
+      f[`uService.${i}.bTagEnable`] = $('iptv-tag' + i).value;
+    }
+  }
   say('iptvmsg', 'Working…');
-  const d = await post('/api/wan', {op: 'set_iptv', f: {uMode: $('iptv-mode').value}});
-  say('iptvmsg', d.ok ? 'IPTV mode updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  const d = await post('/api/wan', {op: 'set_iptv', f});
+  say('iptvmsg', d.ok ? 'IPTV/VLAN updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
 }
 
 async function tabTravel() {
@@ -914,6 +1004,7 @@ async function tabTools() {
       <div class="kv"><label>Show</label><select id="log-n"><option value="25">latest 25</option><option value="83">all 83</option></select></div>
       <div class="btnrow"><button onclick="loadLog()">Refresh log</button>
       <button onclick="loadExcLog()">Exception log</button>
+      <button onclick="dlSyslog()">⬇ Download full syslog</button>
       <button onclick="clearLog()" style="background:#9e6a03">Clear log</button></div>
       <pre id="logout">Press Refresh log.</pre></div>
     <div class="card"><h3>🗺️ Static routes (block 14 → effective table 16)</h3><div id="rtable">Loading…</div></div>`;
@@ -1006,6 +1097,17 @@ async function clearLog() {
   $('logout').textContent = 'Clearing…';
   const d = await post('/api/instr', {cmd: 'systool syslog -clean'});
   $('logout').textContent = d.ok ? 'Log cleared.' : 'Failed: ' + JSON.stringify(d);
+}
+async function dlSyslog() {
+  say('logout', '');
+  $('logout').textContent = 'Fetching…';
+  const d = await post('/api/syslog', {});
+  if (!d.ok || typeof d.log !== 'string') { $('logout').textContent = 'Failed: ' + JSON.stringify(d); return; }
+  const blob = new Blob([d.log], {type: 'text/plain'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = 'router-syslog.txt'; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 5000);
+  $('logout').textContent = `Downloaded (${d.log.length} chars). Preview:\n` + d.log.slice(-1500);
 }
 </script>
 </body>

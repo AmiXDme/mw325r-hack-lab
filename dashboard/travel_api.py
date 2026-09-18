@@ -141,7 +141,7 @@ def do_set_upnp(enabled):
 
 
 @_auth
-def do_set_wifi(key=None, ssid=None):
+def do_set_wifi(key=None, ssid=None, bcast=None, enable=None):
     if key is not None and not (8 <= len(key) <= 63):
         return {"ok": False, "error": "key must be 8-63 chars"}
     if ssid is not None and not (1 <= len(ssid) <= 32):
@@ -151,6 +151,10 @@ def do_set_wifi(key=None, ssid=None):
         f["cPskSecret"] = key
     if ssid is not None:
         f["cSsid"] = ssid
+    if bcast is not None:
+        f["bBcastSsid"] = "1" if str(bcast) == "1" else "0"
+    if enable is not None:
+        f["bEnable"] = "1" if str(enable) == "1" else "0"
     r = _state["t"].write_block(33, f)
     return {"ok": r.get("errorno") == 0, "errorno": r.get("errorno")}
 
@@ -682,11 +686,35 @@ def do_wan(op, wtype=None, f=None):
         return {"ok": True, "linkType": wt}
     if op == "set_iptv":
         mode = str(f.get("uMode", "0"))
-        if mode not in ("0", "1", "2"):
+        if mode not in ("0", "1", "3", "13"):
             return {"ok": False, "error": "bad-iptv-mode"}
-        r = _state["t"].write_block(37, {"uMode": mode})
+        fields = {"uMode": mode}
+        if mode == "1" and "uBridgePorts" in f:
+            fields["uBridgePorts"] = str(f["uBridgePorts"])
+        if mode == "13":
+            for k, v in f.items():
+                if re.match(r"^uService\.[0-3]\.(uVid|uVlanPriority|"
+                            r"bTagEnable)$", k):
+                    fields[k] = str(v)
+        r = _state["t"].write_block(37, fields)
         return {"ok": r.get("errorno") == 0, "errorno": r.get("errorno")}
     return {"ok": False, "error": "bad-op"}
+
+
+@_auth
+def do_syslog():
+    """Fetch the full syslog text over direct TDDP session."""
+    url = "%s/syslog.txt?code=%d&asyn=0&disposition=1&id=%s" % (
+        _state["t"].base, tddp.INSTRUCT,
+        urllib.parse.quote(_state["t"].session, safe=""))
+    req = urllib.request.Request(url,
+                                 headers={"User-Agent": "Mozilla/5.0"})
+    try:
+        with urllib.request.urlopen(req, timeout=30) as r:
+            return {"ok": True,
+                    "log": r.read().decode("utf-8", "replace")}
+    except Exception as e:
+        return {"ok": False, "error": f"backend-error: {e}"[:120]}
 
 
 @_auth
@@ -787,7 +815,9 @@ class Handler(BaseHTTPRequestHandler):
                 "/api/set_wps": lambda: do_set_wps(data.get("enabled")),
                 "/api/set_upnp": lambda: do_set_upnp(data.get("enabled")),
                 "/api/set_wifi": lambda: do_set_wifi(data.get("key"),
-                                                     data.get("ssid")),
+                                                     data.get("ssid"),
+                                                     data.get("bcast"),
+                                                     data.get("enable")),
                 "/api/write_fields": lambda: do_write_fields(data.get("id"),
                                                              data.get("fields")),
                 "/api/change_admin": lambda: do_change_admin(data.get("old"),
@@ -836,6 +866,7 @@ class Handler(BaseHTTPRequestHandler):
                 "/api/restore": lambda: do_restore(
                     data.get("b64", ""), data.get("filename", "restore.bin")),
                 "/api/detect": lambda: do_detect(),
+                "/api/syslog": lambda: do_syslog(),
             }
             if u.path == "/api/factory_reset":
                 if data.get("confirm") != "YES-WIPE-MY-ROUTER":

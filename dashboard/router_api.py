@@ -176,7 +176,7 @@ def do_set_upnp(enabled):
     return {"ok": ok, "igdEnable": cur, "errorno": err}
 
 
-def do_set_wifi(key=None, ssid=None):
+def do_set_wifi(key=None, ssid=None, bcast=None, enable=None):
     if not _ensure_auth():
         return {"ok": False, "error": "not-authenticated"}
     if key is not None and not (8 <= len(key) <= 63):
@@ -188,6 +188,10 @@ def do_set_wifi(key=None, ssid=None):
         expr += f"b.cPskSecret={json.dumps(key)};"
     if ssid is not None:
         expr += f"b.cSsid={json.dumps(ssid)};"
+    if bcast is not None:
+        expr += f"b.bBcastSsid={json.dumps('1' if str(bcast) == '1' else '0')};"
+    if enable is not None:
+        expr += f"b.bEnable={json.dumps('1' if str(enable) == '1' else '0')};"
     expr += "return $.write($.toText(b),0);})()"
     err = cdp_eval(expr)
     return {"ok": err == 0, "errorno": err}
@@ -750,9 +754,18 @@ def do_wan(op, wtype=None, f=None):
         return {"ok": True, "linkType": wt}
     if op == "set_iptv":
         mode = str(f.get("uMode", "0"))
-        if mode not in ("0", "1", "2"):
+        if mode not in ("0", "1", "3", "13"):
             return {"ok": False, "error": "bad-iptv-mode"}
-        return do_write_fields(37, {"uMode": mode})
+        fields = {"uMode": mode}
+        if mode == "1" and "uBridgePorts" in f:
+            fields["uBridgePorts"] = str(f["uBridgePorts"])
+        if mode == "13":
+            import re as _re2
+            for k, v in f.items():
+                if _re2.match(r"^uService\.[0-3]\.(uVid|uVlanPriority|"
+                              r"bTagEnable)$", k):
+                    fields[k] = str(v)
+        return do_write_fields(37, fields)
     return {"ok": False, "error": "bad-op"}
 
 
@@ -863,6 +876,22 @@ def do_route(op, net="", mask="", gateway="", idx=None):
     except Exception:
         return {"ok": False, "error": "bad-response"}
     return {"ok": o.get("errorno") == 0, "errorno": o.get("errorno")}
+
+
+def do_syslog():
+    """Download the full syslog text (stock logSave URL, page session)."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    js = ("(async function(){var r=await fetch($.orgURL($.domainUrl+"
+          "'syslog.txt?code='+TDDP_INSTRUCT+'&asyn=0&disposition=1'),"
+          "{credentials:'include'});return await r.text();})()")
+    try:
+        txt = cdp_eval(js, await_promise=True)
+    except Exception as e:
+        return {"ok": False, "error": f"backend-error: {e}"}
+    if not isinstance(txt, str):
+        return {"ok": False, "error": "bad-response"}
+    return {"ok": True, "log": txt}
 
 
 def do_detect():
@@ -1005,7 +1034,9 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(do_set_upnp(data.get("enabled")))
             if u.path == "/api/set_wifi":
                 return self._json(do_set_wifi(data.get("key"),
-                                              data.get("ssid")))
+                                              data.get("ssid"),
+                                              data.get("bcast"),
+                                              data.get("enable")))
             if u.path == "/api/write_fields":
                 return self._json(do_write_fields(data.get("id"),
                                                   data.get("fields")))
@@ -1080,6 +1111,8 @@ class Handler(BaseHTTPRequestHandler):
                     data.get("b64", ""), data.get("filename", "restore.bin")))
             if u.path == "/api/detect":
                 return self._json(do_detect())
+            if u.path == "/api/syslog":
+                return self._json(do_syslog())
         except Exception as e:
             return self._json({"ok": False, "error": f"backend-error: {e}"},
                               500)
