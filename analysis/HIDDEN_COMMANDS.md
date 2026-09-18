@@ -25,12 +25,27 @@ main staMgt -get arp                       # (parsed)
 advanced bm host|target|schedule|rule -add|-edit|-delete index:|-clr
 advanced pc -enable|-disable|-get|-set time:|-delete index:|-clr
 advanced ddns -configChanged ddnsId:<id>
-main route -stc [-clr|-delete index:]
+main route -stc [-clr|-delete index:] (+ `-add index:0 net: mask: gateway: valid` — verified live)
+main staMgt -get arp | -add/-delete bind ip: mac: name: | -add mac: name: upload: download: [blocked]
 systool sntpc -getGmtStatus
+systool syslog -clean   (ERASES the log — same as stock page button)
+systool ping code:0 target: size: metric: timeout: | systool tracert code:0 target: metric:
+systool ping/tracert code:1 icmpId: (stop) | code:2 icmpId: (poll result)
 wan -linkUp | wan -linkDown (+IPv6 variants)
-wlan checkSsid ssid:<s> | wlan wdsstatus
+wlan checkSsid ssid:<s> | wlan wdsstatus | wlan scan | wlan scanStatus
+wlan lanIpConflictStatus -> poll till "2" -> wlan lanIpConflictResult ("0"=clear)
+wlan dhcpsDetectStatus -> poll till "2" -> wlan dhcpsDetectResult ("0"=no rogue DHCP)
 arpMap (ip:/mac:/name: builders for staMgt add)
 ```
+
+## No-go: CPU/RAM/storage meters (proven absent)
+
+- All 60 TDDP blocks read live: no processor, memory, or storage counters
+  anywhere (closest: block 23 uptime+octet counters, block 59 zeros).
+- Probed `systool version/uptime`, `advanced/main/wlan status` → errno 9
+  (unknown). The packed firmware image yields no extra verbs.
+- Panel shows the honest substitutes: uptime, WAN GB totals, HW-NAT state,
+  conflict/rogue-DHCP checks (Status tab → health card, `/api/detect`).
 
 ## Notes
 

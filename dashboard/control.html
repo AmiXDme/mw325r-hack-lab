@@ -136,7 +136,34 @@ async function tabStatus() {
     <div class="card"><h3>💻 Connected devices (${o.clients.length})</h3>
       <table><thead><tr><th>Name</th><th>IP</th><th>MAC</th></tr></thead><tbody>${
         o.clients.map(c => `<tr><td>${esc(c.host)}</td><td>${esc(c.ip)}</td><td>${esc(c.mac)}</td></tr>`).join('') || '<tr><td colspan="3">none</td></tr>'
-      }</tbody></table></div>`;
+      }</tbody></table></div>
+    <div class="card"><h3>🖥️ Router health (hidden internals)</h3><div id="healthbox">Loading…</div></div>`;
+  healthRefresh();
+}
+async function healthRefresh() {
+  const box = $('healthbox');
+  try {
+    const [st, hn, pp, v6, tp] = await Promise.all([
+      get('/api/block?id=23'), get('/api/block?id=56'), get('/api/block?id=27'),
+      get('/api/block?id=47'), get('/api/block?id=10')]);
+    const s = st.block, up = (+s.upTime || 0);
+    const dh = Math.floor(up / 86400), hh = Math.floor(up % 86400 / 3600), mm = Math.floor(up % 3600 / 60);
+    box.innerHTML =
+      row('Uptime', `${dh}d ${hh}h ${mm}m`) +
+      row('WAN totals', `⬇ ${((+s.inOctets || 0) / 1e9).toFixed(2)} GB / ⬆ ${((+s.outOctets || 0) / 1e9).toFixed(2)} GB (${s.inPkts || 0} pkts)`) +
+      row('HW NAT boost', hn.block.enable === '1' ? 'ON' : 'OFF (software routing)') +
+      row('PPPoE session', pp.block.sessionid && pp.block.sessionid !== '0' ? `id ${esc(pp.block.sessionid)} via ${esc(pp.block.acMac)}` : 'not PPPoE / idle') +
+      row('IPv6', v6.block.status === '1' ? 'active' : 'off') +
+      row('Cloud domain', esc(tp.block.name || '?')) +
+      `<div class="btnrow"><button onclick="runDetect()">Run health checks (IP conflict + rogue DHCP)</button></div><div class="msg" id="detmsg"></div>
+       <p class="note">No CPU/RAM meter exists — this model exposes no processor or memory counters anywhere (all 60 blocks read, no such verbs). Uptime + traffic totals are the real health signals here.</p>`;
+  } catch (e) { box.innerHTML = '<span class="bad">Failed to load.</span>'; }
+}
+async function runDetect() {
+  say('detmsg', 'Checking (~20 s)…');
+  const d = await post('/api/detect', {});
+  if (!d.ok) { say('detmsg', 'Failed: ' + JSON.stringify(d), false); return; }
+  say('detmsg', `LAN-IP conflict: <b>${d.lanIpClear ? 'clear ✅' : 'CONFLICT: ' + esc(d.lanIpConflict)}</b> · Rogue DHCP: <b>${d.dhcpClear ? 'none ✅' : 'FOUND: ' + esc(d.rogueDhcp)}</b>`, d.lanIpClear && d.dhcpClear);
 }
 
 async function tabWifi() {
@@ -153,7 +180,26 @@ async function tabWifi() {
       <div class="kv"><label>Radio</label><select id="w-en"><option value="1"${b.bEnable === '1' ? ' selected' : ''}>ON</option><option value="0"${b.bEnable !== '1' ? ' selected' : ''}>OFF</option></select></div>
       <div class="btnrow"><button onclick="saveWifi()">Apply WiFi settings</button></div>
       <div class="msg" id="wmsg"></div></div>
-    <div class="card"><h3>🔐 Security</h3>${row('Auth', b.uAuthType)}${row('PSK cipher', b.uPSKSecOpt)}${row('Key type', b.uKeyType)}</div>`;
+    <div class="card"><h3>🔐 Security</h3>${row('Auth', b.uAuthType)}${row('PSK cipher', b.uPSKSecOpt)}${row('Key type', b.uKeyType)}</div>
+    <div class="card"><h3>📻 Radio tuning (block 32 — same options as stock Advanced)</h3>
+      <div class="kv"><label>Channel width</label><select id="w-w"><option value="2"${r.uChannelWidth === '2' ? ' selected' : ''}>Auto (20/40)</option><option value="1"${r.uChannelWidth !== '2' ? ' selected' : ''}>20 MHz only</option></select></div>
+      <div class="kv"><label>TX power</label><select id="w-p"><option value="1"${r.adv.uPower === '1' ? ' selected' : ''}>High</option><option value="2"${r.adv.uPower === '2' ? ' selected' : ''}>Middle</option><option value="3"${r.adv.uPower !== '1' && r.adv.uPower !== '2' ? ' selected' : ''}>Low</option></select></div>
+      <div class="kv"><label>Isolate clients</label><select id="w-iso"><option value="1"${r.adv.bIsolationEnabled === '1' ? ' selected' : ''}>ON (guests can't see each other)</option><option value="0"${r.adv.bIsolationEnabled !== '1' ? ' selected' : ''}>OFF</option></select></div>
+      <div class="kv"><label>WMM (video/voice priority)</label><select id="w-wmm"><option value="1"${r.adv.bWMEEnabled === '1' ? ' selected' : ''}>ON</option><option value="0"${r.adv.bWMEEnabled !== '1' ? ' selected' : ''}>OFF</option></select></div>
+      <div class="kv"><label>Turbo mode</label><select id="w-turbo"><option value="1"${r.bTurboOn === '1' ? ' selected' : ''}>ON</option><option value="0"${r.bTurboOn !== '1' ? ' selected' : ''}>OFF</option></select></div>
+      ${row('Region index', r.uRegionIndex + ' (country-locked, view only)')}
+      <div class="btnrow"><button onclick="saveRadio()">Apply radio</button></div>
+      <div class="msg" id="wrmsg"></div>
+      <p class="note">Radio restarts briefly — WiFi drops for a few seconds.</p></div>`;
+}
+async function saveRadio() {
+  if (!confirm('Apply radio settings? WiFi drops a few seconds.')) return;
+  say('wrmsg', 'Working…');
+  const d = await post('/api/write_fields', {id: 32, fields: {
+    uChannelWidth: $('w-w').value, bTurboOn: $('w-turbo').value,
+    'adv.uPower': $('w-p').value, 'adv.bIsolationEnabled': $('w-iso').value,
+    'adv.bWMEEnabled': $('w-wmm').value}});
+  say('wrmsg', d.ok ? 'Radio updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
 }
 async function saveWifi() {
   if (!confirm('Apply WiFi settings? Devices may need to reconnect.')) return;
@@ -891,7 +937,12 @@ async function tabTools() {
       <div class="kv"><label>Count (ping)</label><input id="dg-c" value="4"></div>
       <div class="btnrow"><button onclick="dgStart()">Start</button><button onclick="dgStop()" style="background:#9e6a03">Stop</button></div>
       <pre id="dgout">Output appears here…</pre></div>
-    <div class="card"><h3>📜 System log (latest)</h3><div class="btnrow"><button onclick="loadLog()">Refresh log</button></div><pre id="logout">Press Refresh log.</pre></div>
+    <div class="card"><h3>📜 System log (blocks 2 + 3)</h3>
+      <div class="kv"><label>Show</label><select id="log-n"><option value="25">latest 25</option><option value="83">all 83</option></select></div>
+      <div class="btnrow"><button onclick="loadLog()">Refresh log</button>
+      <button onclick="loadExcLog()">Exception log</button>
+      <button onclick="clearLog()" style="background:#9e6a03">Clear log</button></div>
+      <pre id="logout">Press Refresh log.</pre></div>
     <div class="card"><h3>🗺️ Static routes (block 14 → effective table 16)</h3><div id="rtable">Loading…</div></div>`;
   routeRefresh();
 }
@@ -966,8 +1017,22 @@ async function loadLog() {
   $('logout').textContent = 'Reading…';
   const d = await get('/api/block?id=2');
   if (!d.ok) { $('logout').textContent = 'Failed.'; return; }
-  const list = (d.block.list || []).slice(-25).reverse();
-  $('logout').textContent = list.map(e => `[${e.days || 0}d ${e.hours || 0}:${e.mins || 0}:${e.secs || 0}] ${e.msg || ''}`).join('\n') || '(empty)';
+  const n = +($('log-n') ? $('log-n').value : 25);
+  const list = (d.block.list || []).slice(-n).reverse();
+  $('logout').textContent = list.map(e => `[${e.days || 0}d ${e.hours || 0}:${e.mins || 0}:${e.secs || 0}] lv${e.level || '?'} ${e.msg || ''}`).join('\n') || '(empty)';
+}
+async function loadExcLog() {
+  $('logout').textContent = 'Reading…';
+  const d = await get('/api/block?id=3');
+  if (!d.ok) { $('logout').textContent = 'Failed.'; return; }
+  const rows = (d.block.list || []).map(x => (x && x.msg) || '').filter(m => m);
+  $('logout').textContent = rows.length ? rows.join('\n') : '(exception log empty — good, no crashes recorded)';
+}
+async function clearLog() {
+  if (!confirm('ERASE the router system log? (evidence gone — stock page does the same)')) return;
+  $('logout').textContent = 'Clearing…';
+  const d = await post('/api/instr', {cmd: 'systool syslog -clean'});
+  $('logout').textContent = d.ok ? 'Log cleared.' : 'Failed: ' + JSON.stringify(d);
 }
 </script>
 </body>

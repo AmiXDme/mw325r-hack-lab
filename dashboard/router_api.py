@@ -861,6 +861,37 @@ def do_route(op, net="", mask="", gateway="", idx=None):
     return {"ok": o.get("errorno") == 0, "errorno": o.get("errorno")}
 
 
+def do_detect():
+    """Network health self-checks from the WDS wizard: LAN-IP conflict +
+    rogue-DHCP-server detection. Read-only diagnostics."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+
+    def run(cmd):
+        r = cdp_eval("JSON.stringify($.instr(" + json.dumps(cmd) + "))")
+        try:
+            return str(json.loads(r).get("data", "")).strip()
+        except Exception:
+            return ""
+
+    for _ in range(12):
+        if run("wlan lanIpConflictStatus") == "2":
+            break
+        time.sleep(2)
+    ip_conflict = run("wlan lanIpConflictResult")
+    for _ in range(12):
+        if run("wlan dhcpsDetectStatus") == "2":
+            break
+        time.sleep(2)
+    dhcp = run("wlan dhcpsDetectResult")
+    # result "0" = clean on a healthy net; anything else names the culprit
+    # (conflicting IP / rogue DHCP server IP) — shown raw, never guessed.
+    return {"ok": True, "lanIpConflict": ip_conflict or "?",
+            "lanIpClear": ip_conflict == "0",
+            "rogueDhcp": dhcp or "?",
+            "dhcpClear": dhcp == "0"}
+
+
 def do_restore(b64, filename="restore.bin"):
     """Config restore: upload a backup file through the logged-in router
     page (same URL + session the stock page uses). ~4KB files only."""
@@ -1043,6 +1074,8 @@ class Handler(BaseHTTPRequestHandler):
             if u.path == "/api/restore":
                 return self._json(do_restore(
                     data.get("b64", ""), data.get("filename", "restore.bin")))
+            if u.path == "/api/detect":
+                return self._json(do_detect())
         except Exception as e:
             return self._json({"ok": False, "error": f"backend-error: {e}"},
                               500)

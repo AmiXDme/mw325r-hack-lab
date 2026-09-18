@@ -686,6 +686,27 @@ def do_wan(op, wtype=None, f=None):
 
 
 @_auth
+def do_detect():
+    """Read-only network self-checks (LAN-IP conflict + rogue DHCP)."""
+    def run(cmd):
+        return str(_state["t"].instr(cmd).get("data", "")).strip()
+    for _ in range(12):
+        if run("wlan lanIpConflictStatus") == "2":
+            break
+        time.sleep(2)
+    ip_conflict = run("wlan lanIpConflictResult")
+    for _ in range(12):
+        if run("wlan dhcpsDetectStatus") == "2":
+            break
+        time.sleep(2)
+    dhcp = run("wlan dhcpsDetectResult")
+    return {"ok": True, "lanIpConflict": ip_conflict or "?",
+            "lanIpClear": ip_conflict == "0",
+            "rogueDhcp": dhcp or "?",
+            "dhcpClear": dhcp == "0"}
+
+
+@_auth
 def do_restore(b64, filename="restore.bin"):
     import base64 as _b64
     try:
@@ -810,6 +831,7 @@ class Handler(BaseHTTPRequestHandler):
                     data.get("f") or {}),
                 "/api/restore": lambda: do_restore(
                     data.get("b64", ""), data.get("filename", "restore.bin")),
+                "/api/detect": lambda: do_detect(),
             }
             if u.path == "/api/factory_reset":
                 if data.get("confirm") != "YES-WIPE-MY-ROUTER":
