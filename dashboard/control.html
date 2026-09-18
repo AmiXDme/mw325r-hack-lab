@@ -48,8 +48,13 @@
         font-size: 12px; max-height: 380px; overflow: auto; white-space: pre-wrap; }
   .kv { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 6px 0; }
   .kv label { min-width: 170px; color: #8b949e; font-size: 14px; }
-  .kv input, .kv select { flex: 1; min-width: 180px; }
-</style>
+   .kv input, .kv select { flex: 1; min-width: 180px; }
+   .step { display: flex; gap: 14px; margin: 10px 0; align-items: flex-start; }
+   .step-num { width: 30px; height: 30px; border-radius: 50%; background: #1f6feb; color: #fff;
+     display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 14px; flex-shrink: 0; }
+   .step-body { flex: 1; font-size: 13px; line-height: 1.5; color: #c9d1d9; }
+   .step-body b { color: #58a6ff; }
+ </style>
 </head>
 <body>
 <div class="wrap">
@@ -99,7 +104,7 @@ async function login() {
 }
 $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 
-const TABS = [['status','📊 Status'],['wifi','📶 WiFi'],['net','🌐 Network'],['wan','🌍 Internet'],['dev','👥 Devices'],['mod','🚀 Modern'],['travel','🧭 Travel'],['time','🕐 Time'],['fwd','🚪 Forwarding'],['sec','🛡️ Security'],['sys','⚙️ System'],['tools','🔧 Tools'],['fw','🧬 Firmware'],['raw','🧰 Blocks']];
+ const TABS = [['status','📊 Status'],['wifi','📶 WiFi'],['net','🌐 Network'],['wan','🌍 Internet'],['dev','👥 Devices'],['mod','🚀 Modern'],['travel','🧭 Travel'],['time','🕐 Time'],['fwd','🚪 Forwarding'],['sec','🛡️ Security'],['twin','⚡ Evil Twin Lab'],['sys','⚙️ System'],['tools','🔧 Tools'],['fw','🧬 Firmware'],['raw','🧰 Blocks']];
 function buildTabs() {
   $('tabs').innerHTML = TABS.map(([id, label], i) =>
     `<div class="tab${i === 0 ? ' active' : ''}" id="tab-${id}" onclick="showTab('${id}')">${label}</div>`).join('');
@@ -113,7 +118,7 @@ async function showTab(id) {
   const run = async () => {
     if (_curTab !== id) return; // superseded while queued
     $('tabbody').innerHTML = '<div class="card">Loading…</div>';
-    try { await ({status: tabStatus, wifi: tabWifi, net: tabNet, wan: tabWan, dev: tabDev, mod: tabMod, travel: tabTravel, time: tabTime, fwd: tabFwd, sec: tabSec, sys: tabSys, tools: tabTools, fw: tabFw, raw: tabRaw})[id](); }
+    try { await ({status: tabStatus, wifi: tabWifi, net: tabNet, wan: tabWan, dev: tabDev, mod: tabMod, travel: tabTravel, time: tabTime, fwd: tabFwd, sec: tabSec, twin: tabTwin, sys: tabSys, tools: tabTools, fw: tabFw, raw: tabRaw})[id](); }
     catch(e) {
       if (_curTab !== id) return;
       $('tabbody').innerHTML = `<div class="card"><span class="bad">Failed: ${esc(e.message)}. Reload + log in again.</span></div>`;
@@ -310,10 +315,8 @@ async function tabSec() {
       <div class="kv"><label>New password</label><input type="password" id="a-new"></div>
       <div class="btnrow"><button onclick="chgAdmin()">Change admin password</button></div>
       <div class="msg" id="amsg"></div></div>
-    <div class="card"><h3>🔌 ALG helpers (block 17)</h3><div id="algbox">Loading…</div></div>
-    <div class="card"><h3>🚧 Access control (block 31)</h3><div id="acbox">Loading…</div></div>
-    <div class="card"><h3>🎭 Evil-twin lab — learn the attack + spot it (education)</h3><div id="twinbox">Loading…</div></div>`;
-  secExtras(); twinInit();
+    <div class="card"><h3>🚧 Access control (block 31)</h3><div id="acbox">Loading…</div></div>`;
+   secExtras();
 }
 async function twinInit() {
   const me = await get('/api/block?id=33');
@@ -1195,7 +1198,10 @@ async function saveDmz() {
   say('dmsg', d.ok ? 'DMZ updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
 }
 
-async function tabTools() {
+async function tabTwin() {
+  const me = await get('/api/block?id=33');
+  window._twinOwn = me.ok ? {ssid: me.block.cSsid, key: me.block.cPskSecret, sec: me.block.bSecurityEnable} : {};
+  $('tabbody').innerHTML =
   $('tabbody').innerHTML =
     `<div class="card"><h3>🔧 Ping / Traceroute (runs ON the router)</h3>
       <div class="kv"><label>Type</label><select id="dg-t"><option value="ping">Ping</option><option value="tracert">Traceroute</option></select></div>
