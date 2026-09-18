@@ -858,9 +858,104 @@ async function tabTravel() {
       ${m.ok ? row('LAN MAC', m.lanMac) + row('WAN MAC now', m.wanMac) + row('Mode', m.wanMacType) + row('This PC MAC', m.pcMac || '?') : row('Status', 'unavailable')}
       <div class="kv"><label>Set WAN MAC</label><input id="mc-mac" placeholder="AA-BB-CC-DD-EE-FF"></div>
       <div class="btnrow"><button onclick="macSet()">Apply MAC</button>
-      <button onclick="macClonePc()">Clone this PC's MAC</button></div>
+      <button onclick="macClonePc()">Clone this PC's MAC</button>
+      <button onclick="macRandom()">🎲 Randomize (ghost mode)</button></div>
       <div class="msg" id="mcmsg"></div>
-      <p class="note">Changing the WAN MAC can drop the internet until the ISP re-learns it.</p></div>`;
+      <p class="note">Changing the WAN MAC can drop the internet until the ISP re-learns it.</p></div>
+    <div class="card"><h3>👻 Ghost mode — hide from the hotel network</h3><div id="ghostbox">Loading…</div></div>`;
+  ghostRefresh();
+}
+function macRandom() {
+  const b = [];
+  for (let i = 0; i < 6; i++) b.push(Math.floor(Math.random() * 256));
+  b[0] = (b[0] & 0xFE) | 0x02; // locally-administered, unicast
+  $('mc-mac').value = b.map(x => x.toString(16).padStart(2, '0').toUpperCase()).join('-');
+  say('mcmsg', 'Random MAC filled in — press Apply MAC to use it.', true);
+}
+async function ghostRefresh() {
+  const box = $('ghostbox');
+  try {
+    const [w, lan, dh, mc, d25, up, wps, gu, wf, rd] = await Promise.all([
+      post('/api/wds', {op: 'get'}), get('/api/block?id=11'), get('/api/block?id=8'),
+      post('/api/macclone', {op: 'get'}), get('/api/block?id=25'), get('/api/block?id=19'),
+      get('/api/block?id=33'), get('/api/block?id=35'), get('/api/block?id=33'),
+      get('/api/block?id=32')]);
+    const lip = lan.block.lanIp || '?';
+    const uncommon = !/^(192\.168\.(0|1|2)\.|10\.0\.|172\.16\.)/.test(lip);
+    const item = (st, label, fix) =>
+      `<div class="kv"><label>${st === 'info' ? 'ℹ️' : st ? '✅' : '⚠️'} ${label}</label><span>${fix || ''}</span></div>`;
+    box.innerHTML =
+      item(w.bridgeEnabled === '1', `Bridged upstream (${esc(w.ssid || 'off')})`,
+        w.bridgeEnabled === '1' ? '' : '<span class="note">bridge first ↑</span>') +
+      item(uncommon, `Own subnet ${esc(lip)} (uncommon = safer)`,
+        `<button onclick="ghostLan()" style="padding:6px 10px">Renumber to 192.168.77.1</button>`) +
+      item(dh.block.enable === '1', 'Local DHCP forced ON (NAT hides devices)',
+        `<button onclick="ghostDhcp()" style="padding:6px 10px">Force ON</button>`) +
+      item('info', `Router MAC ${esc(mc.wanMac || '?')} (randomize per hotel)`,
+        `<button onclick="tabTravel();setTimeout(macRandom,300)" style="padding:6px 10px">Randomize</button>`) +
+      item('info', `Upstream name "${esc(d25.block.name || '(empty)')}" (look like a phone)`,
+        `<span><input id="gh-name" style="width:150px" placeholder="e.g. android-a1b2c3"><button onclick="ghostName()" style="padding:6px 10px">Apply</button></span>`) +
+      item(up.block.igdEnable !== '1', 'UPnP silent (no beacons)',
+        `<button onclick="tglUpnpGhost()" style="padding:6px 10px">Turn OFF</button>`) +
+      item(wps.block.wps && wps.block.wps.bEnabled !== '1', 'WPS off',
+        `<button onclick="tglWpsGhost()" style="padding:6px 10px">Turn OFF</button>`) +
+      item(gu.block.bEnable !== '1', 'Guest network off',
+        `<button onclick="ghostGuestOff()" style="padding:6px 10px">Turn OFF</button>`) +
+      item(wf.block.bBcastSsid !== '1', 'Our SSID hidden',
+        `<button onclick="ghostHide()" style="padding:6px 10px">Hide it</button>`) +
+      item(rd.block.adv && rd.block.adv.uPower === '3', 'TX power low (small footprint)',
+        `<button onclick="ghostLowPower()" style="padding:6px 10px">Set low</button>`) +
+      `<div class="msg" id="ghmsg"></div>
+       <p class="note">Honest limits: the hotel AP can still see a WDS bridge link exists; a determined admin can find hidden SSIDs and fingerprint traffic. This hides you from portals, device-counts, casual scans and UPnP discovery — not from forensics. Items marked ⚠️ need one tap each (nothing auto-applies).</p>`;
+  } catch (e) { box.innerHTML = '<span class="bad">Failed to load.</span>'; }
+}
+async function ghostLan() {
+  if (!confirm('Renumber LAN to 192.168.77.1? YOU will disconnect and must rejoin at the new address. Continue?')) return;
+  if (!confirm('Really change it? (Reboot the router after for subnets to settle.)')) return;
+  say('ghmsg', 'Working…');
+  const d = await post('/api/write_fields', {id: 11, fields: {lanIp: '192.168.77.1', lanMask: '255.255.255.0'}});
+  say('ghmsg', d.ok ? 'LAN renumbered. Reconnect to 192.168.77.1, then reboot the router.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+async function ghostDhcp() {
+  if (!confirm('Force local DHCP ON? (Needed so your devices hide behind NAT.)')) return;
+  say('ghmsg', 'Working…');
+  const d = await post('/api/write_fields', {id: 8, fields: {enable: '1'}});
+  say('ghmsg', d.ok ? 'DHCP forced on.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(ghostRefresh, 1500);
+}
+async function ghostName() {
+  const n = $('gh-name').value.trim() || ('android-' + Math.floor(Math.random() * 0xffffff).toString(16));
+  if (!confirm(`Set upstream device name to "${n}"?`)) return;
+  say('ghmsg', 'Working…');
+  const d = await post('/api/write_fields', {id: 25, fields: {name: n}});
+  say('ghmsg', d.ok ? 'Name set.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(ghostRefresh, 1500);
+}
+async function tglUpnpGhost() {
+  const d = await post('/api/set_upnp', {enabled: '0'});
+  say('ghmsg', d.ok ? 'UPnP off.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(ghostRefresh, 1500);
+}
+async function tglWpsGhost() {
+  const d = await post('/api/set_wps', {enabled: '0'});
+  say('ghmsg', d.ok ? 'WPS off.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(ghostRefresh, 1500);
+}
+async function ghostGuestOff() {
+  const d = await post('/api/write_fields', {id: 35, fields: {bEnable: '0'}});
+  say('ghmsg', d.ok ? 'Guest off.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(ghostRefresh, 1500);
+}
+async function ghostHide() {
+  if (!confirm('Hide your SSID? You will need to type the name manually on new devices.')) return;
+  const d = await post('/api/write_fields', {id: 33, fields: {bBcastSsid: '0'}});
+  say('ghmsg', d.ok ? 'SSID hidden.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(ghostRefresh, 1500);
+}
+async function ghostLowPower() {
+  const d = await post('/api/write_fields', {id: 32, fields: {'adv.uPower': '3'}});
+  say('ghmsg', d.ok ? 'TX power low.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(ghostRefresh, 1500);
 }
 async function runSurvey() {
   $('surveybox').innerHTML = 'Scanning… (radio stays up, ~5 s)';
