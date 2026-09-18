@@ -30,27 +30,27 @@ Status: live-read from the owner's unit (authenticated `readEx`), purposes
 | 21 | VSERVER-RULES | 16 slots (enable/lclIp/ports/ptc) | via `forward` instr |
 | 22 | WAN-LINK | linkMode/linkType 0=DHCP 1=static 2=PPPoE 3=L2TP 4=PPTP | **yes (UI, +linkDown/linkUp bounce)** |
 | 23 | WAN-STATUS | ip/mask/gateway/dns/upTime/inOut pkts+octets | no (counters) |
-| 24 | WAN-STATIC | ip/mask/gateway/dns[2]/mtu | **yes (UI)** |
-| 25 | WAN-DNS | name/mtu/ucast/**manualDns**/**dns[2]**/lastIp | **yes (UI)** |
-| 26 | PPPOE | name/**paswd**(blank=keep), fixipEnb/fixip, manualDns/dns, **lcpMru**=MTU(576-1492), dialMode | **yes (UI, masked)** |
+| 24 | WAN-STATIC (TSTATIC_IP in model) | ip/mask/gateway/dns[2]/mtu | **yes (UI)** |
+| 25 | WAN-DHCP-CLIENT (DHCPC in model) | name/mtu/ucast/**manualDns**/**dns[2]**/lastIp | **yes (UI)** |
+| 26 | PPPOE (TPPPOE in model) | name/**paswd**(blank=keep), fixipEnb/fixip, manualDns/dns, **lcpMru**=MTU(576-1492), dialMode | **yes (UI, masked)** |
 | 27 | PPPOE-SESS | acMac/sessionid/dialMode | no |
 | 28–29 | TIME (SNTPC_CONFIG / SNTPC_TIME) | 28:**timeZone** (stored = UI_select − 720); 29: year/month/day/hour/min/sec/**sntpcSuccess** | tz via UI; clock read-only |
 | 30 | PARENTAL (PARENT_CTL) | enable + mon..sun + mac list | **yes (UI editor)** |
 | 31 | ACCESS-CTRL (BEHAVMANG) | **bhavEnable**/bhavRule + r/h/t/s rule tables | master switch via UI; tables in stock UI |
-| 32 | WLAN-RADIO (WLAN_BASIC) | enable/mode/region/**channel**/width/adv + **apc{bBridgeEnabled,cBridgedSsid,cBridgedBssid,uSecurityType,cPassWD}** (WDS bridge) | **yes (UI)** |
+| 32 | WLAN-RADIO (DWLAN_BASIC in model) | enable/mode/region/**channel**/width/adv + **apc{bBridgeEnabled,cBridgedSsid,cBridgedBssid,uSecurityType,cPassWD}** (WDS bridge) | **yes (UI)** |
 | 33 | WLAN-MAIN (MBSSID_MAIN) | **cSsid/cPskSecret**/bcast/security/**wps{enable,PIN}** | **yes (UI)** |
 | 34 | WLAN-IPTV (MBSSID_IPTV) | ⚠️ NOT guest — panel previously misused it as guest (fixed) | — |
 | 35 | WLAN-GUEST (MBSSID_GUESTNET) | **bEnable/cSsid/bSecurityEnable/cPskSecret/bLanAccess/uMaxUp/uMaxDown/bSetOpenTime/uDuration/uAllowTimeMode/uTimeTable** (+wps block) | **yes (UI)** |
-| 36 | AP-SURVEY (WLAN_AP_LIST) | apEntry (BSSID/SSID/RSSI/channel/auth/width) via `wlan scan` → poll `wlan scanStatus` → read | no (scan results; `wlan wdsstatus` = link state) |
+| 36 | AP-SURVEY (LWLAN_AP_LIST in model) | apEntry (BSSID/SSID/RSSI/channel/auth/width) via `wlan scan` → poll `wlan scanStatus` → read | no (scan results; `wlan wdsstatus` = link state) |
 | 37 | VLAN/IPTV | **uMode** 0=off/1=manual/2=auto + uService[] table | mode via UI; table view |
 | 38–39 | L2TP/PPTP-WAN | userName/**passwd**(blank=keep)/domainIp/bDhcp/ip/mask/gateway/dns/mtu | **yes (UI, masked)** |
 | 40 | DDNS | mode + serviceList[2]{enable,username,**password**(blank=keep),domainName,ip,status} | **yes (UI, masked)** |
-| 41 | STATUS | status pair | no |
+| 41 | DDNS-STATUS (model name; live `status:["0","0"]` = 2 slots) | — | no |
 | 42–43, 51 | IPv6-MODES | mode/interfaceType/ipGetMethod | [UNKNOWN] |
 | 44–50 | IPv6-ADDRS | all `::` (unused) | — |
 | 52–54 | RADIO-SLOTS | same shape as 32/33, disabled | [UNKNOWN] |
-| 55 | LOCALE | en_US,zh_TW | [UNKNOWN] |
-| 56 | ? | enable=0 | [UNKNOWN] |
+| 55 | LOCALE (LLANGUAGE in model) | en_US,zh_TW | [UNKNOWN] |
+| 56 | HW-NAT | enable=0 (software routing; shown in UI health card) | view |
 | 57 | SCHEDULE (SCHEDULE_REBOOT) | enable/type/weekday/hour/min/sec/remainTime — ⚠️ **ARMED on owner's unit (enable=1, recurring Mon 03:30); NOT clearable via TDDP (writes errno 2, no instr verb, survives reboot). Factory reset is the only known disarm; needs owner consent.** | no — hands off |
 | 58 | MISC | authKey empty, option66Disable=1 | [UNKNOWN] |
 | 59 | ISP-STATS | bIspReset/wUrlTimes/curTicks | no |
