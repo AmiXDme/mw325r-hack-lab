@@ -342,6 +342,10 @@ def do_instr(cmd):
         return {"ok": False, "error": "not-authenticated"}
     if not isinstance(cmd, str) or not cmd.startswith(ALLOWED_INSTR):
         return {"ok": False, "error": "blocked-prefix"}
+    # CVE-2023-52162: stack overflow in `advanced bm` (behavior mgmt) parsing.
+    # The panel never uses it (only `advanced pc`), so hard-block it here.
+    if cmd.startswith("advanced bm"):
+        return {"ok": False, "error": "blocked-cve-2023-52162"}
     if len(cmd) > 300:
         return {"ok": False, "error": "too-long"}
     r = cdp_eval("JSON.stringify($.instr(" + json.dumps(cmd) + "))")

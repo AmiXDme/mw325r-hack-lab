@@ -199,6 +199,10 @@ def do_backup():
 def do_instr(cmd):
     if not isinstance(cmd, str) or not cmd.startswith(ALLOWED_INSTR):
         return {"ok": False, "error": "blocked-prefix"}
+    # CVE-2023-52162: stack overflow in `advanced bm` parsing — hard-blocked
+    # (the panel only ever uses `advanced pc`).
+    if cmd.startswith("advanced bm"):
+        return {"ok": False, "error": "blocked-cve-2023-52162"}
     if len(cmd) > 300:
         return {"ok": False, "error": "too-long"}
     r = _state["t"].instr(cmd)
