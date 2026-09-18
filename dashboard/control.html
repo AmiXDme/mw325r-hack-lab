@@ -311,8 +311,116 @@ async function tabSec() {
       <div class="btnrow"><button onclick="chgAdmin()">Change admin password</button></div>
       <div class="msg" id="amsg"></div></div>
     <div class="card"><h3>🔌 ALG helpers (block 17)</h3><div id="algbox">Loading…</div></div>
-    <div class="card"><h3>🚧 Access control (block 31)</h3><div id="acbox">Loading…</div></div>`;
-  secExtras();
+    <div class="card"><h3>🚧 Access control (block 31)</h3><div id="acbox">Loading…</div></div>
+    <div class="card"><h3>🎭 Evil-twin lab — learn the attack + spot it (education)</h3><div id="twinbox">Loading…</div></div>`;
+  secExtras(); twinInit();
+}
+async function twinInit() {
+  const me = await get('/api/block?id=33');
+  window._twinOwn = me.ok ? {ssid: me.block.cSsid, key: me.block.cPskSecret, sec: me.block.bSecurityEnable} : {};
+  $('twinbox').innerHTML =
+    `<p class="note">An <b>evil twin</b> copies a real WiFi name so devices join the attacker instead.
+     This lab lets you <b>build one against your own network</b> to understand it, and — more importantly —
+     <b>detect twins hunting you</b>. No passwords are captured by anything here, ever.</p>
+     <div class="btnrow"><button onclick="twinSurvey()">1️⃣ Scan airwaves</button>
+     <button onclick="twinDetect()">2️⃣ Detect twins attacking me</button></div>
+     <div id="twinlist"><p class="note">Scan first.</p></div>
+     <div id="twinbuild"></div><div class="msg" id="twinmsg"></div>
+     <p class="note">Rules: only your own network / devices, or written permission. Relay upstream only works
+     against WDS-capable targets (most home routers refuse WDS) — impersonation + detection always work.</p>`;
+}
+async function twinSurvey() {
+  $('twinlist').innerHTML = 'Scanning… (~5 s)';
+  const d = await post('/api/scan', {});
+  if (!d.ok) { $('twinlist').innerHTML = '<span class="bad">Failed.</span>'; return; }
+  window._twinAps = d.aps;
+  $('twinlist').innerHTML =
+    `<table><thead><tr><th>#</th><th>SSID</th><th>BSSID</th><th>Ch</th><th>Auth</th><th></th></tr></thead><tbody>${
+      d.aps.map((a, i) => `<tr><td>${i}</td><td>${esc(a.ssid) || '<i>hidden</i>'}</td><td>${esc(a.bssid)}</td>
+        <td>${esc(a.channel)}</td><td>${esc(a.auth)}</td>
+        <td><button onclick="twinPick(${i})" style="padding:6px 10px">Study</button></td></tr>`).join('')
+    }</tbody></table>`;
+}
+function twinGate() {
+  if (window._twinOk) return true;
+  const t = prompt('Type I OWN THIS NETWORK to unlock the twin builder (your own gear only):');
+  if (t !== 'I OWN THIS NETWORK') { say('twinmsg', 'Builder stays locked.', false); return false; }
+  window._twinOk = true;
+  return true;
+}
+function twinPick(i) {
+  if (!twinGate()) return;
+  const a = window._twinAps[i];
+  window._twinTarget = a;
+  window._twinBackup = window._twinBackup || {...window._twinOwn};
+  $('twinbuild').innerHTML =
+    `<h3 style="font-size:13px;color:#8b949e;margin:10px 0">🔬 Impersonating "${esc(a.ssid)}" (${esc(a.bssid)})</h3>
+     <div class="kv"><label>Our SSID becomes</label><input id="tw-ssid" maxlength="32" value="${esc(a.ssid)}"></div>
+     <div class="kv"><label>Security</label><select id="tw-sec"><option value="0">Open (clients join freely — classic twin)</option><option value="1">WPA2 + key</option></select></div>
+     <div class="kv"><label>WPA2 key</label><input id="tw-key" type="password" placeholder="needed only for WPA2 clone"></div>
+     <div class="kv"><label>Also bridge upstream to it?</label><select id="tw-relay"><option value="0">No (safer lab)</option><option value="1">Try relay (needs WDS upstream)</option></select></div>
+     <div class="btnrow"><button onclick="twinBuild()">Broadcast the twin</button>
+     <button onclick="twinRestore()" style="background:#9e6a03">Restore my network</button></div>`;
+  say('twinmsg', 'Target locked. Broadcasting restarts the radio — your devices drop briefly.', true);
+}
+async function twinBuild() {
+  const t = window._twinTarget;
+  const ssid = $('tw-ssid').value.trim(), sec = $('tw-sec').value, key = $('tw-key').value;
+  if (!ssid) { say('twinmsg', 'SSID empty.', false); return; }
+  if (sec === '1' && (key.length < 8 || key.length > 63)) { say('twinmsg', 'WPA2 key must be 8-63 chars.', false); return; }
+  if (!confirm(`Impersonate "${ssid}" on YOUR router? Your own devices may roam to the twin — that IS the lesson.`)) return;
+  say('twinmsg', 'Broadcasting…');
+  const d = await post('/api/write_fields', {id: 33, fields: {
+    cSsid: ssid, bSecurityEnable: sec, cPskSecret: sec === '1' ? key : window._twinBackup.key || '',
+    bBcastSsid: '1', bEnable: '1'}});
+  if (!d.ok) { say('twinmsg', 'Failed: ' + JSON.stringify(d), false); return; }
+  if ($('tw-relay').value === '1') {
+    const w = await post('/api/wds', {op: 'connect', ssid: t.ssid, bssid: t.bssid, key: sec === '1' ? key : ''});
+    say('twinmsg', w.ok ? 'Twin live + relay attempted. Watch Travel → link state (fails cleanly without WDS upstream).' : 'Twin live; relay failed (expected vs non-WDS targets): ' + JSON.stringify(w), w.ok);
+  } else say('twinmsg', 'Twin live (no relay). Observe with a second device, then Restore.', true);
+}
+async function twinRestore() {
+  if (!confirm('Restore your original network name + key?')) return;
+  say('twinmsg', 'Restoring…');
+  await post('/api/wds', {op: 'disconnect'});
+  const b = window._twinBackup || {};
+  const d = await post('/api/write_fields', {id: 33, fields: {
+    cSsid: b.ssid || 'MW325R', cPskSecret: b.key || '', bSecurityEnable: b.sec || '1'}});
+  say('twinmsg', d.ok ? 'Your network is back.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+async function twinDetect() {
+  $('twinlist').innerHTML = 'Scanning… (~5 s)';
+  const d = await post('/api/scan', {});
+  if (!d.ok) { $('twinlist').innerHTML = '<span class="bad">Failed.</span>'; return; }
+  const own = (window._twinOwn && window._twinOwn.ssid) || '';
+  const groups = {};
+  d.aps.forEach(a => { const k = (a.ssid || '').toLowerCase(); (groups[k] = groups[k] || []).push(a); });
+  let html = `<table><thead><tr><th>Verdict</th><th>SSID</th><th>BSSIDs seen</th><th>Detail</th></tr></thead><tbody>`;
+  let issue = 0;
+  for (const k of Object.keys(groups)) {
+    const g = groups[k], macs = [...new Set(g.map(a => a.bssid))];
+    const auths = [...new Set(g.map(a => String(a.auth)))];
+    const name = g[0].ssid || '(hidden)';
+    if (k === '' ) continue;
+    if (macs.length > 1) {
+      const isMe = own && k === own.toLowerCase();
+      issue++;
+      html += `<tr><td>${isMe ? '<span class="bad">⚠️ CLONE OF YOU?</span>' : '<span class="warn">⚠️ shared name</span>'}</td><td>${esc(name)}</td><td>${macs.map(esc).join('<br>')}</td><td>${isMe ? 'Your SSID from ' + macs.length + ' radios — you run one AP. Unknown ones = someone impersonating you (or your own extender — check MACs).' : 'Same name, several radios: legit mesh/extender OR a twin. An OPEN copy next to a secured one is the classic tell — compare auth below.'}</td></tr>`;
+    }
+  }
+  // open-copy-of-secured check: same name seen both open and secured
+  for (const k of Object.keys(groups)) {
+    const g = groups[k], auths = [...new Set(g.map(a => String(a.auth)))];
+    if (k !== '' && auths.includes('0') && auths.some(a => a !== '0')) {
+      issue++;
+      html += `<tr><td><span class="bad">🎯 OPEN COPY</span></td><td>${esc(g[0].ssid)}</td><td>${[...new Set(g.map(a => a.bssid))].map(esc).join('<br>')}</td><td>Same name seen OPEN and secured — textbook evil-twin pattern. Join only the secured one you recognize.</td></tr>`;
+    }
+  }
+  const opens = d.aps.filter(a => String(a.auth) === '0' && a.ssid);
+  html += `</tbody></table><p class="note">Open networks nearby: ${opens.length} (${opens.slice(0, 6).map(a => esc(a.ssid)).join(', ') || 'none'}). ` +
+    (issue === 0 ? 'No duplicate-SSID radios found — air looks clean ✅' : issue + ' SSID(s) need your eyes above.') + ` Your SSID: <b>${esc(own || '?')}</b>.</p>`;
+  $('twinlist').innerHTML = html;
+  $('twinbuild').innerHTML = '';
 }
 const ALG_KEYS = [['ftpAlgEnable', 'FTP'], ['pptpAlgEnable', 'PPTP'], ['rtspAlgEnable', 'RTSP'], ['sipAlgEnable', 'SIP'], ['ipsecAlgEnable', 'IPsec'], ['h323AlgEnable', 'H.323']];
 async function secExtras() {
