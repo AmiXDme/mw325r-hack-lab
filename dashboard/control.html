@@ -318,25 +318,12 @@ async function tabSec() {
     <div class="card"><h3>🚧 Access control (block 31)</h3><div id="acbox">Loading…</div></div>`;
    secExtras();
 }
-async function twinInit() {
-  const me = await get('/api/block?id=33');
-  window._twinOwn = me.ok ? {ssid: me.block.cSsid, key: me.block.cPskSecret, sec: me.block.bSecurityEnable} : {};
-  $('twinbox').innerHTML =
-    `<p class="note">An <b>evil twin</b> copies a real WiFi name so devices join the attacker instead.
-     This lab lets you <b>build one against your own network</b> to understand it, and — more importantly —
-     <b>detect twins hunting you</b>. No passwords are captured by anything here, ever.</p>
-     <div class="btnrow"><button onclick="twinSurvey()">1️⃣ Scan airwaves</button>
-     <button onclick="twinDetect()">2️⃣ Detect twins attacking me</button></div>
-     <div id="twinlist"><p class="note">Scan first.</p></div>
-     <div id="twinbuild"></div><div class="msg" id="twinmsg"></div>
-     <p class="note">Rules: only your own network / devices, or written permission. Relay upstream only works
-     against WDS-capable targets (most home routers refuse WDS) — impersonation + detection always work.</p>`;
-}
 async function twinSurvey() {
   $('twinlist').innerHTML = 'Scanning… (~5 s)';
   const d = await post('/api/scan', {});
   if (!d.ok) { $('twinlist').innerHTML = '<span class="bad">Failed.</span>'; return; }
   window._twinAps = d.aps;
+  twinStatsRender(d.aps);
   $('twinlist').innerHTML =
     `<table><thead><tr><th>#</th><th>SSID</th><th>BSSID</th><th>Ch</th><th>Auth</th><th></th></tr></thead><tbody>${
       d.aps.map((a, i) => `<tr><td>${i}</td><td>${esc(a.ssid) || '<i>hidden</i>'}</td><td>${esc(a.bssid)}</td>
@@ -1202,6 +1189,61 @@ async function tabTwin() {
   const me = await get('/api/block?id=33');
   window._twinOwn = me.ok ? {ssid: me.block.cSsid, key: me.block.cPskSecret, sec: me.block.bSecurityEnable} : {};
   $('tabbody').innerHTML =
+    `<div class="card"><h3>📚 How an evil twin works</h3>
+      <div class="step"><div class="step-num">1</div><div class="step-body">
+        <b>Scan</b> — the attacker sniffs nearby WiFi, noting your SSID, channel and encryption.
+        Every AP shouts <b>beacon frames</b> (~10×/second) with its name, MAC, rates and crypto — all <b>in the clear</b>.</div></div>
+      <div class="step"><div class="step-num">2</div><div class="step-body">
+        <b>Clone</b> — the attacker creates an AP with <b>your exact SSID</b> on the same channel.
+        Nothing in WiFi stops anyone broadcasting your name — SSID is just a label, not an identity.</div></div>
+      <div class="step"><div class="step-num">3</div><div class="step-body">
+        <b>Lure</b> — with stronger signal or closer position, victim devices see two APs with one name
+        and join the <b>louder</b> one — the twin. Auto-reconnect makes this silent.</div></div>
+      <div class="step"><div class="step-num">4</div><div class="step-body">
+        <b>Intercept</b> — all victim traffic now flows through the attacker. On open networks passwords fly
+        in cleartext; on WPA2 the handshake can be recorded for offline cracking.
+        <b>This lab only does steps 1–3 against your own gear — it never captures a single password.</b></div></div>
+      <div class="btnrow"><button onclick="twinSurvey()">📡 1️⃣ Scan airwaves</button>
+      <button onclick="twinDetect()">🔍 2️⃣ Detect twins hunting me</button></div>
+      <div id="twinlist"><p class="note">Scan first to see the map.</p></div>
+      <div id="twinbuild"></div><div class="msg" id="twinmsg"></div>
+      <p class="note">⚠️ Rules: only your own network / devices, or written permission. Relay needs a WDS-capable upstream (most home routers refuse) — impersonation + detection always work.</p></div>
+    <div class="card"><h3>📊 WiFi forensic map</h3><div id="twinmap">Scan to generate.</div></div>
+    <div class="card"><h3>🛡️ How to defend against evil twins</h3>
+      ${row('1. Look at BSSID, not SSID', 'Your AP MAC never changes; a twin has a different MAC. Compare in the scan table.')}
+      ${row('2. Beware the OPEN copy', 'Same name seen open AND secured = textbook twin. Join only the secured one you recognize.')}
+      ${row('3. Turn off auto-join', 'Phones silently join the loudest known name — the twin counts on this.')}
+      ${row('4. HTTPS always', 'A twin sees encrypted blobs only when the site uses TLS. Never log in over plain HTTP.')}
+      ${row('5. Use a VPN on strange WiFi', 'An encrypted tunnel blinds packet inspection even on a twin.')}
+      ${row('6. Forget hotel/cafe nets', 'Delete them after the trip so they cannot be impersonated later.')}
+      ${row('7. WPA-Enterprise / certs', 'Per-user certificates make impersonation impossible without the CA.')}</div>`;
+  const el = $('twinmap');
+  if (el) el.innerHTML = 'Scan to generate the forensic map…';
+}
+function twinStatsRender(aps) {
+  const box = $('twinmap');
+  if (!box) return;
+  const authNames = {'0': 'Open', '1': 'WEP', '2': 'WPA TKIP', '3': 'WPA CCMP', '4': 'WPA2 TKIP', '5': 'WPA2 CCMP'};
+  const chMap = {}, encMap = {};
+  aps.forEach(a => {
+    const ch = String(a.channel), au = String(a.auth);
+    chMap[ch] = (chMap[ch] || 0) + 1;
+    encMap[au] = (encMap[au] || 0) + 1;
+  });
+  const channels = Object.keys(chMap).sort((a, b) => parseInt(a) - parseInt(b));
+  const encs = Object.entries(encMap).map(([k, v]) => `${authNames[k] || ('auth ' + k)}: ${v}`).join(', ');
+  const top = [...aps].sort((a, b) => (parseInt(b.rssi) || -999) - (parseInt(a.rssi) || -999)).slice(0, 5);
+  box.innerHTML =
+    row('Networks in range', String(aps.length)) +
+    row('Channels used', channels.join(', ') || 'none') +
+    row('Encryption mix', encs || 'none') +
+    `<p class="note" style="text-align:left"><b>Channel read:</b> ${channels.length > 1 ?
+      'traffic spread over several channels. If YOUR ssid shows up on a channel your router is not set to (see 📶 WiFi tab), that copy is not yours.' :
+      'single channel in use — any same-name AP on another channel would stand out immediately.'}</p>
+     <p class="note" style="text-align:left"><b>Strongest signals:</b><br>${top.map(a => `${esc(a.ssid) || '(hidden)'} @ ${esc(a.bssid)} — ${esc(a.rssi)} dBm, ch ${esc(a.channel)} (${authNames[String(a.auth)] || esc(a.auth)})`).join('<br>')}</p>
+     <p class="note" style="text-align:left"><b>Forensic rule:</b> a twin = <b>same SSID, different BSSID</b>. The scan table above is the evidence — sort suspects by asking which MAC is not your router's (📊 Status shows yours).</p>`;
+}
+async function tabTools() {
   $('tabbody').innerHTML =
     `<div class="card"><h3>🔧 Ping / Traceroute (runs ON the router)</h3>
       <div class="kv"><label>Type</label><select id="dg-t"><option value="ping">Ping</option><option value="tracert">Traceroute</option></select></div>
