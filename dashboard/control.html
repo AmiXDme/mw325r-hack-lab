@@ -76,7 +76,7 @@
   </div>
 </div>
 <script>
-const API = 'http://127.0.0.1:8100';
+const API = (new URLSearchParams(location.search).get('api') || 'http://127.0.0.1:8100').replace(/\/$/, '');
 const $ = id => document.getElementById(id);
 const esc = s => String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;');
 function row(k, v, c) { return `<div class="row"><span class="k">${k}</span><span class="v ${c||''}">${esc(v)}</span></div>`; }
