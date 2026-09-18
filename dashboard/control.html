@@ -98,8 +98,8 @@ async function login() {
     if (d.ok) { $('login').classList.add('hidden'); $('panel').classList.remove('hidden');
       $('conn').textContent = 'connected'; $('conn').className = 'pill on';
       buildTabs(); showTab('status');
-    } else $('err').textContent = 'Login failed (error ' + d.errorno + '). Try again.';
-  } catch(e) { $('err').textContent = 'Backend not running. Start router_api.py first.'; }
+    } else $('err').textContent = 'Login failed: ' + (d.error || ('error ' + (d.errorno ?? 'unknown'))) + '. Try again.';
+  } catch(e) { $('err').textContent = 'Backend connection failed: ' + (e.message || e); }
   $('go').disabled = false;
 }
 $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
