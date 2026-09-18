@@ -307,7 +307,7 @@ async function tabSec() {
       <div class="btnrow"><button onclick="chgAdmin()">Change admin password</button></div>
       <div class="msg" id="amsg"></div></div>
     <div class="card"><h3>🔌 ALG helpers (block 17)</h3><div id="algbox">Loading…</div></div>
-    <div class="card"><h3>👪 Parental control (block 30)</h3><div id="parbox">Loading…</div></div>`;
+    <div class="card"><h3>🚧 Access control (block 31)</h3><div id="acbox">Loading…</div></div>`;
   secExtras();
 }
 const ALG_KEYS = [['ftpAlgEnable', 'FTP'], ['pptpAlgEnable', 'PPTP'], ['rtspAlgEnable', 'RTSP'], ['sipAlgEnable', 'SIP'], ['ipsecAlgEnable', 'IPsec'], ['h323AlgEnable', 'H.323']];
@@ -319,43 +319,16 @@ async function secExtras() {
       `<div class="kv"><label>${label}</label><select id="alg-${k}"><option value="1"${b[k] === '1' ? ' selected' : ''}>ON</option><option value="0"${b[k] !== '1' ? ' selected' : ''}>OFF</option></select></div>`).join('') +
       `<div class="btnrow"><button onclick="saveAlg()">Apply ALG</button></div><div class="msg" id="algmsg"></div>`;
   } else $('algbox').innerHTML = '<span class="bad">Failed to load.</span>';
-  const p = await get('/api/block?id=30');
-  if (p.ok) {
-    const b = p.block, days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-    const slots = (b.list || []).map(x => x.mac || '00-00-00-00-00-00');
-    $('parbox').innerHTML =
-      `<div class="kv"><label>Master switch</label><select id="par-en"><option value="1"${b.enable === '1' ? ' selected' : ''}>ON</option><option value="0"${b.enable !== '1' ? ' selected' : ''}>OFF</option></select></div>
-       ${days.map(d => `<div class="kv"><label>${d.toUpperCase()}</label><select id="par-${d}"><option value="1"${b[d] === '1' ? ' selected' : ''}>Controlled</option><option value="0"${b[d] !== '1' ? ' selected' : ''}>Free</option></select></div>`).join('')}
-       ${slots.map((m, i) => `<div class="kv"><label>Device MAC ${i + 1}</label><input id="par-mac${i}" value="${esc(m)}"></div>`).join('')}
-       <div class="btnrow"><button onclick="saveParental()">Apply parental rules</button></div><div class="msg" id="parmsg"></div>
-       <p class="note">Rules can cut devices off the internet — double-check MACs.</p>`;
-    window._parSlots = slots.length;
-  } else $('parbox').innerHTML = '<span class="bad">Failed to load.</span>';
   const ac = await get('/api/block?id=31');
   if (ac.ok) {
     const b = ac.block;
     const cnt = l => (b[l] || []).filter(x => Object.values(x).some(v => v && v !== '0' && v !== '')).length;
-    $('parbox').innerHTML +=
-      `<div class="card" style="margin:12px 0 0"><h3>🚧 Access control (block 31)</h3>
-       <div class="kv"><label>Master switch</label><select id="ac-en"><option value="1"${b.bhavEnable === '1' ? ' selected' : ''}>ON</option><option value="0"${b.bhavEnable !== '1' ? ' selected' : ''}>OFF</option></select></div>
+    $('acbox').innerHTML =
+      `<div class="kv"><label>Master switch</label><select id="ac-en"><option value="1"${b.bhavEnable === '1' ? ' selected' : ''}>ON</option><option value="0"${b.bhavEnable !== '1' ? ' selected' : ''}>OFF</option></select></div>
        ${row('Host/Target/Schedule rules', `${cnt('rList')} rule rows · ${cnt('hList')} hosts · ${cnt('tList')} targets · ${cnt('sList')} schedules`)}
        <div class="btnrow"><button onclick="saveAccess()">Apply master switch</button></div><div class="msg" id="acmsg"></div>
-       <p class="note">Rule tables are edited in the stock UI; the master switch is safe here.</p></div>`;
-  }
-}
-async function saveParental() {
-  const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-  const f = {enable: $('par-en').value};
-  days.forEach(d => { f[d] = $('par-' + d).value; });
-  for (let i = 0; i < window._parSlots; i++) {
-    const m = $('par-mac' + i).value.trim().toUpperCase().replace(/:/g, '-');
-    if (m && m !== '00-00-00-00-00-00' && !/^([0-9A-F]{2}-){5}[0-9A-F]{2}$/.test(m)) { say('parmsg', 'Bad MAC in slot ' + (i + 1), false); return; }
-    f['list.' + i + '.mac'] = m || '00-00-00-00-00-00';
-  }
-  if (!confirm('Apply parental control rules? Controlled devices lose internet on controlled days.')) return;
-  say('parmsg', 'Working…');
-  const d = await post('/api/write_fields', {id: 30, fields: f});
-  say('parmsg', d.ok ? 'Parental rules updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
+       <p class="note">Rule tables are edited in the stock UI; the master switch is safe here.</p>`;
+  } else $('acbox').innerHTML = '<span class="bad">Failed to load.</span>';
 }
 async function saveAccess() {
   if (!confirm('Flip the access-control master switch?')) return;
