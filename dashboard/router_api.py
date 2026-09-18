@@ -47,7 +47,7 @@ def _page_ws():
     raise RuntimeError("no CDP page target")
 
 
-async def _cdp_eval(expr, navigate_first=False):
+async def _cdp_eval(expr, navigate_first=False, await_promise=False):
     ws = await websockets.connect(_router_ws(), max_size=10_000_000)
     mid = [0]
 
@@ -64,7 +64,8 @@ async def _cdp_eval(expr, navigate_first=False):
 
     async def ev(e):
         r = await send("Runtime.evaluate",
-                       {"expression": e, "returnByValue": True})
+                       {"expression": e, "returnByValue": True,
+                        "awaitPromise": await_promise})
         return r.get("result", {}).get("result", {}).get("value")
 
     try:
@@ -78,9 +79,9 @@ async def _cdp_eval(expr, navigate_first=False):
         await ws.close()
 
 
-def cdp_eval(expr, navigate_first=False):
+def cdp_eval(expr, navigate_first=False, await_promise=False):
     with _lock:  # one CDP conversation at a time
-        return asyncio.run(_cdp_eval(expr, navigate_first))
+        return asyncio.run(_cdp_eval(expr, navigate_first, await_promise))
 
 
 def do_login(password):
@@ -630,6 +631,273 @@ def do_ipmac(op, ip="", mac="", name=""):
     return {"ok": False, "error": "bad-op"}
 
 
+PW_MASK_KEYS = ("paswd", "passwd")
+
+
+def _scrub_passwords(b):
+    for k in list(b.keys()):
+        if k.lower() in PW_MASK_KEYS and b[k]:
+            b[k] = "***set***"
+    return b
+
+
+def _valid_ip(ip):
+    import re as _re
+    if not _re.match(r"^\d{1,3}(\.\d{1,3}){3}$", ip or ""):
+        return False
+    return all(0 <= int(p) <= 255 for p in ip.split("."))
+
+
+def do_wan(op, wtype=None, f=None):
+    """ISP-level WAN: link type + PPPoE/static/L2TP/PPTP creds + IPTV mode.
+
+    Mirrors the stock pages: writes LINK(22) + the type block, then
+    bounces WAN (linkDown/linkUp) so settings take effect without reboot.
+    Passwords: blank means 'keep existing'; real values never leave here.
+    """
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    f = f or {}
+    if op == "get":
+        out = {}
+        for bid in (22, 24, 26, 38, 39, 37):
+            raw = cdp_eval(f"JSON.stringify($.readEx({bid}))")
+            try:
+                out[str(bid)] = _scrub_passwords(json.loads(raw))
+            except Exception:
+                return {"ok": False, "error": "parse-error"}
+        return {"ok": True, "wan": out}
+    if op in ("set_dynamic", "set_pppoe", "set_static",
+              "set_l2tp", "set_pptp"):
+        type_map = {"set_dynamic": "0", "set_static": "1",
+                    "set_pppoe": "2", "set_l2tp": "3", "set_pptp": "4"}
+        wt = type_map[op]
+        writes = []  # (bid, {field: value})
+        if op == "set_pppoe":
+            name = (f.get("name") or "").strip()
+            if not name:
+                return {"ok": False, "error": "pppoe-user-required"}
+            mtu = str(f.get("mtu") or "1480")
+            if not mtu.isdigit() or not 576 <= int(mtu) <= 1492:
+                return {"ok": False, "error": "mtu must be 576-1492"}
+            pf = {"name": name, "lcpMru": mtu,
+                  "fixipEnb": "1" if str(f.get("fixipEnb")) == "1" else "0",
+                  "fixip": f.get("fixip") or "0.0.0.0",
+                  "manualDns": "1" if str(f.get("manualDns")) == "1" else "0"}
+            if pf["fixipEnb"] == "1" and not _valid_ip(pf["fixip"]):
+                return {"ok": False, "error": "bad-fixed-ip"}
+            dns = [f.get("dns1") or "0.0.0.0", f.get("dns2") or "0.0.0.0"]
+            if pf["manualDns"] == "1" and not all(map(_valid_ip, dns)):
+                return {"ok": False, "error": "bad-dns"}
+            pf["dns.0"], pf["dns.1"] = dns
+            if f.get("paswd"):  # blank = keep existing password
+                pf["paswd"] = f["paswd"]
+            writes.append((26, pf))
+        elif op == "set_static":
+            need = {k: (f.get(k) or "").strip()
+                    for k in ("ip", "mask", "gateway", "mtu")}
+            if not all(map(_valid_ip, (need["ip"], need["mask"],
+                                       need["gateway"]))):
+                return {"ok": False, "error": "bad-static-ip"}
+            if not need["mtu"].isdigit() or not 576 <= int(need["mtu"]) <= 1500:
+                return {"ok": False, "error": "mtu must be 576-1500"}
+            dns = [f.get("dns1") or "0.0.0.0", f.get("dns2") or "0.0.0.0"]
+            if not all(map(_valid_ip, dns)):
+                return {"ok": False, "error": "bad-dns"}
+            writes.append((24, {"ip": need["ip"], "mask": need["mask"],
+                                "gateway": need["gateway"], "mtu": need["mtu"],
+                                "dns.0": dns[0], "dns.1": dns[1]}))
+        elif op in ("set_l2tp", "set_pptp"):
+            bid = 39 if op == "set_l2tp" else 38
+            user = (f.get("user") or "").strip()
+            srv = (f.get("server") or "").strip()
+            if not user or not srv:
+                return {"ok": False, "error": "user-and-server-required"}
+            mtu = str(f.get("mtu") or "1460")
+            if not mtu.isdigit() or not 576 <= int(mtu) <= 1500:
+                return {"ok": False, "error": "mtu must be 576-1500"}
+            tf = {"userName": user, "domainIp": srv, "mtu": mtu,
+                  "bDhcp": "0" if str(f.get("static")) == "1" else "1"}
+            if tf["bDhcp"] == "0":
+                for k in ("ip", "mask", "gateway"):
+                    v = (f.get(k) or "").strip()
+                    if not _valid_ip(v):
+                        return {"ok": False, "error": "bad-tunnel-ip"}
+                    tf[k] = v
+            if f.get("paswd"):
+                tf["passwd"] = f["paswd"]
+            writes.append((bid, tf))
+        writes.append((22, {"linkType": wt}))
+        for bid, fields in writes:
+            r = do_write_fields(bid, fields)
+            if not r.get("ok"):
+                return {"ok": False, "error": "write-failed",
+                        "block": bid, "detail": r}
+        for verb in ("wan -linkDown", "wan -linkUp"):
+            r = cdp_eval("JSON.stringify($.instr(" +
+                         json.dumps(verb) + "))")
+            try:
+                if json.loads(r).get("errorno") != 0:
+                    return {"ok": False, "error": "reconnect-failed",
+                            "verb": verb}
+            except Exception:
+                return {"ok": False, "error": "bad-response"}
+            time.sleep(2)
+        return {"ok": True, "linkType": wt}
+    if op == "set_iptv":
+        mode = str(f.get("uMode", "0"))
+        if mode not in ("0", "1", "2"):
+            return {"ok": False, "error": "bad-iptv-mode"}
+        return do_write_fields(37, {"uMode": mode})
+    return {"ok": False, "error": "bad-op"}
+
+
+def _valid_mac(mac):
+    import re as _re
+    return bool(_re.match(r"^([0-9A-F]{2}-){5}[0-9A-F]{2}$",
+                          (mac or "").strip().upper()))
+
+
+def do_ddns(op, f=None):
+    """DDNS (block 40): 2 provider slots. Blank password = keep existing."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    f = f or {}
+    if op == "get":
+        raw = cdp_eval("JSON.stringify($.readEx(40))")
+        try:
+            return {"ok": True, "ddns": _scrub_passwords(json.loads(raw))}
+        except Exception:
+            return {"ok": False, "error": "parse-error"}
+    if op == "set":
+        try:
+            idx = int(f.get("idx", 0))
+        except Exception:
+            return {"ok": False, "error": "bad-slot"}
+        if idx not in (0, 1):
+            return {"ok": False, "error": "bad-slot"}
+        pf = {f"serviceList.{idx}.enable":
+              "1" if str(f.get("enable")) == "1" else "0",
+              f"serviceList.{idx}.username": (f.get("username") or "")[:64],
+              f"serviceList.{idx}.domainName": (f.get("domain") or "")[:64]}
+        if f.get("password"):
+            pf[f"serviceList.{idx}.password"] = f["password"]
+        return do_write_fields(40, pf)
+    return {"ok": False, "error": "bad-op"}
+
+
+def do_rmt(op, f=None):
+    """Remote/local web management (blocks 7/6). Stock semantics:
+    rule 0=remote OFF, 1=all IPs, 2=single IP; port 1024-65535."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    f = f or {}
+    if op == "get":
+        out = {}
+        for bid in (5, 6, 7):
+            raw = cdp_eval(f"JSON.stringify($.readEx({bid}))")
+            try:
+                out[str(bid)] = json.loads(raw)
+            except Exception:
+                return {"ok": False, "error": "parse-error"}
+        return {"ok": True, "rmt": out}
+    if op == "set_remote":
+        rule = str(f.get("rule", "0"))
+        if rule not in ("0", "1", "2"):
+            return {"ok": False, "error": "bad-rule"}
+        port = str(f.get("port") or "8888")
+        if not port.isdigit() or not 1024 <= int(port) <= 65535:
+            return {"ok": False, "error": "port must be 1024-65535"}
+        addr = (f.get("addr") or "0.0.0.0").strip()
+        if rule == "2" and not _valid_ip(addr):
+            return {"ok": False, "error": "bad-addr"}
+        return do_write_fields(7, {"rule": rule, "port": port,
+                                   "addr": addr})
+    if op == "set_local":
+        macs = [ (f.get("macs") or []) + ["", "", "", ""] ] [0][:4]
+        pf = {"enableAll": "1" if str(f.get("enableAll")) == "1" else "0"}
+        for i, m in enumerate(macs):
+            m = (m or "").strip().upper()
+            if pf["enableAll"] == "0" and m and not _valid_mac(m):
+                return {"ok": False, "error": f"bad-mac-{i}"}
+            pf[f"mac.{i}"] = m or "00-00-00-00-00-00"
+        return do_write_fields(6, pf)
+    return {"ok": False, "error": "bad-op"}
+
+
+def do_route(op, net="", mask="", gateway="", idx=None):
+    """Static routes via `main route -stc ...` (block 14 = table)."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    if op == "list":
+        out = {}
+        for bid in (14, 16):
+            raw = cdp_eval(f"JSON.stringify($.readEx({bid}))")
+            try:
+                out[str(bid)] = json.loads(raw)
+            except Exception:
+                return {"ok": False, "error": "parse-error"}
+        return {"ok": True, "routes": out}
+    if op == "add":
+        if not all(map(_valid_ip, (net, mask, gateway))):
+            return {"ok": False, "error": "bad-route-ip"}
+        cmd = (f"main route -stc -add index:0 net:{net.strip()} "
+               f"mask:{mask.strip()} gateway:{gateway.strip()} valid")
+    elif op == "delete":
+        try:
+            idx = int(idx)
+        except Exception:
+            return {"ok": False, "error": "bad-index"}
+        cmd = f"main route -stc -delete index:{idx}"
+    elif op == "clear":
+        cmd = "main route -stc -clr"
+    else:
+        return {"ok": False, "error": "bad-op"}
+    r = cdp_eval("JSON.stringify($.instr(" + json.dumps(cmd) + "))")
+    try:
+        o = json.loads(r)
+    except Exception:
+        return {"ok": False, "error": "bad-response"}
+    return {"ok": o.get("errorno") == 0, "errorno": o.get("errorno")}
+
+
+def do_restore(b64, filename="restore.bin"):
+    """Config restore: upload a backup file through the logged-in router
+    page (same URL + session the stock page uses). ~4KB files only."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    import base64 as _b64
+    try:
+        blob = _b64.b64decode(b64 or "", validate=True)
+    except Exception:
+        return {"ok": False, "error": "bad-file"}
+    if not blob or len(blob) > 65536:
+        return {"ok": False, "error": "file must be 1B-64KB"}
+    if not (filename or "").lower().endswith(".bin"):
+        return {"ok": False, "error": "expecting a .bin backup"}
+    js = ("(async function(){try{"
+          "var raw=atob(" + json.dumps(b64) + ");"
+          "var by=new Uint8Array(raw.length);"
+          "for(var i=0;i<raw.length;i++)by[i]=raw.charCodeAt(i);"
+          "var fd=new FormData();"
+          "fd.append('fileName',new Blob([by],{type:'application/octet-stream'}),"
+          + json.dumps(filename) + ");"
+          "var url=$.orgURL($.domainUrl+'?code='+9+'&asyn=0');"
+          "var r=await fetch(url,{method:'POST',body:fd,credentials:'include'});"
+          "var t=await r.text();"
+          "return JSON.stringify({status:r.status,len:t.length,"
+          "head:t.slice(0,160)});}catch(e){return JSON.stringify({error:String(e)});}})()")
+    try:
+        r = cdp_eval(js, await_promise=True)
+        o = json.loads(r or "{}")
+    except Exception:
+        return {"ok": False, "error": "bad-response"}
+    if o.get("error"):
+        return {"ok": False, "error": "upload-failed", "detail": o["error"][:120]}
+    return {"ok": o.get("status") == 200, "status": o.get("status"),
+            "note": "sent; if the file is valid the router reboots now"}
+
+
 def do_device(op, mac="", name="", up="0", down="0", blocked=None):
     """Device block/rename/limit via staMgt instr (block 13 is read-only)."""
     if not _ensure_auth():
@@ -757,6 +1025,24 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json(do_ipmac(
                     data.get("op"), data.get("ip", ""),
                     data.get("mac", ""), data.get("name", "")))
+            if u.path == "/api/wan":
+                return self._json(do_wan(
+                    data.get("op"), data.get("wtype"),
+                    data.get("f") or {}))
+            if u.path == "/api/ddns":
+                return self._json(do_ddns(
+                    data.get("op"), data.get("f") or {}))
+            if u.path == "/api/rmt":
+                return self._json(do_rmt(
+                    data.get("op"), data.get("f") or {}))
+            if u.path == "/api/route":
+                return self._json(do_route(
+                    data.get("op"), data.get("net", ""),
+                    data.get("mask", ""), data.get("gateway", ""),
+                    data.get("idx")))
+            if u.path == "/api/restore":
+                return self._json(do_restore(
+                    data.get("b64", ""), data.get("filename", "restore.bin")))
         except Exception as e:
             return self._json({"ok": False, "error": f"backend-error: {e}"},
                               500)

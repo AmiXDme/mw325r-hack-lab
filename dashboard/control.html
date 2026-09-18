@@ -180,7 +180,10 @@ async function tabNet() {
     <div class="card"><h3>📋 DHCP leases (${leases.length})</h3>
       <table><thead><tr><th>Name</th><th>IP</th><th>MAC</th><th>Expires</th></tr></thead><tbody>${
         leases.map(c => `<tr><td>${esc(c.hostName || '(unnamed)')}</td><td>${esc(c.ip)}</td><td>${esc(c.mac)}</td><td>${esc(c.expires)}</td></tr>`).join('') || '<tr><td colspan="4">none</td></tr>'
-      }</tbody></table></div>`;
+      }</tbody></table></div>
+    <div class="card"><h3>🌍 DDNS (block 40)</h3><div id="ddnsbox">Loading…</div></div>
+    <div class="card"><h3>🔐 Remote web management (blocks 7/6)</h3><div id="rmtbox">Loading…</div></div>`;
+  netExtras();
 }
 async function saveLan() {
   if (!confirm('Change router IP? You must reconnect to the new address. Continue?')) return;
@@ -188,6 +191,55 @@ async function saveLan() {
   say('nmsg', 'Working…');
   const d = await post('/api/write_fields', {id: 11, fields: {lanIp: $('n-ip').value.trim(), lanMask: $('n-mask').value.trim()}});
   say('nmsg', d.ok ? 'LAN updated. Reconnect to the new IP.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+async function netExtras() {
+  const d = await post('/api/ddns', {op: 'get'});
+  if (d.ok) {
+    const sl = d.ddns.serviceList || [{}, {}];
+    $('ddnsbox').innerHTML = sl.map((s, i) =>
+      `<div class="kv"><label>Slot ${i + 1}</label><select id="dd-${i}-en"><option value="1"${s.enable === '1' ? ' selected' : ''}>ON</option><option value="0"${s.enable !== '1' ? ' selected' : ''}>OFF</option></select></div>
+       <div class="kv"><label>Username</label><input id="dd-${i}-user" maxlength="64" value="${esc(s.username)}"></div>
+       <div class="kv"><label>Password (blank = keep)</label><input id="dd-${i}-pass" type="password" placeholder="${s.password ? '•••••• (saved)' : '(empty)'}"></div>
+       <div class="kv"><label>Domain</label><input id="dd-${i}-dom" maxlength="64" value="${esc(s.domainName)}"></div>
+       ${row('Last IP / status', (s.ip || '?') + ' / ' + (s.status === '1' ? 'updated' : 'idle'))}`).join('') +
+      `<div class="kv"><label>Apply to slot</label><select id="dd-slot"><option value="0">Slot 1</option><option value="1">Slot 2</option></select></div>
+       <div class="btnrow"><button onclick="saveDdns()">Apply DDNS</button></div><div class="msg" id="ddmsg"></div>`;
+  } else $('ddnsbox').innerHTML = '<span class="bad">Failed to load.</span>';
+  const r = await post('/api/rmt', {op: 'get'});
+  if (r.ok) {
+    const b7 = r.rmt['7'] || {}, b6 = r.rmt['6'] || {}, macs = (b6.mac || []).concat(['00-00-00-00-00-00', '00-00-00-00-00-00', '00-00-00-00-00-00', '00-00-00-00-00-00']);
+    $('rmtbox').innerHTML =
+      `<div class="kv"><label>Internet-side admin</label><select id="rm-rule"><option value="0"${b7.rule !== '1' && b7.rule !== '2' ? ' selected' : ''}>OFF (recommended)</option><option value="1"${b7.rule === '1' ? ' selected' : ''}>ON — any IP (dangerous)</option><option value="2"${b7.rule === '2' ? ' selected' : ''}>ON — one IP only</option></select></div>
+       <div class="kv"><label>Remote port</label><input id="rm-port" value="${esc(b7.port) || '8888'}"></div>
+       <div class="kv"><label>Allowed IP (mode 2)</label><input id="rm-addr" value="${esc(b7.addr)}"></div>
+       <div class="btnrow"><button onclick="saveRmt()">Apply remote access</button></div><div class="msg" id="rmmsg"></div>
+       <div class="kv"><label>Home-side admin PCs</label><select id="lc-all"><option value="1"${b6.enableAll !== '0' ? ' selected' : ''}>All home devices</option><option value="0"${b6.enableAll === '0' ? ' selected' : ''}>Only these 4 MACs</option></select></div>
+       ${[0, 1, 2, 3].map(i => `<div class="kv"><label>Manager MAC ${i + 1}</label><input id="lc-mac${i}" value="${esc(macs[i])}"></div>`).join('')}
+       <div class="btnrow"><button onclick="saveLocal()">Apply home-admin restriction</button></div><div class="msg" id="lcmsg"></div>
+       <p class="note">Locking home admin to MACs can lock YOU out — keep one correct MAC.</p>`;
+  } else $('rmtbox').innerHTML = '<span class="bad">Failed to load.</span>';
+}
+async function saveDdns() {
+  const i = $('dd-slot').value;
+  if (!confirm('Apply DDNS slot ' + (+i + 1) + '?')) return;
+  say('ddmsg', 'Working…');
+  const d = await post('/api/ddns', {op: 'set', f: {idx: i, enable: $('dd-' + i + '-en').value,
+    username: $('dd-' + i + '-user').value.trim(), password: $('dd-' + i + '-pass').value, domain: $('dd-' + i + '-dom').value.trim()}});
+  say('ddmsg', d.ok ? 'DDNS updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+async function saveRmt() {
+  if ($('rm-rule').value !== '0' && !confirm('EXPOSE router admin to the INTERNET? Attackers scan for this. Continue?')) return;
+  if ($('rm-rule').value !== '0' && !confirm('Second check: really open remote admin?')) return;
+  say('rmmsg', 'Working…');
+  const d = await post('/api/rmt', {op: 'set_remote', f: {rule: $('rm-rule').value, port: $('rm-port').value.trim(), addr: $('rm-addr').value.trim()}});
+  say('rmmsg', d.ok ? 'Remote access updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+async function saveLocal() {
+  if ($('lc-all').value === '0' && !confirm('Restrict home admin to listed MACs? A wrong list locks you out. Continue?')) return;
+  say('lcmsg', 'Working…');
+  const d = await post('/api/rmt', {op: 'set_local', f: {enableAll: $('lc-all').value,
+    macs: [$('lc-mac0').value, $('lc-mac1').value, $('lc-mac2').value, $('lc-mac3').value]}});
+  say('lcmsg', d.ok ? 'Home-admin restriction updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
 }
 
 async function tabSec() {
@@ -209,7 +261,7 @@ async function tabSec() {
       <div class="btnrow"><button onclick="chgAdmin()">Change admin password</button></div>
       <div class="msg" id="amsg"></div></div>
     <div class="card"><h3>🔌 ALG helpers (block 17)</h3><div id="algbox">Loading…</div></div>
-    <div class="card"><h3>👪 Parental control (view)</h3><div id="parbox">Loading…</div></div>`;
+    <div class="card"><h3>👪 Parental control (block 30)</h3><div id="parbox">Loading…</div></div>`;
   secExtras();
 }
 const ALG_KEYS = [['ftpAlgEnable', 'FTP'], ['pptpAlgEnable', 'PPTP'], ['rtspAlgEnable', 'RTSP'], ['sipAlgEnable', 'SIP'], ['ipsecAlgEnable', 'IPsec'], ['h323AlgEnable', 'H.323']];
@@ -224,13 +276,46 @@ async function secExtras() {
   const p = await get('/api/block?id=30');
   if (p.ok) {
     const b = p.block, days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
-    const macs = (b.list || []).map(x => x.mac).filter(m => m && m !== '00-00-00-00-00-00');
+    const slots = (b.list || []).map(x => x.mac || '00-00-00-00-00-00');
     $('parbox').innerHTML =
-      row('Master switch', b.enable === '1' ? 'ON' : 'OFF', b.enable === '1' ? 'warn' : 'ok') +
-      days.map(d => row(d.toUpperCase(), b[d] === '1' ? 'controlled' : 'free')).join('') +
-      row('Controlled MACs', macs.length ? macs.join(', ') : '(none)') +
-      `<p class="note">Read-only here — parental rules can lock devices out, so edit them in the stock UI.</p>`;
+      `<div class="kv"><label>Master switch</label><select id="par-en"><option value="1"${b.enable === '1' ? ' selected' : ''}>ON</option><option value="0"${b.enable !== '1' ? ' selected' : ''}>OFF</option></select></div>
+       ${days.map(d => `<div class="kv"><label>${d.toUpperCase()}</label><select id="par-${d}"><option value="1"${b[d] === '1' ? ' selected' : ''}>Controlled</option><option value="0"${b[d] !== '1' ? ' selected' : ''}>Free</option></select></div>`).join('')}
+       ${slots.map((m, i) => `<div class="kv"><label>Device MAC ${i + 1}</label><input id="par-mac${i}" value="${esc(m)}"></div>`).join('')}
+       <div class="btnrow"><button onclick="saveParental()">Apply parental rules</button></div><div class="msg" id="parmsg"></div>
+       <p class="note">Rules can cut devices off the internet — double-check MACs.</p>`;
+    window._parSlots = slots.length;
   } else $('parbox').innerHTML = '<span class="bad">Failed to load.</span>';
+  const ac = await get('/api/block?id=31');
+  if (ac.ok) {
+    const b = ac.block;
+    const cnt = l => (b[l] || []).filter(x => Object.values(x).some(v => v && v !== '0' && v !== '')).length;
+    $('parbox').innerHTML +=
+      `<div class="card" style="margin:12px 0 0"><h3>🚧 Access control (block 31)</h3>
+       <div class="kv"><label>Master switch</label><select id="ac-en"><option value="1"${b.bhavEnable === '1' ? ' selected' : ''}>ON</option><option value="0"${b.bhavEnable !== '1' ? ' selected' : ''}>OFF</option></select></div>
+       ${row('Host/Target/Schedule rules', `${cnt('rList')} rule rows · ${cnt('hList')} hosts · ${cnt('tList')} targets · ${cnt('sList')} schedules`)}
+       <div class="btnrow"><button onclick="saveAccess()">Apply master switch</button></div><div class="msg" id="acmsg"></div>
+       <p class="note">Rule tables are edited in the stock UI; the master switch is safe here.</p></div>`;
+  }
+}
+async function saveParental() {
+  const days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+  const f = {enable: $('par-en').value};
+  days.forEach(d => { f[d] = $('par-' + d).value; });
+  for (let i = 0; i < window._parSlots; i++) {
+    const m = $('par-mac' + i).value.trim().toUpperCase().replace(/:/g, '-');
+    if (m && m !== '00-00-00-00-00-00' && !/^([0-9A-F]{2}-){5}[0-9A-F]{2}$/.test(m)) { say('parmsg', 'Bad MAC in slot ' + (i + 1), false); return; }
+    f['list.' + i + '.mac'] = m || '00-00-00-00-00-00';
+  }
+  if (!confirm('Apply parental control rules? Controlled devices lose internet on controlled days.')) return;
+  say('parmsg', 'Working…');
+  const d = await post('/api/write_fields', {id: 30, fields: f});
+  say('parmsg', d.ok ? 'Parental rules updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+async function saveAccess() {
+  if (!confirm('Flip the access-control master switch?')) return;
+  say('acmsg', 'Working…');
+  const d = await post('/api/write_fields', {id: 31, fields: {bhavEnable: $('ac-en').value}});
+  say('acmsg', d.ok ? 'Access control updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
 }
 async function saveAlg() {
   const f = {};
@@ -267,11 +352,16 @@ async function chgAdmin() {
 
 async function tabSys() {
   $('tabbody').innerHTML =
-    `<div class="card"><h3>⚙️ System</h3>
+    `    <div class="card"><h3>⚙️ System</h3>
       <div class="btnrow"><button onclick="dlBackup()">⬇ Download config backup</button>
       <button class="danger" onclick="doReboot()">Reboot router (~1 min down)</button></div>
       <div class="btnrow"><button class="red" onclick="doReset()">Factory reset (WIPES everything)</button></div>
       <div class="msg" id="ymsg"></div></div>
+    <div class="card"><h3>⬆ Restore config backup (.bin)</h3>
+      <div class="kv"><label>Backup file</label><input type="file" id="rs-file" accept=".bin"></div>
+      <div class="btnrow"><button onclick="doRestore()">Upload + restore</button></div>
+      <div class="msg" id="rsmsg"></div>
+      <p class="note">Only files this router made (a few KB). Router reboots after a valid restore — wait ~2 min, session resumes by itself.</p></div>
     <div class="card"><h3>ℹ️ About these buttons</h3>
       ${row('Backup', 'Downloads the official config file (restorable)')}
       ${row('Reboot', 'Restarts; network returns in ~1 minute')}
@@ -297,6 +387,25 @@ async function doReset() {
   say('ymsg', 'Resetting…');
   const d = await post('/api/factory_reset', {confirm: 'YES-WIPE-MY-ROUTER'});
   say('ymsg', d.ok ? 'Reset sent. Reconfigure via default login.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+async function doRestore() {
+  const f = $('rs-file').files[0];
+  if (!f) { say('rsmsg', 'Pick a .bin backup first.', false); return; }
+  if (f.size > 65536 || f.size === 0) { say('rsmsg', 'File must be 1B-64KB.', false); return; }
+  if (!confirm(`Restore config from "${f.name}" (${f.size} bytes)? Router reboots after.`)) return;
+  const typed = prompt('Type RESTORE to confirm:');
+  if (typed !== 'RESTORE') { say('rsmsg', 'Cancelled.', false); return; }
+  say('rsmsg', 'Uploading…');
+  const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(r.result.split(',')[1]); r.onerror = rej; r.readAsDataURL(f); });
+  const d = await post('/api/restore', {b64, filename: f.name});
+  if (!d.ok) { say('rsmsg', 'Failed: ' + JSON.stringify(d), false); return; }
+  say('rsmsg', 'Sent (HTTP ' + d.status + '). If valid, router reboots now — retrying for 2 min…', true);
+  for (let i = 0; i < 24; i++) {
+    await new Promise(r => setTimeout(r, 5000));
+    try { const h = await get('/api/health'); if (h.authed) { say('rsmsg', 'Router is back. Restored settings are live.', true); return; } } catch (e) { /* still down */ }
+    say('rsmsg', `Waiting for router… (${(i + 1) * 5}s)`, true);
+  }
+  say('rsmsg', 'Router did not come back in 2 min — check lights, reload + log in.', false);
 }
 
 async function tabFw() {
@@ -496,7 +605,6 @@ async function wanCtl(op) {
 async function tabWan() {
   const st = (await get('/api/block?id=23')).block;
   const link = (await get('/api/block?id=22')).block;
-  const ppp = (await get('/api/block?id=26')).block;
   const types = {'0': 'Dynamic IP', '1': 'Static IP', '2': 'PPPoE', '3': 'L2TP', '4': 'PPTP'};
   $('tabbody').innerHTML =
     `<div class="card"><h3>🌍 Internet status (live)</h3>
@@ -504,11 +612,10 @@ async function tabWan() {
       ${row('DNS', Array.isArray(st.dns) ? st.dns.join(' / ') : (st.dns || '—'))}
       ${row('Uptime', st.upTime || '—')}${row('RX/TX pkts', (st.inPkts || '?') + ' / ' + (st.outPkts || '?'))}
       ${row('Link type', types[String(link.linkType)] || link.linkType)}</div>
-    <div class="card"><h3>🔌 Connection (view)</h3>
-      ${row('PPPoE user', ppp.name || '(none)')}${row('PPPoE password', ppp.paswd ? '•••••• (set)' : '(empty)')}
-      ${row('MTU', ppp.mtu || st.mtu || '?')}
-      <p class="note">Changing WAN type can drop the internet — tell me your ISP details and we do it together.</p></div>
+    <div class="card"><h3>🏭 ISP settings — WAN type, login, MTU (like the ISP technician)</h3><div id="ispbox">Loading…</div></div>
+    <div class="card"><h3>📺 IPTV / VLAN (block 37)</h3><div id="iptvbox">Loading…</div></div>
     <div class="card"><h3>🏠 DHCP server</h3><div id="dhcpcfg">Loading…</div></div>`;
+  ispRefresh();
   const dh = (await get('/api/block?id=8')).block;
   $('dhcpcfg').innerHTML =
     `<div class="kv"><label>Enabled</label><select id="dh-en"><option value="1"${dh.enable === '1' ? ' selected' : ''}>ON</option><option value="0"${dh.enable !== '1' ? ' selected' : ''}>OFF</option></select></div>
@@ -524,6 +631,98 @@ async function saveDhcp() {
     enable: $('dh-en').value, poolStart: $('dh-s').value.trim(),
     poolEnd: $('dh-e').value.trim(), leaseTime: $('dh-l').value.trim()}});
   say('dhmsg', d.ok ? 'DHCP updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+async function ispRefresh() {
+  const d = await post('/api/wan', {op: 'get'});
+  if (!d.ok) { $('ispbox').innerHTML = '<span class="bad">Failed to load.</span>'; $('iptvbox').innerHTML = ''; return; }
+  const w = d.wan, link = w['22'] || {}, p = w['26'] || {}, s = w['24'] || {}, l2 = w['39'] || {}, pt = w['38'] || {}, iptv = w['37'] || {};
+  window._wan = w;
+  const t = link.linkType || '0';
+  const tname = {'0': 'Dynamic IP', '1': 'Static IP', '2': 'PPPoE', '3': 'L2TP', '4': 'PPTP'}[t] || t;
+  $('ispbox').innerHTML =
+    row('Active WAN type', tname) +
+    `<div class="kv"><label>Switch to</label><select id="isp-type">
+      <option value="0"${t === '0' ? ' selected' : ''}>Dynamic IP (DHCP)</option>
+      <option value="1"${t === '1' ? ' selected' : ''}>Static IP</option>
+      <option value="2"${t === '2' ? ' selected' : ''}>PPPoE (user + password)</option>
+      <option value="3"${t === '3' ? ' selected' : ''}>L2TP</option>
+      <option value="4"${t === '4' ? ' selected' : ''}>PPTP</option></select></div>
+    <div id="isp-pppoe" class="hidden">
+      <div class="kv"><label>PPPoE user</label><input id="isp-puser" maxlength="64" value="${esc(p.name)}"></div>
+      <div class="kv"><label>PPPoE password (blank = keep)</label><input id="isp-ppass" type="password" placeholder="${p.paswd ? '•••••• (saved)' : '(empty)'}"></div>
+      <div class="kv"><label>MTU (576-1492)</label><input id="isp-pmtu" value="${esc(p.lcpMru) || '1480'}"></div>
+      <div class="kv"><label>Fixed IP from ISP?</label><select id="isp-pfixen"><option value="0"${p.fixipEnb !== '1' ? ' selected' : ''}>No</option><option value="1"${p.fixipEnb === '1' ? ' selected' : ''}>Yes</option></select></div>
+      <div class="kv"><label>Fixed IP</label><input id="isp-pfix" value="${esc(p.fixip)}"></div>
+      <div class="kv"><label>Custom DNS?</label><select id="isp-pdnsen"><option value="0"${p.manualDns !== '1' ? ' selected' : ''}>Auto (ISP)</option><option value="1"${p.manualDns === '1' ? ' selected' : ''}>Manual</option></select></div>
+      <div class="kv"><label>DNS 1 / DNS 2</label><span><input id="isp-pdns1" style="width:48%" value="${esc((p.dns || [])[0])}"> <input id="isp-pdns2" style="width:48%" value="${esc((p.dns || [])[1])}"></span></div>
+    </div>
+    <div id="isp-static" class="hidden">
+      <div class="kv"><label>IP address</label><input id="isp-sip" value="${esc(s.ip)}"></div>
+      <div class="kv"><label>Subnet mask</label><input id="isp-smask" value="${esc(s.mask)}"></div>
+      <div class="kv"><label>Gateway</label><input id="isp-sgw" value="${esc(s.gateway)}"></div>
+      <div class="kv"><label>MTU (576-1500)</label><input id="isp-smtu" value="${esc(s.mtu) || '1500'}"></div>
+      <div class="kv"><label>DNS 1 / DNS 2</label><span><input id="isp-sdns1" style="width:48%" value="${esc((s.dns || [])[0])}"> <input id="isp-sdns2" style="width:48%" value="${esc((s.dns || [])[1])}"></span></div>
+    </div>
+    <div id="isp-tunnel" class="hidden">
+      <div class="kv"><label>Username</label><input id="isp-tuser" maxlength="64"></div>
+      <div class="kv"><label>Password (blank = keep)</label><input id="isp-tpass" type="password"></div>
+      <div class="kv"><label>VPN server IP/domain</label><input id="isp-tsrv"></div>
+      <div class="kv"><label>Address mode</label><select id="isp-tmode"><option value="0">Dynamic (from server)</option><option value="1">Static</option></select></div>
+      <div class="kv"><label>Static IP / mask / gateway</label><span><input id="isp-tip" style="width:32%" placeholder="IP"> <input id="isp-tmask" style="width:32%" placeholder="mask"> <input id="isp-tgw" style="width:32%" placeholder="gateway"></span></div>
+      <div class="kv"><label>MTU (576-1500)</label><input id="isp-tmtu" value="1460"></div>
+    </div>
+    <div class="btnrow"><button onclick="ispApply()">Apply ISP settings + reconnect</button></div>
+    <div class="msg" id="ispmsg"></div>
+    <p class="note">Wrong settings = no internet until fixed — but this panel keeps working over home WiFi/LAN, so you can always correct them here.</p>`;
+  const svc = (iptv.uService || []).map((x, i) => `#${i} type=${x.uServiceType} vid=${x.uVid} ports=${x.uMemberPorts} tag=${x.bTagEnable}`).join('<br>');
+  $('iptvbox').innerHTML =
+    row('IPTV mode', {'0': 'OFF', '1': 'Manual', '2': 'Auto?'}[iptv.uMode] || iptv.uMode) +
+    row('Bridge ports', iptv.uBridgePorts || '?') +
+    `<div class="kv"><label>Mode</label><select id="iptv-mode"><option value="0"${iptv.uMode === '0' ? ' selected' : ''}>OFF</option><option value="1"${iptv.uMode === '1' ? ' selected' : ''}>Manual</option><option value="2"${iptv.uMode === '2' ? ' selected' : ''}>Auto</option></select></div>
+    <div class="btnrow"><button onclick="iptvApply()">Apply IPTV mode</button></div>
+    <div class="msg" id="iptvmsg"></div>
+    <p class="note">Service table (view):<br>${svc || '—'}</p>`;
+  ispShowForm();
+  $('isp-type').addEventListener('change', ispShowForm);
+}
+function ispShowForm() {
+  const t = $('isp-type').value;
+  $('isp-pppoe').classList.toggle('hidden', t !== '2');
+  $('isp-static').classList.toggle('hidden', t !== '1');
+  $('isp-tunnel').classList.toggle('hidden', t !== '3' && t !== '4');
+  if ((t === '3' || t === '4') && window._wan) {
+    const b = window._wan[t === '3' ? '39' : '38'] || {};
+    $('isp-tuser').value = b.userName || ''; $('isp-tsrv').value = b.domainIp || '';
+    $('isp-tmtu').value = b.mtu || '1460'; $('isp-tmode').value = b.bDhcp === '0' ? '1' : '0';
+    $('isp-tip').value = b.ip || ''; $('isp-tmask').value = b.mask || ''; $('isp-tgw').value = b.gateway || '';
+    $('isp-tpass').placeholder = b.passwd ? '•••••• (saved)' : '(empty)';
+  }
+}
+async function ispApply() {
+  const t = $('isp-type').value;
+  const names = {'0': 'Dynamic IP', '1': 'Static IP', '2': 'PPPoE', '3': 'L2TP', '4': 'PPTP'};
+  if (!confirm(`Switch WAN to ${names[t]} and RECONNECT? Internet drops ~30 s.`)) return;
+  if (!confirm('Really apply? A wrong setting means no internet until you fix it here.')) return;
+  say('ispmsg', 'Applying + reconnecting… (~30 s)');
+  let body = {op: 'set_dynamic', f: {}};
+  if (t === '2') body = {op: 'set_pppoe', f: {name: $('isp-puser').value, paswd: $('isp-ppass').value,
+    mtu: $('isp-pmtu').value.trim(), fixipEnb: $('isp-pfixen').value, fixip: $('isp-pfix').value.trim(),
+    manualDns: $('isp-pdnsen').value, dns1: $('isp-pdns1').value.trim(), dns2: $('isp-pdns2').value.trim()}};
+  if (t === '1') body = {op: 'set_static', f: {ip: $('isp-sip').value.trim(), mask: $('isp-smask').value.trim(),
+    gateway: $('isp-sgw').value.trim(), mtu: $('isp-smtu').value.trim(),
+    dns1: $('isp-sdns1').value.trim(), dns2: $('isp-sdns2').value.trim()}};
+  if (t === '3' || t === '4') body = {op: t === '3' ? 'set_l2tp' : 'set_pptp', f: {user: $('isp-tuser').value,
+    paswd: $('isp-tpass').value, server: $('isp-tsrv').value.trim(), static: $('isp-tmode').value,
+    ip: $('isp-tip').value.trim(), mask: $('isp-tmask').value.trim(), gateway: $('isp-tgw').value.trim(), mtu: $('isp-tmtu').value.trim()}};
+  const d = await post('/api/wan', body);
+  say('ispmsg', d.ok ? 'Applied + reconnected. Check Internet status above in ~30 s.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(tabWan, 35000);
+}
+async function iptvApply() {
+  if (!confirm('Change IPTV/VLAN mode? TV boxes may need a re-plug.')) return;
+  say('iptvmsg', 'Working…');
+  const d = await post('/api/wan', {op: 'set_iptv', f: {uMode: $('iptv-mode').value}});
+  say('iptvmsg', d.ok ? 'IPTV mode updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
 }
 
 async function tabTravel() {
@@ -647,7 +846,19 @@ async function tabFwd() {
       <div class="kv"><label>Enabled</label><select id="dmz-en"><option value="1"${dmz.dmzEnable === '1' ? ' selected' : ''}>ON</option><option value="0"${dmz.dmzEnable !== '1' ? ' selected' : ''}>OFF</option></select></div>
       <div class="kv"><label>DMZ IP</label><input id="dmz-ip" value="${esc(dmz.dmzClient)}"></div>
       <div class="btnrow"><button onclick="saveDmz()">Apply DMZ</button></div>
-      <div class="msg" id="dmsg"></div></div>`;
+      <div class="msg" id="dmsg"></div></div>
+    <div class="card"><h3>🔌 UPnP port maps (auto, block 20)</h3><div id="upnpmaps">Loading…</div></div>`;
+  fwdMaps();
+}
+async function fwdMaps() {
+  const d = await get('/api/block?id=20');
+  if (!d.ok) { $('upnpmaps').innerHTML = '<span class="bad">Failed.</span>'; return; }
+  const rows = (d.block.list || []).filter(r => r.enabled === '1' || (r.extPort && r.extPort !== '0'));
+  $('upnpmaps').innerHTML = rows.length ?
+    `<table><thead><tr><th>WAN port</th><th>→ Client</th><th>Client port</th><th>Proto</th><th>Desc</th></tr></thead><tbody>${
+      rows.map(r => `<tr><td>${esc(r.extPort)}</td><td>${esc(r.client)}</td><td>${esc(r.intPort)}</td><td>${r.ptc === '1' ? 'TCP' : r.ptc === '2' ? 'UDP' : esc(r.ptc)}</td><td>${esc(r.desc)}</td></tr>`).join('')
+    }</tbody></table><p class="note">Created automatically by apps/consoles via UPnP. Turn UPnP OFF in Security to stop this.</p>`
+    : '<p class="note">No automatic UPnP mappings right now.</p>';
 }
 async function addRule() {
   const rp = $('vs-rp').value.trim(), ip = $('vs-ip').value.trim(), lp = $('vs-lp').value.trim();
@@ -681,10 +892,49 @@ async function tabTools() {
       <div class="btnrow"><button onclick="dgStart()">Start</button><button onclick="dgStop()" style="background:#9e6a03">Stop</button></div>
       <pre id="dgout">Output appears here…</pre></div>
     <div class="card"><h3>📜 System log (latest)</h3><div class="btnrow"><button onclick="loadLog()">Refresh log</button></div><pre id="logout">Press Refresh log.</pre></div>
-    <div class="card"><h3>🗺️ Route table</h3><div id="rtable">Loading…</div></div>`;
-  const rt = (await get('/api/block?id=16')).block;
-  $('rtable').innerHTML = '<table><thead><tr><th>Network</th><th>Mask</th><th>Gateway</th></tr></thead><tbody>' +
-    ((rt.list || []).filter(r => r.net && r.net !== '0.0.0.0').map(r => `<tr><td>${esc(r.net)}</td><td>${esc(r.mask)}</td><td>${esc(r.gateway)}</td></tr>`).join('') || '<tr><td colspan="3">none</td></tr>') + '</tbody></table>';
+    <div class="card"><h3>🗺️ Static routes (block 14 → effective table 16)</h3><div id="rtable">Loading…</div></div>`;
+  routeRefresh();
+}
+async function routeRefresh() {
+  const d = await post('/api/route', {op: 'list'});
+  if (!d.ok) { $('rtable').innerHTML = '<span class="bad">Failed to load.</span>'; return; }
+  const stc = (d.routes['14'].list || []).map((r, i) => ({i, ...r})).filter(r => r.enable === '1' || (r.net && r.net !== '0.0.0.0'));
+  const eff = (d.routes['16'].list || []).filter(r => r.net && r.net !== '0.0.0.0');
+  $('rtable').innerHTML =
+    `<table><thead><tr><th>#</th><th>Network</th><th>Mask</th><th>Gateway</th><th></th></tr></thead><tbody>${
+      stc.map(r => `<tr><td>${r.i}</td><td>${esc(r.net)}</td><td>${esc(r.mask)}</td><td>${esc(r.gateway)}</td>
+        <td><button onclick="routeDel(${r.i})" style="padding:6px 10px">Delete</button></td></tr>`).join('') || '<tr><td colspan="5">no static routes</td></tr>'
+    }</tbody></table>
+    <div class="kv"><label>Network</label><input id="rt-net" placeholder="e.g. 10.0.0.0"></div>
+    <div class="kv"><label>Mask</label><input id="rt-mask" placeholder="e.g. 255.0.0.0"></div>
+    <div class="kv"><label>Gateway</label><input id="rt-gw" placeholder="e.g. 192.168.1.2"></div>
+    <div class="btnrow"><button onclick="routeAdd()">Add route</button>
+    <button onclick="routeClear()" style="background:#9e6a03">Clear all</button></div>
+    <div class="msg" id="rtmsg"></div>
+    <p class="note">Effective table now:<br>${eff.map(r => `${esc(r.net)}/${esc(r.mask)} via ${esc(r.gateway)}`).join('<br>') || '—'}</p>`;
+}
+async function routeAdd() {
+  const net = $('rt-net').value.trim(), mask = $('rt-mask').value.trim(), gw = $('rt-gw').value.trim();
+  if (!net || !mask || !gw) { say('rtmsg', 'Fill network, mask and gateway.', false); return; }
+  if (!confirm(`Add route ${net}/${mask} via ${gw}? A wrong route can cut off a subnet.`)) return;
+  say('rtmsg', 'Working…');
+  const d = await post('/api/route', {op: 'add', net, mask, gateway: gw});
+  say('rtmsg', d.ok ? 'Route added.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(routeRefresh, 1500);
+}
+async function routeDel(i) {
+  if (!confirm('Delete static route #' + i + '?')) return;
+  say('rtmsg', 'Working…');
+  const d = await post('/api/route', {op: 'delete', idx: i});
+  say('rtmsg', d.ok ? 'Deleted.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(routeRefresh, 1500);
+}
+async function routeClear() {
+  if (!confirm('DELETE ALL static routes?')) return;
+  say('rtmsg', 'Working…');
+  const d = await post('/api/route', {op: 'clear'});
+  say('rtmsg', d.ok ? 'Cleared.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(routeRefresh, 1500);
 }
 let _dgTimer = null, _dgId = null, _dgType = 'ping';
 async function dgStart() {
