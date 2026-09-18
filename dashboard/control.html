@@ -99,7 +99,7 @@ async function login() {
 }
 $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 
-const TABS = [['status','📊 Status'],['wifi','📶 WiFi'],['net','🌐 Network'],['wan','🌍 Internet'],['dev','👥 Devices'],['mod','🚀 Modern'],['fwd','🚪 Forwarding'],['sec','🛡️ Security'],['sys','⚙️ System'],['tools','🔧 Tools'],['fw','🧬 Firmware'],['raw','🧰 Blocks']];
+const TABS = [['status','📊 Status'],['wifi','📶 WiFi'],['net','🌐 Network'],['wan','🌍 Internet'],['dev','👥 Devices'],['mod','🚀 Modern'],['travel','🧭 Travel'],['time','🕐 Time'],['fwd','🚪 Forwarding'],['sec','🛡️ Security'],['sys','⚙️ System'],['tools','🔧 Tools'],['fw','🧬 Firmware'],['raw','🧰 Blocks']];
 function buildTabs() {
   $('tabs').innerHTML = TABS.map(([id, label], i) =>
     `<div class="tab${i === 0 ? ' active' : ''}" id="tab-${id}" onclick="showTab('${id}')">${label}</div>`).join('');
@@ -113,7 +113,7 @@ async function showTab(id) {
   const run = async () => {
     if (_curTab !== id) return; // superseded while queued
     $('tabbody').innerHTML = '<div class="card">Loading…</div>';
-    try { await ({status: tabStatus, wifi: tabWifi, net: tabNet, wan: tabWan, dev: tabDev, mod: tabMod, fwd: tabFwd, sec: tabSec, sys: tabSys, tools: tabTools, fw: tabFw, raw: tabRaw})[id](); }
+    try { await ({status: tabStatus, wifi: tabWifi, net: tabNet, wan: tabWan, dev: tabDev, mod: tabMod, travel: tabTravel, time: tabTime, fwd: tabFwd, sec: tabSec, sys: tabSys, tools: tabTools, fw: tabFw, raw: tabRaw})[id](); }
     catch(e) {
       if (_curTab !== id) return;
       $('tabbody').innerHTML = `<div class="card"><span class="bad">Failed: ${esc(e.message)}. Reload + log in again.</span></div>`;
@@ -207,7 +207,38 @@ async function tabSec() {
       <div class="kv"><label>Current password</label><input type="password" id="a-old"></div>
       <div class="kv"><label>New password</label><input type="password" id="a-new"></div>
       <div class="btnrow"><button onclick="chgAdmin()">Change admin password</button></div>
-      <div class="msg" id="amsg"></div></div>`;
+      <div class="msg" id="amsg"></div></div>
+    <div class="card"><h3>🔌 ALG helpers (block 17)</h3><div id="algbox">Loading…</div></div>
+    <div class="card"><h3>👪 Parental control (view)</h3><div id="parbox">Loading…</div></div>`;
+  secExtras();
+}
+const ALG_KEYS = [['ftpAlgEnable', 'FTP'], ['pptpAlgEnable', 'PPTP'], ['rtspAlgEnable', 'RTSP'], ['sipAlgEnable', 'SIP'], ['ipsecAlgEnable', 'IPsec'], ['h323AlgEnable', 'H.323']];
+async function secExtras() {
+  const a = await get('/api/block?id=17');
+  if (a.ok) {
+    const b = a.block;
+    $('algbox').innerHTML = ALG_KEYS.map(([k, label]) =>
+      `<div class="kv"><label>${label}</label><select id="alg-${k}"><option value="1"${b[k] === '1' ? ' selected' : ''}>ON</option><option value="0"${b[k] !== '1' ? ' selected' : ''}>OFF</option></select></div>`).join('') +
+      `<div class="btnrow"><button onclick="saveAlg()">Apply ALG</button></div><div class="msg" id="algmsg"></div>`;
+  } else $('algbox').innerHTML = '<span class="bad">Failed to load.</span>';
+  const p = await get('/api/block?id=30');
+  if (p.ok) {
+    const b = p.block, days = ['mon', 'tue', 'wed', 'thu', 'fri', 'sat', 'sun'];
+    const macs = (b.list || []).map(x => x.mac).filter(m => m && m !== '00-00-00-00-00-00');
+    $('parbox').innerHTML =
+      row('Master switch', b.enable === '1' ? 'ON' : 'OFF', b.enable === '1' ? 'warn' : 'ok') +
+      days.map(d => row(d.toUpperCase(), b[d] === '1' ? 'controlled' : 'free')).join('') +
+      row('Controlled MACs', macs.length ? macs.join(', ') : '(none)') +
+      `<p class="note">Read-only here — parental rules can lock devices out, so edit them in the stock UI.</p>`;
+  } else $('parbox').innerHTML = '<span class="bad">Failed to load.</span>';
+}
+async function saveAlg() {
+  const f = {};
+  ALG_KEYS.forEach(([k]) => { f[k] = $('alg-' + k).value; });
+  if (!confirm('Apply ALG helper settings?')) return;
+  say('algmsg', 'Working…');
+  const d = await post('/api/write_fields', {id: 17, fields: f});
+  say('algmsg', d.ok ? 'ALG updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
 }
 async function tglWps() {
   const to = window._wps === '1' ? '0' : '1';
@@ -317,7 +348,44 @@ async function tabDev() {
           <button onclick="devRename(${c.i})" style="padding:6px 10px">Name</button>
           <button onclick="devLimit(${c.i})" style="padding:6px 10px">Limit</button></td></tr>`).join('') || '<tr><td colspan="7">none</td></tr>'
       }</tbody></table><div class="msg" id="devmsg"></div>
-      <p class="note">Limits in KB/s per device (0 = unlimited). Blocking drops the device instantly; unblock restores it.</p></div>`;
+      <p class="note">Limits in KB/s per device (0 = unlimited). Blocking drops the device instantly; unblock restores it.</p></div>
+    <div class="card"><h3>🔗 IP-MAC binding (ARP + static binds)</h3><div id="ipmacbox">Loading…</div></div>`;
+  ipmacRefresh();
+}
+async function ipmacRefresh() {
+  const box = $('ipmacbox');
+  const [b, a] = [await post('/api/ipmac', {op: 'list'}), await post('/api/arp', {})];
+  if (!b.ok || !a.ok) { box.innerHTML = '<span class="bad">Failed to load.</span>'; return; }
+  const bound = new Set((b.binds || []).map(x => (x.mac || '').toUpperCase()));
+  box.innerHTML =
+    `<table><thead><tr><th>Name</th><th>IP</th><th>MAC</th><th>Bound?</th></tr></thead><tbody>${
+      (a.arp || []).map(x => `<tr><td>${esc(x.name)}</td><td>${esc(x.ip)}</td><td>${esc(x.mac)}</td>
+        <td>${bound.has((x.mac || '').toUpperCase()) ? '<span class="ok">static</span>' : 'dynamic'}</td></tr>`).join('') || '<tr><td colspan="4">empty ARP table</td></tr>'
+    }</tbody></table>
+    <div class="kv"><label>IP</label><input id="ib-ip" placeholder="192.168.1.50"></div>
+    <div class="kv"><label>MAC</label><input id="ib-mac" placeholder="AA-BB-CC-DD-EE-FF"></div>
+    <div class="kv"><label>Name</label><input id="ib-name" maxlength="32"></div>
+    <div class="btnrow"><button onclick="ipmacAdd()">Bind IP↔MAC</button>
+    <button onclick="ipmacDel()" style="background:#9e6a03">Delete bind</button></div>
+    <div class="msg" id="ibmsg"></div>`;
+}
+async function ipmacAdd() {
+  const ip = $('ib-ip').value.trim(), mac = $('ib-mac').value.trim().toUpperCase().replace(/:/g, '-'), name = $('ib-name').value.trim();
+  if (!ip || !mac) { say('ibmsg', 'Fill IP and MAC.', false); return; }
+  if (!confirm(`Bind ${ip} ↔ ${mac}?`)) return;
+  say('ibmsg', 'Working…');
+  const d = await post('/api/ipmac', {op: 'add', ip, mac, name});
+  say('ibmsg', d.ok ? 'Bound.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(ipmacRefresh, 1500);
+}
+async function ipmacDel() {
+  const ip = $('ib-ip').value.trim(), mac = $('ib-mac').value.trim().toUpperCase().replace(/:/g, '-'), name = $('ib-name').value.trim();
+  if (!ip || !mac) { say('ibmsg', 'Fill the IP + MAC of the bind to delete.', false); return; }
+  if (!confirm(`Delete bind ${ip} ↔ ${mac}?`)) return;
+  say('ibmsg', 'Working…');
+  const d = await post('/api/ipmac', {op: 'delete', ip, mac, name});
+  say('ibmsg', d.ok ? 'Deleted.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(ipmacRefresh, 1500);
 }
 function devByIdx(i) { return window._devs.find(c => c.i === i); }
 async function devBlock(i) {
@@ -370,11 +438,16 @@ async function tabMod() {
       <div class="btnrow"><button onclick="wanCtl('linkUp')">Reconnect internet</button>
       <button onclick="wanCtl('linkDown')" style="background:#9e6a03">Disconnect internet</button></div>
       <div class="msg" id="wanmsg"></div></div>`;
-  const g = (await get('/api/block?id=34')).block;
+  const g = (await get('/api/block?id=35')).block; // MBSSID_GUESTNET (real app page; 34 = IPTV)
   $('guestbox').innerHTML =
     `<div class="kv"><label>Enabled</label><select id="g-en"><option value="1"${g.bEnable === '1' ? ' selected' : ''}>ON</option><option value="0"${g.bEnable !== '1' ? ' selected' : ''}>OFF</option></select></div>
-     <div class="kv"><label>Guest SSID</label><input id="g-ssid" value="${esc(g.cSsid)}"></div>
+     <div class="kv"><label>Guest SSID</label><input id="g-ssid" maxlength="32" value="${esc(g.cSsid)}"></div>
+     <div class="kv"><label>Security</label><select id="g-sec"><option value="1"${g.bSecurityEnable === '1' ? ' selected' : ''}>WPA2 password</option><option value="0"${g.bSecurityEnable !== '1' ? ' selected' : ''}>Open (no password)</option></select></div>
      <div class="kv"><label>Guest key (8-63)</label><input id="g-key" value="${esc(g.cPskSecret)}"></div>
+     <div class="kv"><label>Allow guests → my LAN</label><select id="g-lan"><option value="1"${g.bLanAccess === '1' ? ' selected' : ''}>Allow</option><option value="0"${g.bLanAccess !== '1' ? ' selected' : ''}>Isolate (recommended)</option></select></div>
+     <div class="kv"><label>Max upload KB/s (0=∞)</label><input id="g-up" value="${esc(g.uMaxUploadSpeed)}"></div>
+     <div class="kv"><label>Max download KB/s (0=∞)</label><input id="g-down" value="${esc(g.uMaxDownloadSpeed)}"></div>
+     ${row('Open-time schedule', g.bSetOpenTime === '1' ? `ON (mode ${esc(g.uAllowTimeMode)}, ${esc(g.uDuration)} min)` : 'OFF (day-grid editable in stock UI)')}
      <div class="btnrow"><button onclick="saveGuest()">Apply guest WiFi</button></div>
      <div class="msg" id="gmsg"></div>`;
 }
@@ -394,12 +467,17 @@ async function runTraffic() {
 function trafficLoop() { trafficStop(); runTraffic(); _trTimer = setInterval(runTraffic, 5000); }
 function trafficStop() { if (_trTimer) clearInterval(_trTimer); _trTimer = null; }
 async function saveGuest() {
-  const key = $('g-key').value.trim();
-  if (key && (key.length < 8 || key.length > 63)) { say('gmsg', 'Key must be 8-63 chars (or empty with radio off).', false); return; }
-  if (!confirm('Apply guest WiFi settings?')) return;
+  const key = $('g-key').value.trim(), ssid = $('g-ssid').value.trim();
+  const sec = $('g-sec').value;
+  if (!ssid) { say('gmsg', 'SSID cannot be empty.', false); return; }
+  if (sec === '1' && (key.length < 8 || key.length > 63)) { say('gmsg', 'WPA2 key must be 8-63 chars (or switch Security to Open).', false); return; }
+  const up = $('g-up').value.trim(), down = $('g-down').value.trim();
+  if ((up && isNaN(+up)) || (down && isNaN(+down))) { say('gmsg', 'Speed caps must be numbers (0 = unlimited).', false); return; }
+  if (!confirm('Apply guest WiFi settings (block 35)?')) return;
   say('gmsg', 'Working…');
-  const d = await post('/api/write_fields', {id: 34, fields: {
-    bEnable: $('g-en').value, cSsid: $('g-ssid').value.trim(), cPskSecret: key}});
+  const d = await post('/api/write_fields', {id: 35, fields: {
+    bEnable: $('g-en').value, cSsid: ssid, bSecurityEnable: sec, cPskSecret: key,
+    bLanAccess: $('g-lan').value, uMaxUploadSpeed: up || '0', uMaxDownloadSpeed: down || '0'}});
   say('gmsg', d.ok ? 'Guest WiFi updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
 }
 async function setDns(auto) {
@@ -446,6 +524,108 @@ async function saveDhcp() {
     enable: $('dh-en').value, poolStart: $('dh-s').value.trim(),
     poolEnd: $('dh-e').value.trim(), leaseTime: $('dh-l').value.trim()}});
   say('dhmsg', d.ok ? 'DHCP updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+
+async function tabTravel() {
+  const w = await post('/api/wds', {op: 'get'});
+  if (!w.ok) throw new Error(w.error);
+  const m = await post('/api/macclone', {op: 'get'});
+  $('tabbody').innerHTML =
+    `<div class="card"><h3>🧭 WDS bridge — use this router as a WiFi extender / travel router</h3>
+      ${row('Bridge', w.bridgeEnabled === '1' ? 'ON → ' + w.ssid : 'OFF', w.bridgeEnabled === '1' ? 'warn' : 'ok')}
+      ${row('Bridged BSSID', w.bssid || '—')}${row('Link state', w.wdsStatus)}
+      <div class="btnrow"><button onclick="tabTravel()">Refresh status</button>
+      <button onclick="wdsDisconnect()" style="background:#9e6a03">Disconnect bridge</button></div>
+      <div class="msg" id="wdsmsg"></div></div>
+    <div class="card"><h3>📡 Nearby networks (site survey)</h3>
+      <div class="btnrow"><button onclick="runSurvey()">Scan now (~5 s)</button></div>
+      <div id="surveybox"><p class="note">Press Scan. Click a row to pick it for bridging.</p></div></div>
+    <div class="card"><h3>🔗 Bridge to network</h3>
+      <div class="kv"><label>SSID</label><input id="w-ssid" maxlength="32"></div>
+      <div class="kv"><label>BSSID (optional)</label><input id="w-bssid" placeholder="AA-BB-CC-DD-EE-FF (empty = auto)"></div>
+      <div class="kv"><label>Password (empty = open)</label><input id="w-key" type="password"></div>
+      <div class="btnrow"><button onclick="wdsConnect()">Connect bridge</button></div>
+      <p class="note">Bridging restarts the radio — WiFi drops briefly for everyone.</p></div>
+    <div class="card"><h3>🖧 MAC clone (hotel / ISP-locked portals)</h3>
+      ${m.ok ? row('LAN MAC', m.lanMac) + row('WAN MAC now', m.wanMac) + row('Mode', m.wanMacType) + row('This PC MAC', m.pcMac || '?') : row('Status', 'unavailable')}
+      <div class="kv"><label>Set WAN MAC</label><input id="mc-mac" placeholder="AA-BB-CC-DD-EE-FF"></div>
+      <div class="btnrow"><button onclick="macSet()">Apply MAC</button>
+      <button onclick="macClonePc()">Clone this PC's MAC</button></div>
+      <div class="msg" id="mcmsg"></div>
+      <p class="note">Changing the WAN MAC can drop the internet until the ISP re-learns it.</p></div>`;
+}
+async function runSurvey() {
+  $('surveybox').innerHTML = 'Scanning… (radio stays up, ~5 s)';
+  const d = await post('/api/scan', {});
+  if (!d.ok) { $('surveybox').innerHTML = '<span class="bad">Failed: ' + esc(JSON.stringify(d)) + '</span>'; return; }
+  window._aps = d.aps;
+  const authN = {'0': 'Open', '1': 'WEP?', '3': 'WPA', '4': 'WPA2', '5': 'WPA/WPA2'};
+  $('surveybox').innerHTML =
+    `<table><thead><tr><th>SSID</th><th>BSSID</th><th>Ch</th><th>Signal</th><th>Auth</th><th></th></tr></thead><tbody>${
+      d.aps.map((a, i) => `<tr><td>${esc(a.ssid) || '<i>hidden</i>'}</td><td>${esc(a.bssid)}</td><td>${esc(a.channel)}</td>
+        <td>${esc(a.rssi)}</td><td>${authN[String(a.auth)] || esc(a.auth)}</td>
+        <td><button onclick="wdsPick(${i})" style="padding:6px 10px">Pick</button></td></tr>`).join('') || '<tr><td colspan="6">none found</td></tr>'
+    }</tbody></table><p class="note">${d.count} networks seen.</p>`;
+}
+function wdsPick(i) {
+  const a = window._aps[i];
+  $('w-ssid').value = a.ssid || ''; $('w-bssid').value = a.bssid || '';
+  say('wdsmsg', 'Picked ' + (a.ssid || a.bssid) + ' — enter its password, then Connect bridge.', true);
+  window.scrollTo(0, document.body.scrollHeight);
+}
+async function wdsConnect() {
+  const ssid = $('w-ssid').value.trim(), key = $('w-key').value, bssid = $('w-bssid').value.trim().toUpperCase();
+  if (!ssid) { say('wdsmsg', 'Enter an SSID (or Scan + Pick).', false); return; }
+  if (key && (key.length < 8 || key.length > 63)) { say('wdsmsg', 'Password must be 8-63 chars (or empty for open).', false); return; }
+  if (!confirm('Bridge to "' + ssid + '"? WiFi drops briefly for everyone.')) return;
+  say('wdsmsg', 'Connecting…');
+  const d = await post('/api/wds', {op: 'connect', ssid, key, bssid});
+  say('wdsmsg', d.ok ? 'Bridge settings sent. Watch Link state above.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(tabTravel, 4000);
+}
+async function wdsDisconnect() {
+  if (!confirm('Turn the WDS bridge OFF?')) return;
+  say('wdsmsg', 'Working…');
+  const d = await post('/api/wds', {op: 'disconnect'});
+  say('wdsmsg', d.ok ? 'Bridge off.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(tabTravel, 2000);
+}
+async function macSet() {
+  const mac = $('mc-mac').value.trim().toUpperCase().replace(/:/g, '-');
+  if (!confirm('Set WAN MAC to ' + mac + '? Internet may drop until the ISP re-learns it.')) return;
+  say('mcmsg', 'Working…');
+  const d = await post('/api/macclone', {op: 'set', mac});
+  say('mcmsg', d.ok ? 'WAN MAC updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) setTimeout(tabTravel, 2000);
+}
+async function macClonePc() {
+  const m = await post('/api/macclone', {op: 'get'});
+  if (!m.ok || !m.pcMac) { say('mcmsg', 'Could not read this PC MAC.', false); return; }
+  $('mc-mac').value = m.pcMac;
+  macSet();
+}
+
+const TZ_OPTS = [['0','UTC-12'],['60','UTC-11'],['120','UTC-10'],['180','UTC-9'],['240','UTC-8'],['300','UTC-7'],['360','UTC-6'],['420','UTC-5'],['510','UTC-4:30'],['540','UTC-3'],['600','UTC-3:30'],['660','UTC-2'],['720','UTC (GMT)'],['780','UTC+1'],['840','UTC+2'],['900','UTC+3'],['930','UTC+3:30'],['960','UTC+4'],['990','UTC+4:30'],['1020','UTC+5'],['1050','UTC+5:30'],['1065','UTC+5:45'],['1080','UTC+6 (Dhaka)'],['1110','UTC+6:30'],['1140','UTC+7'],['1200','UTC+8'],['1260','UTC+9'],['1290','UTC+9:30'],['1320','UTC+10'],['1380','UTC+11'],['1440','UTC+12'],['1500','UTC+13']];
+async function tabTime() {
+  const t = await post('/api/time', {op: 'get'});
+  if (!t.ok) throw new Error(t.error);
+  const c = t.clock || {};
+  $('tabbody').innerHTML =
+    `<div class="card"><h3>🕐 Router clock (live)</h3>
+      ${row('Date/time', `${c.year}-${c.month}-${c.day} ${c.hour}:${c.minute}:${c.second}`)}
+      ${row('Internet time sync', c.sntpOk === '1' ? 'OK' : 'NOT synced', c.sntpOk === '1' ? 'ok' : 'bad')}
+      ${t.gmt ? row('SNTP detail', t.gmt) : ''}</div>
+    <div class="card"><h3>🌍 Timezone</h3>
+      <div class="kv"><label>Zone</label><select id="tz-sel">${TZ_OPTS.map(([v, l]) => `<option value="${v}"${String(t.tzSel) === v ? ' selected' : ''}>${l}</option>`).join('')}</select></div>
+      <div class="btnrow"><button onclick="setTz()">Apply timezone</button></div>
+      <div class="msg" id="tzmsg"></div>
+      <p class="note">Timezone drives guest-WiFi schedules and logs.</p></div>`;
+}
+async function setTz() {
+  if (!confirm('Set router timezone to ' + $('tz-sel').selectedOptions[0].text + '?')) return;
+  say('tzmsg', 'Working…');
+  const d = await post('/api/time', {op: 'set', tz: $('tz-sel').value});
+  say('tzmsg', d.ok ? 'Timezone updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
 }
 
 async function tabFwd() {

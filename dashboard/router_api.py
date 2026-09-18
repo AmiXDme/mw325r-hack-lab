@@ -413,6 +413,223 @@ def do_dns(dns1, dns2="", auto=False):
     return do_write_fields(25, fields)
 
 
+def do_scan():
+    """WiFi site survey: run wlan scan, poll scanStatus, read block 36."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    s = cdp_eval("JSON.stringify($.instr('wlan scan'))")
+    try:
+        if json.loads(s).get("errorno") != 0:
+            return {"ok": False, "error": "scan-start-failed"}
+    except Exception:
+        return {"ok": False, "error": "bad-response"}
+    for _ in range(20):
+        time.sleep(1)
+        r = cdp_eval("JSON.stringify($.instr('wlan scanStatus'))")
+        try:
+            st = str(json.loads(r).get("data", "")).strip()
+        except Exception:
+            st = ""
+        if st == "1":
+            break
+    raw = cdp_eval("JSON.stringify($.readEx(36))")
+    try:
+        b = json.loads(raw)
+    except Exception:
+        return {"ok": False, "error": "parse-error"}
+    aps = []
+    for e in b.get("apEntry", []):
+        if not e.get("cBssid") or e.get("cBssid", "").startswith("00-00-00"):
+            continue
+        aps.append({"bssid": e.get("cBssid"), "ssid": (e.get("cSsid") or "").strip(),
+                    "rssi": e.get("uRssi"), "channel": e.get("uChannel"),
+                    "auth": e.get("uAuthMode"), "width": e.get("uChanWidth")})
+    aps.sort(key=lambda a: -int(a["rssi"] or 0))
+    return {"ok": True, "count": len(aps), "aps": aps}
+
+
+def do_wds(op, ssid="", key="", bssid=""):
+    """Travel-router WDS bridge on block 32 apc + wlan wdsstatus."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    if op == "get":
+        raw = cdp_eval("JSON.stringify($.readEx(32))")
+        try:
+            b = json.loads(raw)
+        except Exception:
+            return {"ok": False, "error": "parse-error"}
+        st = instr_raw = cdp_eval("JSON.stringify($.instr('wlan wdsstatus'))")
+        try:
+            wds = json.loads(st).get("data", "")
+        except Exception:
+            wds = ""
+        apc = b.get("apc", {})
+        return {"ok": True,
+                "bridgeEnabled": apc.get("bBridgeEnabled"),
+                "ssid": apc.get("cBridgedSsid", ""),
+                "bssid": apc.get("cBridgedBssid", ""),
+                "security": apc.get("uSecurityType"),
+                "wdsStatus": {"0": "disconnected", "1": "init", "2": "scan",
+                              "3": "auth", "4": "assoc", "5": "connected"}.get(
+                                  str(wds).strip(), str(wds))}
+    if op == "connect":
+        ssid = ssid.strip()
+        if not ssid:
+            return {"ok": False, "error": "empty-ssid"}
+        if key and not (8 <= len(key) <= 63):
+            return {"ok": False, "error": "key must be 8-63 for WPA"}
+        uSec = "4" if key else "1"
+        bssid = (bssid or "").strip().upper()
+        import re as _re
+        if not _re.match(r"^([0-9A-F]{2}-){5}[0-9A-F]{2}$", bssid):
+            bssid = "00-00-00-00-00-00"  # zeroed = router resolves BSSID by SSID
+        return do_write_fields(32, {"apc.bBridgeEnabled": "1",
+                                    "apc.cBridgedSsid": ssid,
+                                    "apc.cBridgedBssid": bssid,
+                                    "apc.uSecurityType": uSec,
+                                    "apc.cPassWD": key})
+    if op == "disconnect":
+        return do_write_fields(32, {"apc.bBridgeEnabled": "0"})
+    return {"ok": False, "error": "bad-op"}
+
+
+def do_macclone(op, mac=""):
+    """MAC clone (block 1 mac[1] + wanMacType), peer MAC via TDDP8."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    if op == "get":
+        raw = cdp_eval("JSON.stringify($.readEx(1))")
+        try:
+            b = json.loads(raw)
+        except Exception:
+            return {"ok": False, "error": "parse-error"}
+        peer = cdp_eval("JSON.stringify($.getPeerMac())")
+        pc = ""
+        try:
+            pc = str(json.loads(peer).get("data", "")).strip().splitlines() and \
+                 str(json.loads(peer).get("data", "")).split("\r\n")[0]
+        except Exception:
+            pass
+        return {"ok": True,
+                "lanMac": (b.get("mac") or ["?", "?"])[0],
+                "wanMac": (b.get("mac") or ["?", "?"])[1],
+                "wanMacType": b.get("wanMacType"),
+                "pcMac": pc}
+    if op == "set":
+        import re as _re
+        mac = (mac or "").strip().upper()
+        if not _re.match(r"^([0-9A-F]{2}-){5}[0-9A-F]{2}$", mac):
+            return {"ok": False, "error": "bad-mac-format"}
+        if mac in ("00-00-00-00-00-00", "FF-FF-FF-FF-FF-FF"):
+            return {"ok": False, "error": "invalid-mac"}
+        cur = json.loads(cdp_eval("JSON.stringify($.readEx(1))"))
+        lan = (cur.get("mac") or ["?"])[0].upper()
+        if mac == lan:
+            return {"ok": False, "error": "wan-mac-equals-lan-mac"}
+        return do_write_fields(1, {"mac.1": mac, "wanMacType": "2"})
+    return {"ok": False, "error": "bad-op"}
+
+
+TZ_OPTIONS = [
+    ("0", "UTC-12 (Eniwetok)"), ("60", "UTC-11 (Midway)"),
+    ("120", "UTC-10 (Hawaii)"), ("180", "UTC-9 (Alaska)"),
+    ("240", "UTC-8 (Pacific)"), ("300", "UTC-7 (Mountain)"),
+    ("360", "UTC-6 (Central)"), ("420", "UTC-5 (Eastern)"),
+    ("510", "UTC-4:30 (Newfoundland)"), ("540", "UTC-3 (Brasilia)"),
+    ("600", "UTC-3:30 (Mid-Atlantic)"), ("660", "UTC-2 (Cape Verde)"),
+    ("720", "UTC (GMT)"), ("780", "UTC+1 (Amsterdam)"),
+    ("840", "UTC+2 (Cairo)"), ("900", "UTC+3 (Baghdad)"),
+    ("930", "UTC+3:30 (Tehran)"), ("960", "UTC+4 (Abu Dhabi)"),
+    ("990", "UTC+4:30 (Kabul)"), ("1020", "UTC+5 (Yekaterinburg)"),
+    ("1050", "UTC+5:30 (Madras)"), ("1065", "UTC+5:45 (Kathmandu)"),
+    ("1080", "UTC+6 (Alma-Ata)"), ("1110", "UTC+6:30 (Rangoon)"),
+    ("1140", "UTC+7 (Bangkok)"), ("1200", "UTC+8 (Beijing)"),
+    ("1260", "UTC+9 (Tokyo)"), ("1290", "UTC+9:30 (Adelaide)"),
+    ("1320", "UTC+10 (Brisbane)"), ("1380", "UTC+11 (Magadan)"),
+    ("1440", "UTC+12 (Fiji)"), ("1500", "UTC+13 (Nuku'alofa)"),
+]
+
+
+def do_time(op, tz="1080"):
+    """Date/time view (blocks 28/29) + timezone set (stored = tz - 720)."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    try:
+        cfg = json.loads(cdp_eval("JSON.stringify($.readEx(28))"))
+        now = json.loads(cdp_eval("JSON.stringify($.readEx(29))"))
+    except Exception:
+        return {"ok": False, "error": "parse-error"}
+    stored = str(cfg.get("timeZone", "360"))
+    if op == "get":
+        gmt = cdp_eval("JSON.stringify($.instr('systool sntpc -getGmtStatus'))")
+        try:
+            gmt = str(json.loads(gmt).get("data", "")).strip()
+        except Exception:
+            gmt = ""
+        return {"ok": True, "timeZone": stored,
+                "tzSel": str(int(stored) + 720), "gmt": gmt,
+                "clock": {"year": now.get("year"), "month": now.get("month"),
+                          "day": now.get("day"), "hour": now.get("hour"),
+                          "minute": now.get("minute"), "second": now.get("second"),
+                          "sntpOk": now.get("sntpcSuccess")}}
+    if op == "set":
+        try:
+            sel = int(tz)
+        except Exception:
+            return {"ok": False, "error": "bad-tz"}
+        return do_write_fields(28, {"timeZone": str(sel - 720)})
+    return {"ok": False, "error": "bad-op"}
+
+
+def do_arp():
+    """Live ARP table: name\r\rmac\r\rip\r\rbindFlag per line."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    r = cdp_eval("JSON.stringify($.instr('main staMgt -get arp'))")
+    try:
+        data = str(json.loads(r).get("data", ""))
+    except Exception:
+        return {"ok": False, "error": "bad-response"}
+    out = []
+    for line in (data.split("\r\n") if data else []):
+        parts = line.split("\r\r")
+        if len(parts) >= 3:
+            out.append({"name": parts[0] or "(anonymous)",
+                        "mac": parts[1] or "", "ip": parts[2] or "",
+                        "bind": parts[3] if len(parts) > 3 else ""})
+    return {"ok": True, "arp": out}
+
+
+def do_ipmac(op, ip="", mac="", name=""):
+    """IP-MAC binding via main staMgt bind verbs (block 12 bindEntry)."""
+    if not _ensure_auth():
+        return {"ok": False, "error": "not-authenticated"}
+    import urllib.parse as _up
+    import re as _re
+    if op == "list":
+        raw = cdp_eval("JSON.stringify($.readEx(12))")
+        try:
+            b = json.loads(raw)
+        except Exception:
+            return {"ok": False, "error": "parse-error"}
+        binds = [x for x in b.get("list", []) if x.get("bindEntry") == "1"]
+        return {"ok": True, "binds": binds}
+    if op in ("add", "delete", "clear"):
+        ip = ip.strip()
+        mac = (mac or "").strip().upper()
+        if not _re.match(r"^\d{1,3}(\.\d{1,3}){3}$", ip) or \
+           not _re.match(r"^([0-9A-F]{2}-){5}[0-9A-F]{2}$", mac):
+            return {"ok": False, "error": "bad-ip-or-mac"}
+        cmd = f"main staMgt -{op} bind ip:{ip} mac:{mac} name:{_up.quote(name or '')}"
+        r = cdp_eval("JSON.stringify($.instr(" + json.dumps(cmd) + "))")
+        try:
+            o = json.loads(r)
+        except Exception:
+            return {"ok": False, "error": "bad-response"}
+        return {"ok": o.get("errorno") == 0, "errorno": o.get("errorno")}
+    return {"ok": False, "error": "bad-op"}
+
+
 def do_device(op, mac="", name="", up="0", down="0", blocked=None):
     """Device block/rename/limit via staMgt instr (block 13 is read-only)."""
     if not _ensure_auth():
@@ -522,6 +739,24 @@ class Handler(BaseHTTPRequestHandler):
                     data.get("target", ""), data.get("size", "64"),
                     data.get("count", "4"), data.get("timeout", "800"),
                     data.get("hops", "20"), data.get("icmpId")))
+            if u.path == "/api/scan":
+                return self._json(do_scan())
+            if u.path == "/api/wds":
+                return self._json(do_wds(
+                    data.get("op"), data.get("ssid", ""),
+                    data.get("key", ""), data.get("bssid", "")))
+            if u.path == "/api/macclone":
+                return self._json(do_macclone(
+                    data.get("op"), data.get("mac", "")))
+            if u.path == "/api/time":
+                return self._json(do_time(
+                    data.get("op"), data.get("tz", "1080")))
+            if u.path == "/api/arp":
+                return self._json(do_arp())
+            if u.path == "/api/ipmac":
+                return self._json(do_ipmac(
+                    data.get("op"), data.get("ip", ""),
+                    data.get("mac", ""), data.get("name", "")))
         except Exception as e:
             return self._json({"ok": False, "error": f"backend-error: {e}"},
                               500)
