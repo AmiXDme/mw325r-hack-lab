@@ -80,16 +80,30 @@ BLE = {"scan_on": False, "devices": {}}
 FAKEAP = {"on": False}       # deauther-equivalent (channel squat) flag
 
 MAX_EV = 300
+LOGQ = []
+
 def ev(level, msg):
+    """Record an event. NEVER does network I/O here (a slow console socket
+    must not be able to deadlock engine operations)."""
     with LOCK:
         LAB["events"].append({"ts": time.time(), "level": level, "msg": msg})
         del LAB["events"][:-MAX_EV]
-    # mirror into the ESP32 console log (its ws_log equivalent)
-    try:
-        if BRIDGE_CLIENTS:
-            ws_bridge_broadcast({"type": "log", "level": level, "msg": msg})
-    except Exception:
-        pass
+        LOGQ.append({"type": "log", "level": level, "msg": msg})
+        del LOGQ[:-50]
+
+def _log_flusher():
+    """Background: drain queued events to console clients, non-blocking
+    (per-socket send timeout, dead sockets dropped without touching callers)."""
+    while True:
+        time.sleep(0.5)
+        with LOCK:
+            batch = LOGQ[:]
+            LOGQ.clear()
+        for m in batch:
+            try:
+                ws_bridge_broadcast(m)
+            except Exception:
+                pass
 
 def now():
     return time.strftime("%H:%M:%S")
@@ -523,7 +537,14 @@ def ws_send_frame(sock, data, op=1):
         hdr.append(127)
         hdr += struct.pack(">Q", n)
     with BRIDGE_SOCK_LOCK:
-        sock.sendall(bytes(hdr) + data)
+        try:
+            sock.settimeout(2)              # never block the engine on a dead console
+            sock.sendall(bytes(hdr) + data)
+        finally:
+            try:
+                sock.settimeout(None)
+            except Exception:
+                pass
 
 class WSBridgeClient:
     def __init__(self, sock):
@@ -1316,6 +1337,7 @@ def main():
     threading.Thread(target=dns_loop, args=(LAB["dns_port"],), daemon=True).start()
 
     threading.Thread(target=periodic, daemon=True).start()
+    threading.Thread(target=_log_flusher, daemon=True).start()
 
     async def ws_srv():
         async with websockets.serve(ws_handler, "0.0.0.0", 8765, max_size=2**22):
