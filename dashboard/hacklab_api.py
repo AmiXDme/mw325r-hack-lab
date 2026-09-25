@@ -125,8 +125,34 @@ AUTHSTR = {0: "OPEN", 1: "WEP", 2: "WPA_PSK", 3: "WPA2_PSK",
            4: "WPA_WPA2_PSK", 5: "WPA2_ENTERPRISE", 6: "WPA3_PSK",
            7: "WPA2_WPA3_PSK", 8: "WAPI_PSK"}
 
+def page_authed():
+    """True if the router session is usable. This process may start fresh
+    while the :8100 panel already logged in — both drive the SAME headless
+    Chrome, and the page keeps its encoded password in $.pwd, so we simply
+    adopt it. No password ever leaves RAM."""
+    if R._state.get("enc_pwd"):
+        try:
+            if R.cdp_eval("$.auth($.pwd).errorno") == 0:
+                return True
+        except Exception:
+            pass
+        return False
+    try:
+        if R.cdp_eval("$.auth($.pwd).errorno") == 0:
+            enc = R.cdp_eval("String($.pwd||'')")
+            if enc:
+                R._state["enc_pwd"] = enc
+                ev("info", "adopted router session from the shared browser")
+                return True
+    except Exception:
+        pass
+    return False
+
 def ap_list():
     """Router site survey (real scan) -> ESP32-style list."""
+    if not page_authed():
+        ev("warn", "scan blocked: router session not authenticated")
+        return None
     r = R.do_scan()
     out = []
     if r.get("ok"):
@@ -144,6 +170,8 @@ def ap_list():
 def stations():
     """Router-attached stations + dhcp leases (block 13 / block 9)."""
     sta, leases = [], []
+    if not page_authed():
+        return sta, leases
     try:
         b13 = R.read_block(13)
         if b13.get("ok"):
@@ -503,6 +531,25 @@ def capture_password(pw, mac, ua, source="ws"):
         except Exception:
             pass
 
+def login_sync(password):
+    """Log into the router FROM this process and remember the encoded password
+    so the panel (:8100) can adopt it too — one login unlocks both engines.
+    Returns the login result dict."""
+    r = R.do_login(password)
+    if r.get("ok"):
+        ev("info", "router login ok (lab engine)")
+        try:
+            # let the panel backend adopt the same encoded password
+            import urllib.request as _u
+            req = _u.Request("http://127.0.0.1:8100/api/adopt_login",
+                             data=json.dumps({"enc": R._state["enc_pwd"]}).encode(),
+                             headers={"Content-Type": "application/json"})
+            _u.urlopen(req, timeout=5)
+        except Exception:
+            pass
+    return r
+
+
 def free_port(preferred, fam=socket.SOCK_STREAM):
     for p in (preferred, preferred + 1, preferred + 2, 0):
         try:
@@ -827,9 +874,9 @@ def handle_cmd(cmd, p, req_id):
 
     if cmd == 3:                                    # wifi_scan
         global _AP_CACHE, _AP_TS
-        if not R._state.get("enc_pwd"):
+        if not page_authed():
             return {"req_id": req_id, "status": "error",
-                    "message": "Router not authenticated — log in first"}
+                    "message": "Router not authenticated — log in via the panel first (or POST /api/login)"}
         if time.time() - _AP_TS > 60:               # 60 s scan cache
             _AP_CACHE = ap_list()
             _AP_TS = time.time()
@@ -1081,7 +1128,7 @@ class ApiHandler(BaseHTTPRequestHandler):
         u = urlparse(self.path)
         if u.path == "/api/health":
             return self._json({"ok": True, "lab": LAB["running"],
-                               "authed": bool(R._state.get("enc_pwd")),
+                               "authed": page_authed(),
                                "portal_port": LAB["portal_port"],
                                "dns_port": LAB["dns_port"], "ip": LAB["http_ip"]})
         if u.path == "/api/lab_status":
@@ -1112,7 +1159,7 @@ class ApiHandler(BaseHTTPRequestHandler):
                 pw = d.get("password", "")
                 if not pw:
                     return self._json({"ok": False, "error": "empty-password"})
-                r = R.do_login(pw)
+                r = login_sync(pw)
                 if r.get("ok"):
                     ov = R.overview()
                     if ov.get("ok"):
@@ -1122,6 +1169,10 @@ class ApiHandler(BaseHTTPRequestHandler):
 
             if u.path == "/api/lab_start":
                 t = d.get("target") or {}
+                if not page_authed():
+                    return self._json({"ok": False,
+                                       "error": "router-not-authenticated",
+                                       "hint": "log in via the panel login (now chained to the lab) or POST /api/login"})
                 if not t.get("ssid"):
                     return self._json({"ok": False, "error": "no-target"})
                 ok, msg = lab_engine_start(t, d.get("portal", "fwupgrade"),

@@ -35,13 +35,17 @@ karma, sniffer, aircrack, host/port/BLE scans) driven by the PC engine.
 ## Run
 
 ```bash
-./launch-panel.sh                 # starts router_api + hacklab_api + panel
-# or manually:
-python3 router_api.py &           # TDDP backend      :8100
-python3 hacklab_api.py &          # lab engine        :8101 (portal :8080, DNS :5354, WS :8765)
-python3 -m http.server 8099 &     # static panel
-# open http://localhost:8099/control.html  →  🧪 Hack Lab tab
+./launch-panel.sh   # starts EVERYTHING and opens the panel app window:
+                    #   headless Chrome CDP :9222 (router session)
+                    #   router_api  :8100 (TDDP backend)
+                    #   hacklab_api :8101 (portal :8080, DNS :5354, WS :8765)
+                    #   dashboard   http://localhost:8099/control.html
 ```
+
+One login unlocks everything: both backends drive the same headless Chrome,
+and the lab engine adopts the router session from the live page (`$.pwd`) —
+log in once in the panel (or the lab) and scan/twin/verify work everywhere,
+including the ESP32 `admin.html` console on the portal port.
 
 Ports: unprivileged defaults (8080/5354). For the classic captive-portal ports
 run the lab engine as root: `sudo python3 hacklab_api.py` (binds :80/:53 and

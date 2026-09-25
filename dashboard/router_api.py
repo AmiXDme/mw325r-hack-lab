@@ -1025,6 +1025,14 @@ class Handler(BaseHTTPRequestHandler):
             except Exception as e:
                 return self._json({"ok": False, "error": f"backend-error: {e}"},
                                   500)
+        if u.path == "/api/adopt_login":
+            # Hack Lab backend shares its (encoded) router password so one
+            # login unlocks both engines. Localhost only; RAM only.
+            enc = data.get("enc")
+            if isinstance(enc, str) and 8 <= len(enc) <= 256:
+                _state["enc_pwd"] = enc
+                return self._json({"ok": True, "adopted": True})
+            return self._json({"ok": False, "error": "bad-enc"}, 400)
         try:
             if u.path == "/api/reboot":
                 return self._json(do_reboot())

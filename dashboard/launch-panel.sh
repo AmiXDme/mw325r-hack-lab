@@ -38,9 +38,16 @@ if ! curl -s -m 2 http://127.0.0.1:8101/api/health | grep -q '"ok": true'; then
   sleep 2
 fi
 
-# 4) the panel itself
+# 4) the dashboard itself (http, not file:// — one origin for all APIs)
+if ! curl -s -m 2 -o /dev/null http://127.0.0.1:8099/control.html; then
+  setsid nohup python3 -m http.server 8099 --bind 127.0.0.1 --directory "$SRC" \
+      >> "$LOG" 2>&1 < /dev/null &
+  sleep 1
+fi
+
+# 5) open the panel app window on the http origin
 exec setsid "$CHROME_BIN" \
-    --app="file://$SRC/control.html" \
+    --app="http://localhost:8099/control.html" \
     --user-data-dir="$HOME/.config/mw325r-panel" \
     --class=MW325R-Panel \
     --start-maximized "$@" >> "$LOG" 2>&1
