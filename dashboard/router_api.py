@@ -58,7 +58,9 @@ async def _cdp_eval(expr, navigate_first=False, await_promise=False):
             msg["params"] = params
         await ws.send(json.dumps(msg))
         while True:
-            r = json.loads(await ws.recv())
+            # hard cap per call: a wedged router page must never hold the
+            # global CDP lock forever (else every other op times out)
+            r = json.loads(await asyncio.wait_for(ws.recv(), timeout=30))
             if r.get("id") == mid[0]:
                 return r
 
