@@ -1,0 +1,3632 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ESP32WifiPhisher</title>
+    <style>
+        :root {
+            --bg-color: #0f0f0f;
+            --sidebar-bg: #141414;
+            --card-bg: #1e1e1e;
+            --text-main: #e0e0e0;
+            --text-muted: #6c757d;
+            --accent: #00e676;
+            --accent-dim: rgba(0, 230, 118, 0.1);
+            --danger: #ff5252;
+            --border: #333;
+            --terminal-bg: #000000;
+        }
+
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+            width: 100vw;
+        }
+
+        /* --- SIDEBAR --- */
+        .sidebar {
+            width: 260px;
+            background-color: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            border-right: 1px solid var(--border);
+            z-index: 1000;
+            transition: transform 0.3s ease;
+        }
+
+        /* Overlay per chiudere la sidebar cliccando fuori */
+        .sidebar-overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+        .sidebar.open + .sidebar-overlay {
+            display: block;
+        }
+
+        .brand {
+            padding: 25px 20px;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: var(--accent);
+            letter-spacing: 1px;
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            text-shadow: 0 0 10px rgba(0, 230, 118, 0.4);
+        }
+
+        .menu {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px 0;
+        }
+
+        .menu-category {
+            padding: 20px 25px 8px 25px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 1.2px;
+            user-select: none;
+        }
+
+        .menu-item {
+            padding: 12px 25px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            color: #bbb;
+            transition: all 0.2s ease;
+            border-left: 3px solid transparent;
+        }
+
+        .menu-item:hover {
+            background-color: rgba(255, 255, 255, 0.05);
+            color: white;
+        }
+
+        .menu-item.active {
+            background-color: var(--accent-dim);
+            color: var(--accent);
+            border-left: 3px solid var(--accent);
+        }
+
+        .menu-item svg {
+            width: 20px;
+            height: 20px;
+            margin-right: 15px;
+            fill: currentColor;
+        }
+
+        /* --- MAIN CONTENT --- */
+        .main-content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--bg-color);
+            position: relative;
+            overflow-x: hidden;
+            overflow-y: auto; 
+        }
+
+        /* --- TOP BAR --- */
+        .top-bar {
+            height: 60px;
+            background-color: var(--sidebar-bg);
+            border-bottom: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 25px;
+        }
+
+        .page-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .status-indicators {
+            display: flex;
+            gap: 15px;
+            font-size: 0.9rem;
+            align-items: center;
+        }
+
+        /* RAM Bar Style */
+        .ram-container {
+            display: flex;
+            flex-direction: column;
+            width: 100px;
+        }
+
+        .ram-text {
+            font-size: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2px;
+            color: #aaa;
+        }
+
+        .progress-bg {
+            width: 100%;
+            height: 4px;
+            background: #333;
+            border-radius: 2px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: var(--accent);
+            width: 0%;
+            transition: width 0.5s ease;
+            box-shadow: 0 0 8px var(--accent);
+        }
+
+        .status-badge {
+            background: #333;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            border: 1px solid #444;
+        }
+
+        .status-value {
+            color: var(--accent);
+            font-weight: bold;
+        }
+
+        .mobile-toggle {
+            display: none;
+            cursor: pointer;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        /* --- VIEWS --- */
+        .view-container {
+            flex: 1;
+            padding: 30px;
+            overflow-y: auto;
+            display: none;
+            padding-bottom: 150px;
+        }
+
+        .view-container.active {
+            display: block;
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        h2 {
+            color: white;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+            margin-top: 0;
+            font-weight: 300;
+            letter-spacing: 1px;
+        }
+
+        /* --- CARDS & UI --- */
+        .card {
+            background-color: var(--card-bg);
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.1);
+        }
+
+        .stat-label {
+            color: #aaa;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 5px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #aaa;
+            font-size: 0.85rem;
+            margin-top: 15px;
+            text-transform: uppercase;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            background-color: #121212;
+            border: 1px solid #444;
+            color: white;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-family: 'Courier New', monospace;
+            transition: border 0.2s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+        }
+
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+
+        button {
+            background-color: var(--accent);
+            color: #000;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 700;
+            text-transform: uppercase;
+            font-size: 0.8rem;
+            letter-spacing: 1px;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            filter: brightness(1.1);
+            box-shadow: 0 0 15px var(--accent-dim);
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        button.danger {
+            background-color: var(--danger);
+            color: white;
+        }
+
+        button.danger:hover {
+            box-shadow: 0 0 15px rgba(255, 82, 82, 0.2);
+        }
+
+        button.secondary {
+            background-color: #333;
+            color: white;
+            border: 1px solid #444;
+        }
+
+        @media (max-width: 768px) {
+            .wifi-table {
+                display: block;
+                overflow-x: auto; /* La tabella scorre dentro il suo box, non sposta la pagina */
+                white-space: nowrap;
+                -webkit-overflow-scrolling: touch;
+            }
+            
+            /* Rimpicciolisci un po' il testo per i telefoni */
+            .view-container {
+                padding: 10px;
+            }
+        }
+
+        .wifi-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .wifi-table th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid #444;
+            color: #888;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+        }
+
+        .wifi-table td {
+            border-bottom: 1px solid #333;
+            padding: 12px;
+        }
+
+        .wifi-table tr:hover {
+            background-color: #2a2a2a;
+        }
+
+        /* --- HOST DISCOVERY: Fing-style row list --- */
+        .host-row {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 14px 16px;
+            border-bottom: 1px solid var(--border);
+            transition: background 0.15s;
+        }
+
+        .host-row:last-child {
+            border-bottom: none;
+        }
+
+        .host-row:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        .host-icon {
+            flex: 0 0 auto;
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: #1a1a1a;
+            border: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-muted);
+        }
+
+        .host-icon svg {
+            width: 22px;
+            height: 22px;
+        }
+
+        .host-info {
+            flex: 1 1 auto;
+            min-width: 0;
+        }
+
+        .host-name {
+            color: white;
+            font-weight: 600;
+            font-size: 0.95rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .host-sub {
+            color: var(--text-muted);
+            font-size: 0.78rem;
+            font-family: 'Courier New', monospace;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .host-badges {
+            margin-top: 6px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+        }
+
+        .host-badge {
+            display: inline-block;
+            background: var(--accent-dim);
+            color: var(--accent);
+            border: 1px solid rgba(0, 230, 118, 0.3);
+            border-radius: 3px;
+            padding: 2px 7px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            letter-spacing: 0.3px;
+            white-space: nowrap;
+        }
+
+        .host-ip {
+            flex: 0 0 auto;
+            text-align: right;
+        }
+
+        .host-ip-addr {
+            color: var(--accent);
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            font-size: 0.85rem;
+        }
+
+        .host-use-btn {
+            display: block;
+            margin: 6px 0 0 auto !important;
+            padding: 3px 10px !important;
+            font-size: 0.65rem !important;
+        }
+
+        .host-empty {
+            text-align: center;
+            padding: 30px;
+            color: #666;
+            font-style: italic;
+        }
+
+        /* --- TERMINAL WINDOW (New) --- */
+        .terminal-panel {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 140px;
+            background-color: var(--terminal-bg);
+            border-top: 1px solid var(--accent);
+            padding: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+            color: #0f0;
+            overflow-y: auto;
+            z-index: 500;
+            box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.5);
+        }
+
+        .log-entry { margin: 2px 0; }
+        .log-time { color: #666; margin-right: 10px; }
+        .log-info { color: #00e676; }
+        .log-error { color: #ff5252; }
+        .log-success { color: #00e676; font-weight: bold; text-shadow: 0 0 5px rgba(0, 230, 118, 0.5); }
+        .log-warning { color: #ffab40; }
+
+        /* --- TOAST NOTIFICATION (New) --- */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background-color: #333;
+            border-left: 4px solid var(--accent);
+            padding: 15px 20px;
+            border-radius: 4px;
+            color: white;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.5);
+            transition: all 0.4s cubic-bezier(0.68, -0.55, 0.27, 1.55);
+            z-index: 9999;
+            white-space: nowrap;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0); /* Scende in posizione */
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        #view-port-scan.active {
+            display: flex !important;
+            flex-direction: column;
+            overflow: hidden; /* Blocca lo scroll dell'intera pagina */
+            padding-bottom: 200px; /* Rimuove lo spazio extra in fondo (era a 150px) */
+        }
+
+        #view-port-scan > .card {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Obbliga la card a non superare i bordi dello schermo */
+            margin-bottom: 0;
+        }
+
+        #view-ble.active {
+            display: flex !important;
+            flex-direction: column;
+            overflow: hidden; /* Blocca lo scroll dell'intera pagina */
+            padding-bottom: 200px; /* Lascia spazio al terminale in basso */
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .sidebar {
+                position: absolute;
+                height: 100%;
+                transform: translateX(-100%);
+                box-shadow: 5px 0 15px rgba(0, 0, 0, 0.5);
+            }
+            .sidebar.open { transform: translateX(0); }
+            .mobile-toggle { display: block; }
+            .view-container { padding: 15px; padding-bottom: 160px; }
+            .status-indicators { display: none; }
+
+            .impact-badge {
+                display: inline-block;
+                padding: 4px 12px;
+                border-radius: 4px;
+                font-size: 0.75rem;
+                font-weight: 800;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+                margin-bottom: 8px;
+                border: 1px solid rgba(255,255,255,0.2);
+            }
+            .impact-low { background-color: rgba(108, 117, 125, 0.2); color: #adb5bd; border-color: #adb5bd; }
+            .impact-medium { background-color: rgba(255, 171, 64, 0.2); color: #ffab40; border-color: #ffab40; }
+            .impact-high { background-color: rgba(255, 82, 82, 0.2); color: #ff5252; border-color: #ff5252; }
+            .impact-critical {
+                background-color: rgba(255, 0, 0, 0.3);
+                color: #ff0000;
+                border-color: #ff0000;
+                box-shadow: 0 0 10px rgba(255, 0, 0, 0.4);
+                animation: pulse-red 2s infinite;
+            }
+
+            @keyframes pulse-red {
+                0% { box-shadow: 0 0 5px rgba(255, 0, 0, 0.2); }
+                50% { box-shadow: 0 0 15px rgba(255, 0, 0, 0.6); }
+                100% { box-shadow: 0 0 5px rgba(255, 0, 0, 0.2); }
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="sidebar" id="sidebar">
+        <div class="brand">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4zm0 10.99h7c-.53 4.12-3.28 7.79-7 8.94V12H5V6.3l7-3.11v8.8z" />
+            </svg>
+            <span>ESP32 AUDIT</span>
+        </div>
+        <div class="menu">
+            <div class="menu-category" data-i18n="dashboard_cat">Dashboard</div>
+            <div class="menu-item active" onclick="showView('view-home', this)">
+                <svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z" /></svg>
+                <span data-i18n="status_overview">Status Overview</span>
+            </div>
+            
+            <div class="menu-category" data-i18n="wifi_modules_cat">WiFi Modules</div>
+            <div class="menu-item" onclick="showView('view-sniffer', this)">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg> 
+                <span data-i18n="packet_analyzer">Packet Analyzer</span>
+            </div>
+            <div class="menu-item" onclick="showView('view-scan', this)">
+                <svg viewBox="0 0 24 24"><path d="M12.01 21.49L23.64 7c-.45-.34-4.93-4-11.64-4C5.28 3 .81 6.66.36 7l11.63 14.49.01.01.01-.01z" /></svg> 
+                <span data-i18n="scanner_sniff">Scanner & Sniff</span>
+            </div>
+            <div class="menu-item" onclick="showView('view-recon', this)">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z"/></svg> 
+                <span data-i18n="recon_airodump">Recon (Airodump)</span>
+            </div>
+            <div class="menu-item" onclick="showView('view-eviltwin', this)">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 3c1.66 0 3 1.34 3 3s-1.34 3-3 3-3-1.34-3-3 1.34-3 3-3zm0 14.2c-2.5 0-4.71-1.28-6-3.22.03-1.99 4-3.08 6-3.08 1.99 0 5.97 1.09 6 3.08-1.29 1.94-3.5 3.22-6 3.22z" /></svg> 
+                <span data-i18n="eviltwin_attack">Evil Twin Attack</span>
+            </div>
+            <div class="menu-item" onclick="showView('view-karma', this)">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg> 
+                <span data-i18n="karma_attack">Karma Attack</span>
+            </div>
+            <div class="menu-item" onclick="showView('view-deauth', this)">
+                <svg viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zM4 12c0-4.42 3.58-8 8-8 1.85 0 3.55.63 4.9 1.69L5.69 16.9C4.63 15.55 4 13.85 4 12zm8 8c-1.85 0-3.55-.63-4.9-1.69L18.31 7.1C19.37 8.45 20 10.15 20 12c0 4.42-3.58 8-8 8z"/></svg> 
+                <span data-i18n="deauth_attack">Deauther</span>
+            </div>
+
+            <div class="menu-category" data-i18n="ble_cat">Bluetooth Modules</div>
+            <div class="menu-item" onclick="showView('view-ble', this)">
+                <!-- Icona Bluetooth -->
+                <svg viewBox="0 0 24 24"><path d="M17.71 7.71L12 2h-1v7.59L6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 11 14.41V22h1l5.71-5.71-4.3-4.29 4.3-4.29zM13 5.83l1.88 1.88L13 9.59V5.83zm1.88 10.46L13 18.17v-3.76l1.88 1.88z"/></svg>
+                <span data-i18n="ble_sniffer">BLE Sniffer</span>
+            </div>
+
+            <div class="menu-item" onclick="showView('view-ble-spam', this)">
+                <svg viewBox="0 0 24 24"><path d="M11 2v4.26L6.53 1.74 5.11 3.15l15.73 15.74 1.41-1.42-4.14-4.14L22 9h-4.27L22 4.74l-1.41-1.41L13 11.2V2h-2zm-1 12.26l-4.15 4.15L2.29 14.86 1 16.14l4.5 4.5 1.41-1.41 4.14-4.14-5.6-5.61-1.41 1.41L10 14.26zm3 .44v5.3l-2.07-2.07L13 14.7z"/></svg> 
+                <span data-i18n="ble_spam">BLE Spam Attack</span>
+            </div>
+
+            <div class="menu-category" data-i18n="net_cat">Network Analysis</div>
+            <div class="menu-item" id="menu-sta" onclick="showView('view-sta', this)">
+                <svg viewBox="0 0 24 24"><path d="M12 21L15.6 16.2C14.6 15.45 13.35 15 12 15C10.65 15 9.4 15.45 8.4 16.2L12 21ZM12 3C7.95 3 4.21 4.34 1.2 6.6L3 9C5.5 7.12 8.62 6 12 6C15.38 6 18.5 7.12 21 9L22.8 6.6C19.79 4.34 16.05 3 12 3ZM12 9C9.3 9 6.81 9.89 4.8 11.4L6.6 13.8C8.1 12.67 9.97 12 12 12C14.03 12 15.9 12.67 17.4 13.8L19.2 11.4C17.19 9.89 14.7 9 12 9Z"/></svg> 
+                <span data-i18n="sta_connection">Target Connection</span>
+            </div>
+            <div class="menu-item" id="menu-host-discovery" onclick="showView('view-host-discovery', this)">
+                <svg viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                <span data-i18n="host_discovery">Host Discovery</span>
+            </div>
+            <div class="menu-item" id="menu-port-scan" onclick="showView('view-port-scan', this)">
+                <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 9h-2V7h-2v5H6v-2H4v6h8v-4zm6 4h-6v2h6v-2zm0-4h-6v2h6v-2zm0-4h-6v2h6V8z"/></svg> 
+                <span data-i18n="port_scanner">Port Scanner</span>
+            </div>
+            
+            <div class="menu-category" data-i18n="system_cat">System</div>
+
+            <div class="menu-item" onclick="showView('view-handshakes', this)">
+                <svg viewBox="0 0 24 24"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg> 
+                <span data-i18n="captured_handshakes">Captured Handshake</span>
+            </div>
+
+            <div class="menu-item" onclick="showView('view-passwords', this)">
+                <svg viewBox="0 0 24 24"><path d="M12.65 10C11.83 7.67 9.61 6 7 6c-3.31 0-6 2.69-6 6s2.69 6 6 6c2.61 0 4.83-1.67 5.65-4H17v4h4v-4h2v-4H12.65zM7 14c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2z" /></svg> 
+                <span data-i18n="captured_creds">Captured Creds</span>
+            </div>
+
+            <div class="menu-item" onclick="showView('view-settings', this)">
+                <svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.58 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z" /></svg> 
+                <span data-i18n="configuration">Configuration</span>
+            </div>
+        </div>
+    </div>
+
+    </div> <div class="sidebar-overlay" onclick="toggleSidebar()"></div>
+
+    <div class="main-content">
+
+        <!-- TOP BAR -->
+        <div class="top-bar">
+            <div class="mobile-toggle" onclick="toggleSidebar()">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z" />
+                </svg>
+            </div>
+            <div class="page-title" id="page-title" data-i18n="status_overview">Status Overview</div>
+
+            <div class="status-indicators">
+                <select id="lang-select" onchange="changeLanguage(this.value)" style="background: #121212; color: white; border: 1px solid #444; border-radius: 4px; padding: 4px; font-size: 0.8rem; margin-right: 15px;">
+                    <option value="en">EN</option>
+                    <option value="it">IT</option>
+                    <option value="es">ES</option>
+                    <option value="fr">FR</option>
+                    <option value="de">DE</option>
+                    <option value="ru">RU</option>
+                    <option value="zh">ZH</option>
+                </select>
+                <div class="status-badge"><span data-i18n="uptime">UPTIME</span> <span class="status-value" id="uptime-val">--:--:--</span></div>
+
+                <div class="ram-container">
+                    <div class="ram-text"><span data-i18n="ram">RAM</span> <span id="ram-text-val">0%</span></div>
+                    <div class="progress-bg">
+                        <div class="progress-fill" id="ram-bar" style="width: 0%"></div>
+                    </div>
+                </div>
+                <!--  <div class="status-badge"><span data-i18n="sd">SD</span> <span class="status-value" id="status-sd">--</span></div> -->
+                <div class="status-badge" id="badge-usb" style="display: none; align-items: center; gap: 4px; color: var(--accent); border-color: var(--accent); background: rgba(0, 230, 118, 0.1);">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M15 7v4h1v2h-3V5h2l-3-4-3 4h2v8H8v-2.07c.7-.37 1.2-1.08 1.2-1.93 0-1.21-.99-2.2-2.2-2.2-1.21 0-2.2.99-2.2 2.2 0 .85.5 1.56 1.2 1.93V13c0 1.11.89 2 2 2h3v3.05c-.71.37-1.2 1.08-1.2 1.95 0 1.22.99 2.2 2.2 2.2 1.21 0 2.2-.98 2.2-2.2 0-.87-.49-1.58-1.2-1.95V15h3c1.11 0 2-.89 2-2v-2h1V7h-4z"/>
+                    </svg>
+                    <span style="font-weight: bold; font-size: 0.75rem;">USB WIFI</span>
+                </div>
+            </div>
+        </div>
+
+        <div id="toast" class="toast">Notification Message</div>
+
+        <!-- HOME -->
+        <div id="view-home" class="view-container active">
+            <div style="display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px;">
+                <h2 style="border:none; padding:0; margin:0;" data-i18n="dashboard_title">Dashboard</h2>
+                <div id="global-status-badge" style="background:#333; color:#aaa; padding:5px 12px; border-radius:4px; font-size:0.8rem; font-weight:bold; border:1px solid #444;">
+                    <span data-i18n="system_idle">SYSTEM IDLE</span>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin-bottom: 25px;">
+                <div id="mod-et" style="background:#121212; border:1px solid #333; padding:15px; border-radius:6px; text-align:center; transition:all 0.3s;">
+                    <div style="font-size:0.75rem; color:#666; font-weight:bold;" data-i18n="mod_et">EVIL TWIN</div>
+                    <div class="mod-status" style="font-size:1rem; font-weight:bold; color:#444; margin-top:5px;" data-i18n="status_inactive">INACTIVE</div>
+                </div>
+                <div id="mod-deauth" style="background:#121212; border:1px solid #333; padding:15px; border-radius:6px; text-align:center; transition:all 0.3s;">
+                    <div style="font-size:0.75rem; color:#666; font-weight:bold;" data-i18n="mod_deauth">DEAUTHER</div>
+                    <div class="mod-status" style="font-size:1rem; font-weight:bold; color:#444; margin-top:5px;" data-i18n="status_inactive">INACTIVE</div>
+                </div>
+                <div id="mod-karma" style="background:#121212; border:1px solid #333; padding:15px; border-radius:6px; text-align:center; transition:all 0.3s;">
+                    <div style="font-size:0.75rem; color:#666; font-weight:bold;" data-i18n="mod_karma">KARMA</div>
+                    <div class="mod-status" style="font-size:1rem; font-weight:bold; color:#444; margin-top:5px;" data-i18n="status_inactive">INACTIVE</div>
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+                
+                <div class="card" style="border-top: 3px solid var(--accent); position: relative;">
+                    <div class="stat-label" data-i18n="primary_target_info">PRIMARY TARGET INFO</div>
+                    
+                    <div style="margin-top: 15px;">
+                        <div style="display:flex; justify-content:space-between; align-items:flex-end;">
+                            <div id="home-ssid" style="font-size: 1.5rem; font-weight: bold; color: white; line-height:1.2; word-break: break-all;" data-i18n="no_target">No Target</div>
+                            <div id="home-rssi" style="font-size: 0.9rem; color: #666; font-weight:bold; white-space: nowrap;">-- dBm</div>
+                        </div>
+                        
+                        <div style="margin-top:15px; display:grid; grid-template-columns: 1fr 1fr; gap:10px; font-size:0.85rem;">
+                            <div style="background:#121212; padding:10px; border-radius:4px; border:1px solid #333;">
+                                <span style="color:#666; display:block; font-size:0.65rem; margin-bottom:2px;" data-i18n="mac_address">MAC ADDRESS</span>
+                                <span id="home-bssid" style="font-family:monospace; color:#ccc; letter-spacing:1px;">--:--:--:--:--:--</span>
+                            </div>
+                            <div style="background:#121212; padding:10px; border-radius:4px; border:1px solid #333;">
+                                <span style="color:#666; display:block; font-size:0.65rem; margin-bottom:2px;" data-i18n="vendor">VENDOR</span>
+                                <span id="home-vendor" style="color:#ccc;">--</span>
+                            </div>
+                            <div style="background:#121212; padding:10px; border-radius:4px; border:1px solid #333;">
+                                <span style="color:#666; display:block; font-size:0.65rem; margin-bottom:2px;" data-i18n="channel">CHANNEL</span>
+                                <span id="home-ch" style="color:var(--accent); font-weight:bold; font-size:1.1rem;">--</span>
+                            </div>
+                            <div style="background:#121212; padding:10px; border-radius:4px; border:1px solid #333;">
+                                <span style="color:#666; display:block; font-size:0.65rem; margin-bottom:2px;" data-i18n="security">SECURITY</span>
+                                <span id="home-auth" style="color:#ccc;">--</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="border-top: 3px solid #ff5252;">
+                    <div class="stat-label" data-i18n="intel_capture">INTELLIGENCE & CAPTURE</div>
+                    
+                    <div style="margin-top:20px; display:flex; flex-direction:column; gap:15px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:10px; border-bottom:1px solid #333;">
+                            <div>
+                                <div style="font-size:0.85rem; font-weight:bold; color:#fff;" data-i18n="wpa_handshake">WPA Handshake</div>
+                                <div style="font-size:0.75rem; color:#888;" data-i18n="hash_collection">Hash collection</div>
+                            </div>
+                            <div id="home-hs-badge" style="background:#222; color:#555; padding:4px 10px; border-radius:4px; font-size:0.7rem; font-weight:bold; letter-spacing:1px;" data-i18n="status_waiting">
+                                WAITING
+                            </div>
+                        </div>
+
+                        <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:10px; border-bottom:1px solid #333;">
+                            <div>
+                                <div style="font-size:0.85rem; font-weight:bold; color:#fff;" data-i18n="5ghz_twin">5GHz Twin</div>
+                                <div style="font-size:0.75rem; color:#888;" data-i18n="dual_band_detection">Dual-band AP detection</div>
+                            </div>
+                            <div id="home-5g-badge" style="background:#222; color:#555; padding:4px 10px; border-radius:4px; font-size:0.7rem; font-weight:bold; letter-spacing:1px;" data-i18n="status_scanning">
+                                SCANNING
+                            </div>
+                        </div>
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px;">
+                            <div style="text-align:center; background:#1a1a1a; padding:10px; border-radius:4px;">
+                                <div id="home-clients" style="font-size: 1.5rem; font-weight:bold; color: #fff;">0</div>
+                                <div style="font-size: 0.7rem; color: #00bcd4; font-weight:bold;" data-i18n="clients">CLIENTS</div>
+                            </div>
+                            <div style="text-align:center; background:#1a1a1a; padding:10px; border-radius:4px;">
+                                <div id="home-aps" style="font-size: 1.5rem; font-weight:bold; color: #fff;">0</div>
+                                <div style="font-size: 0.7rem; color: #aaa; font-weight:bold;" data-i18n="networks">NETWORKS</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="border-top: 3px solid #00e676;">
+                    <div class="stat-label" data-i18n="packet_injection_health">PACKET INJECTION HEALTH</div>
+                    
+                    <div style="margin-top: 20px;">
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                            <div style="text-align: center; background: #151515; padding: 10px; border-radius: 4px;">
+                                <div id="stat-tx-sent" style="font-size: 1.8rem; font-weight: bold; color: white;">0</div>
+                                <div style="font-size: 0.7rem; color: #aaa; letter-spacing: 1px;" data-i18n="sent">SENT</div>
+                            </div>
+                            <div style="text-align: center; background: #151515; padding: 10px; border-radius: 4px;">
+                                <div id="stat-tx-drop" style="font-size: 1.8rem; font-weight: bold; color: #ff5252;">0</div>
+                                <div style="font-size: 0.7rem; color: #aaa; letter-spacing: 1px;" data-i18n="dropped">DROPPED</div>
+                            </div>
+                            <div style="text-align: center; background: #151515; padding: 10px; border-radius: 4px;">
+                                <div id="stat-tx-pps" style="font-size: 1.8rem; font-weight: bold; color: #00bcd4;">0</div>
+                                <div style="font-size: 0.7rem; color: #aaa; letter-spacing: 1px;" data-i18n="pps">PPS</div>
+                            </div>
+                        </div>
+
+                        <div style="display: flex; justify-content: space-between; font-size: 0.75rem; color: #aaa; margin-bottom: 5px;">
+                            <span data-i18n="injection_quality">INJECTION QUALITY</span>
+                            <span id="stat-quality-perc">100%</span>
+                        </div>
+                        <div class="progress-bg" style="background: #333; height: 6px;">
+                            <div id="stat-quality-bar" class="progress-fill" style="width: 100%; background: #00e676;"></div>
+                        </div>
+                        <div id="stat-message" style="font-size: 0.7rem; color: #666; margin-top: 8px; font-style: italic;" data-i18n="sys_idle_msg">
+                            System idle.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card" style="border-top: 3px solid #00bcd4;">
+                    <div class="stat-label">STA NETWORK & DISCOVERY</div>
+                    
+                    <div style="margin-top:20px; display:flex; flex-direction:column; gap:15px;">
+                        <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:10px; border-bottom:1px solid #333;">
+                            <div>
+                                <div style="font-size:0.85rem; font-weight:bold; color:#fff;" id="dash-sta-ssid">No Network</div>
+                                <div style="font-size:0.75rem; color:#888;">Active STA Connection</div>
+                            </div>
+                            <div id="dash-sta-badge" style="background:#222; color:#555; padding:4px 10px; border-radius:4px; font-size:0.7rem; font-weight:bold; letter-spacing:1px;">
+                                OFFLINE
+                            </div>
+                        </div>
+
+                        <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:10px; border-bottom:1px solid #333;">
+                            <div>
+                                <div style="font-size:0.85rem; font-weight:bold; color:var(--accent); font-family:monospace;" id="dash-sta-ip">--.--.--.--</div>
+                                <div style="font-size:0.75rem; color:#888;">Local IP Address</div>
+                            </div>
+                            <div style="text-align:right;">
+                                <div style="font-size:0.85rem; font-weight:bold; color:#ccc; font-family:monospace;" id="dash-sta-gw">--.--.--.--</div>
+                                <div style="font-size:0.75rem; color:#888;">Gateway</div>
+                            </div>
+                        </div>
+
+                        <div style="display:flex; align-items:center; justify-content:space-between; padding-bottom:10px; border-bottom:1px solid #333;">
+                            <div>
+                                <div style="font-size:0.85rem; font-weight:bold; color:var(--accent); font-family:monospace;" id="dash-sta-mask">--.--.--.--</div>
+                                <div style="font-size:0.75rem; color:#888;">Subnet Mask</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- LIVE PACKET ANALYZER -->
+        <div id="view-sniffer" class="view-container">
+            <h2 data-i18n="live_packet_analyzer">Live Packet Analyzer</h2>
+            
+            <div class="card">
+                <label style="color:var(--accent); border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:15px; margin-top:0;" data-i18n="capture_configuration">CAPTURE CONFIGURATION</label>
+                
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap:15px; margin-bottom:20px;">
+                    <div>
+                        <label data-i18n="frequency">Frequency</label>
+                        <div style="display:flex; gap:10px; align-items:center;">
+                            <select id="sniff-chan" style="flex:1;"></select>
+                            <div style="display:flex; align-items:center; gap:5px; background:#121212; padding:8px; border:1px solid #444; border-radius:4px; height: 42px; box-sizing: border-box;">
+                                <input type="checkbox" id="sniff-hop" style="width:auto; margin:0;">
+                                <span style="font-size:0.8rem; color:#aaa; font-weight:bold;" data-i18n="hop">HOP</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label data-i18n="main_frame_type">Main Frame Type</label>
+                        <select id="sniff-type" onchange="updateSubtypes()">
+                            <option value="0" data-i18n="opt_all_traffic">ALL TRAFFIC</option>
+                            <option value="1" data-i18n="opt_mgmt">MANAGEMENT</option>
+                            <option value="2" data-i18n="opt_ctrl">CONTROL</option>
+                            <option value="3" data-i18n="opt_data">DATA</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label data-i18n="subtype_filter">Subtype Filter</label>
+                        <select id="sniff-subtype" disabled>
+                            <option value="0" data-i18n="opt_all_subtypes">All Subtypes</option>
+                        </select>
+                    </div>
+                </div>
+
+                <label style="color:var(--accent); border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:15px;" data-i18n="display_filters">DISPLAY FILTERS</label>
+                
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:15px;">
+                    <input type="text" id="disp-filter-src" data-i18n="ph_source_mac" placeholder="Source MAC">
+                    <input type="text" id="disp-filter-dst" data-i18n="ph_dest_mac" placeholder="Dest MAC">
+                    <input type="text" id="disp-filter-ssid" data-i18n="ph_ssid_info" placeholder="SSID / Info">
+                    <input type="number" id="disp-filter-rssi" data-i18n="ph_min_rssi" placeholder="Min RSSI (-90)" value="-95">
+                </div>
+                
+                <div class="btn-group">
+                    <button onclick="startCapture()" id="btn-sniff-start">
+                        <svg style="width:16px; height:16px; vertical-align:middle; margin-right:5px;" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></svg> <span data-i18n="btn_start">START</span>
+                    </button>
+                    
+                    <button class="danger" onclick="stopCapture()" id="btn-sniff-stop" disabled style="opacity:0.5; cursor:not-allowed;">
+                        <svg style="width:16px; height:16px; vertical-align:middle; margin-right:5px;" viewBox="0 0 24 24"><path fill="currentColor" d="M6 6h12v12H6z"/></svg> <span data-i18n="btn_stop">STOP</span>
+                    </button>
+
+                    <button class="secondary" onclick="togglePause()" id="btn-sniff-pause" data-i18n="btn_pause_view">PAUSE VIEW</button>
+                    <button class="secondary" onclick="clearSnifferTable()" data-i18n="btn_clear">CLEAR</button>
+                </div>
+                
+                <div style="margin-top:5px; font-size:0.8rem; color:#666; text-align:right;">
+                    <span data-i18n="rx_count">Rx:</span> <span id="pkt-total-count">0</span> <span data-i18n="shown_count">| Shown:</span> <span id="pkt-display-count">0</span>
+                </div>
+            </div>
+
+            <div class="card" style="padding:0; overflow-x:auto; height: 500px; overflow-y: scroll;">
+                <table class="wifi-table" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                    <thead style="position: sticky; top: 0; background: #1e1e1e; z-index: 10;">
+                        <tr>
+                            <th style="width:40px" data-i18n="th_ch">Ch</th>
+                            <th style="width:50px" data-i18n="th_dbm">dBm</th>
+                            <th style="width:60px" data-i18n="th_type">Type</th>
+                            <th style="width:100px" data-i18n="th_subtype">Subtype</th>
+                            <th style="width:130px" data-i18n="th_source">Source</th>
+                            <th style="width:130px" data-i18n="th_destination">Destination</th>
+                            <th style="width:40px" data-i18n="th_len">Len</th>
+                            <th data-i18n="th_info">Info</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sniffer-body"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- WIFI SCANNER -->
+        <div id="view-scan" class="view-container">
+            <h2 data-i18n="wifi_scanner_title">WiFi Scanner</h2>
+            <div class="card">
+                <p style="margin-top:0;" data-i18n="scan_desc">Scan for nearby Access Points to select a target.</p>
+                <div class="btn-group">
+                    <button onclick="scanNetworks()" data-i18n="btn_start_scan">Start Scan</button>
+                </div>
+            </div>
+            <div id="network-list" class="card" style="padding:0; overflow-x:auto;">
+                <table class="wifi-table">
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_ssid">SSID</th>
+                            <th data-i18n="th_rssi">RSSI</th>
+                            <th data-i18n="th_ch">CH</th>
+                            <th data-i18n="th_bssid">BSSID</th>
+                            <th data-i18n="th_sec">Sec</th>
+                            <th data-i18n="th_wps">WPS</th>
+                            <th data-i18n="th_action">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="wifi-networks-body">
+                        <tr>
+                            <td colspan="7" style="text-align:center; padding: 20px;" data-i18n="no_scan_data">No scan data</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- RECONNAISSANCE -->
+        <div id="view-recon" class="view-container">
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:15px; margin-bottom:20px;">
+                <h2 style="border:none; margin:0;" data-i18n="recon_title">Network Reconnaissance</h2>
+            </div>
+
+            <div style="display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid #333; padding-bottom:15px; margin-bottom:20px; flex-wrap:wrap; gap:15px;"> 
+                <!-- TOOLBAR MINIMALE AIRODUMP-STYLE -->
+                <div style="display:flex; align-items:center; gap:10px; background:#121212; padding:8px 12px; border-radius:6px; border:1px solid #333;">
+                    <span style="font-size:0.75rem; color:#aaa; font-weight:bold; letter-spacing:1px;" data-i18n="channel">CH:</span>
+                    <select id="recon-chan" style="width: auto; padding: 4px 20px 4px 8px; height: 30px; font-size: 0.8rem; margin:0; min-width: 110px;">
+                        <option value="0">ALL (HOP)</option>
+                        <!-- I canali verranno popolati via JS -->
+                    </select>
+                    
+                    <button onclick="startRecon()" id="btn-recon-start" style="padding: 6px 12px; margin:0; font-size:0.75rem;">START</button>
+                    <button class="danger" onclick="stopRecon()" id="btn-recon-stop" disabled style="opacity:0.5; cursor:not-allowed; padding: 6px 12px; margin:0; font-size:0.75rem;">STOP</button>
+                    <button class="secondary" onclick="clearReconData()" style="padding: 6px 12px; margin:0; font-size:0.75rem;">CLEAR</button>
+                </div>
+            </div>
+
+            <div class="card" style="padding:0; overflow-x:auto; margin-bottom: 20px;">
+                    <div style="padding:10px 15px; background:#181818; border-bottom:1px solid #333; font-weight:bold; color:var(--accent); font-size: 0.85rem;">
+                        ACCESS POINTS
+                    </div>
+                    <table class="wifi-table" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                        <thead style="background: #1e1e1e;">
+                            <tr>
+                                <th data-i18n="th_essid">ESSID</th>
+                                <th data-i18n="th_bssid">BSSID</th>
+                                <th data-i18n="th_pwr">PWR</th>
+                                <th data-i18n="th_ch">CH</th>
+                                <th data-i18n="th_pkts">FRAMES</th>
+                                <th data-i18n="th_clients">CLIENTS</th> 
+                                <th data-i18n="th_bytes">BYTES</th>
+                                <th data-i18n="th_sec">ENC</th>
+                                <th data-i18n="th_hs">HS</th>
+                            </tr>
+                        </thead>
+                        <tbody id="recon-ap-body">
+                            <tr><td colspan="9" style="text-align:center; padding:15px; color:#666;">Start an attack or scan to listen...</td></tr>
+                        </tbody>
+                    </table>
+                </div>  
+
+            <div class="card" style="padding:0; overflow-x:auto;">
+                <div style="padding:10px 15px; background:#181818; border-bottom:1px solid #333; font-weight:bold; color:#00bcd4; font-size: 0.85rem;">
+                    CLIENTS
+                </div>
+                <table class="wifi-table" style="font-family: 'Courier New', monospace; font-size: 0.8rem;">
+                    <thead style="background: #1e1e1e;">
+                        <tr>
+                            <th data-i18n="th_station">STATION (MAC)</th>
+                            <th data-i18n="th_assoc_ap">AP (SSID)</th>
+                            <th data-i18n="th_ch">CH</th>
+                            <th data-i18n="th_pwr">PWR</th>
+                            <th data-i18n="th_probes">PROBES</th>
+                            <th data-i18n="th_pkts">FRAMES</th>
+                            <th data-i18n="th_bytes">BYTES</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recon-cli-body">
+                        <tr><td colspan="7" style="text-align:center; padding:15px; color:#666;">Waiting for clients...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- EVIL TWIN -->
+        <div id="view-eviltwin" class="view-container">
+            <h2 data-i18n="evil_twin_title">Evil Twin Attack</h2>
+            <div class="card">
+                <label data-i18n="attack_scenario">ATTACK SCENARIO</label>
+                <select id="attack-scenario">
+                    <option value="0" data-i18n="opt_fw_upgrade">Firmware Upgrade</option>
+                    <option value="1" data-i18n="opt_fake_nm">Fake Network Manager</option>
+                    <option value="2" data-i18n="opt_oauth">OAuth Login</option>
+                </select>
+
+                <div style="margin-top: 20px; border: 1px dashed #444; padding: 15px; border-radius: 4px; background:#181818;">
+                    <label style="margin-top:0;" data-i18n="target_details">TARGET DETAILS</label>
+                    <div style="font-size: 1.2rem; color: var(--accent); font-weight:bold;" id="current-target-ssid" data-i18n="no_target_selected">No Target Selected</div>
+                    <div style="font-family:monospace; color: #666;" id="current-target-bssid">--:--:--:--:--:--</div>
+                </div>
+
+                <div class="btn-group">
+                    <button class="danger" onclick="startEvilTwin()" data-i18n="btn_launch_attack">LAUNCH ATTACK</button>
+                    <button class="secondary" onclick="stopEvilTwin()" data-i18n="btn_terminate">TERMINATE</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- KARMA -->
+        <div id="view-karma" class="view-container">
+            <h2 data-i18n="karma_probe_scanner">Karma Probe Scanner</h2>
+            
+            <div class="card">
+                <label data-i18n="phishing_scenario_lbl">1. PHISHING SCENARIO</label>
+                <select id="karma-scenario">
+                    <option value="0" data-i18n="opt_fw_upgrade">Firmware Upgrade</option>
+                    <option value="1" data-i18n="opt_fake_nm">Fake Network Manager</option>
+                    <option value="2" data-i18n="opt_oauth">OAuth Login</option>
+                </select>
+
+                <p style="margin-top:15px; font-size:0.9rem; color:#aaa;" data-i18n="scan_devices_lbl">
+                    2. Scan for devices probing for known networks.
+                </p>
+
+                <div class="btn-group">
+                    <button onclick="startKarmaScan()" data-i18n="btn_scan_probes">SCAN PROBES</button>
+                    <button class="secondary" onclick="stopKarmaScan()" data-i18n="btn_stop_scan">STOP SCAN</button>
+                </div>
+            </div>
+
+            <div class="card" style="padding:0; overflow-x:auto;">
+                <div style="padding:15px; border-bottom:1px solid #333; font-weight:bold; color:var(--accent);" data-i18n="detected_probes">
+                    DETECTED PROBES
+                </div>
+                <table class="wifi-table">
+                    <thead>
+                        <tr>
+                            <th data-i18n="th_victim_mac">Victim MAC</th>
+                            <th data-i18n="th_target_ssid">Target SSID</th>
+                            <th data-i18n="th_rssi">RSSI</th>
+                            <th data-i18n="th_ch">CH</th>
+                            <th data-i18n="th_action">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="karma-scan-body">
+                        <tr>
+                            <td colspan="5" style="text-align:center; padding: 20px; color:#666;" data-i18n="click_scan_probes">
+                                Click 'SCAN PROBES' to start listening...
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- DEAUTHER -->
+        <div id="view-deauth" class="view-container">
+            <h2 data-i18n="deauth_attack_title">Deauthentication Attack</h2>
+            
+            <div class="card">
+                <label data-i18n="target_mode">TARGET MODE</label>
+                <select id="deauth-mode" onchange="updateDeauthUI()">
+                    <option value="single" data-i18n="opt_single_target">Single Target (Selected SSID)</option>
+                    <option value="broadcast" data-i18n="opt_all_networks">All Networks (Broadcast/Hopping)</option>
+                </select>
+                <div id="deauth-broadcast-channel-container" style="display: none; margin-top: 15px;">
+                    <label>ATTACK CHANNEL</label>
+                    <select id="deauth-broadcast-channel" onchange="updateDeauthUI()">
+                        <option value="0">All Channels (Hopping)</option>
+                        <!-- Le altre opzioni verranno generate via JS -->
+                    </select>
+                </div>
+
+                <div id="deauth-info-box" style="margin-top: 15px; margin-bottom: 20px; border: 1px dashed var(--danger); padding: 15px; border-radius: 4px; background:rgba(255, 82, 82, 0.05);">
+                    <label style="margin-top:0; color:var(--danger);" data-i18n="current_target">CURRENT TARGET</label>
+                    <div style="font-size: 1.3rem; font-weight:bold; color:white;" id="deauth-target-ssid" data-i18n="no_target_selected">No Target Selected</div>
+                    <div style="font-family:monospace; color: #888;" id="deauth-target-bssid">--:--:--:--:--:--</div>
+                    <div style="font-size: 0.8rem; color: #666; margin-top:5px;"><span data-i18n="lbl_channel">CHANNEL: </span> <span id="deauth-target-ch">--</span></div>
+                </div>
+
+                <div>
+                    <label data-i18n="attack_type">ATTACK TYPE</label>
+                    <select id="deauth-frame-type" onchange="updateAttackTypeDesc()">
+                        <option value="0" selected data-i18n="opt_deauth_frame">Deauthentication frame</option>
+                        <option value="1" data-i18n="opt_disassoc_frame">Disassociation frame</option>
+                        <option value="2" data-i18n="opt_broadcast_deauth">Broadcast deauth/disassoc</option>
+                        <option value="3" data-i18n="opt_auth_flood">Authentication flood</option>
+                        <option value="4" data-i18n="opt_assoc_flood">Association/Reassociation flood</option>
+                        <option value="5" data-i18n="opt_csa_spoof">CSA spoofing</option>
+                        <option value="6" data-i18n="opt_eapol_logoff">EAPOL-Logoff spoofing</option>
+                        <option value="7" data-i18n="opt_eapol_start">EAPOL-Start spam</option>
+                        <option value="8" data-i18n="opt_eap_fail">EAP Failure injection</option>
+                        <option value="9" data-i18n="opt_eap_id">EAP Identity request spam / EAP rounds abuse</option>
+                        <option value="10" data-i18n="opt_4way_disrupt">4-Way Handshake disruption</option>
+                        <option value="11" data-i18n="opt_wpa3_sae">WPA3 SAE flood</option>
+                        <option value="12" data-i18n="opt_pmf_downgrade">PMF/802.11w downgrade pressure</option>
+                        <option value="13" data-i18n="opt_nav_abuse">NAV/RTS/CTS abuse</option>
+                        <option value="14" data-i18n="opt_beacon_manip">Beacon manipulation</option>
+                    </select>
+
+                    <div id="attack-meta" style="margin-top: 15px;"></div>
+                    
+                    <div id="attack-desc" style="margin-top: 10px; padding: 10px; background: #121212; border-left: 3px solid var(--accent); color: #aaa; font-size: 0.85rem; font-style: italic; min-height: 40px;">
+                    </div>
+                </div>
+                
+                <p style="font-size: 0.8rem; color: #666; margin-top: 20px;">
+                    <strong style="color:var(--danger)" data-i18n="warning">WARNING:</strong> 
+                    <span id="deauth-warning-text" data-i18n="deauth_warning_text">This will disconnect clients from the selected Access Point.</span>
+                </p>
+
+                <div class="btn-group">
+                    <button class="danger" onclick="startDeauth()" data-i18n="btn_start_attack">START ATTACK</button>
+                    <button class="secondary" onclick="stopDeauth()" data-i18n="btn_stop">STOP</button>
+                </div>
+            </div>
+
+            <div class="terminal-panel" style="position: relative; height: 100px; margin-top:20px; border: 1px solid #333; box-shadow:none;">
+                <div class="log-entry"><span class="log-time">INFO</span> <span data-i18n="select_all_networks">Select 'All Networks' or pick a target from Scanner.</span></div>
+            </div>
+        </div>
+
+        <!-- BLE SNIFFER -->
+        <div id="view-ble" class="view-container">
+            <h2 data-i18n="ble_sniffer_title">BLE Scanner & Recon</h2>
+            
+            <div class="card">
+                <label style="color:var(--accent); border-bottom:1px solid #333; padding-bottom:5px; margin-bottom:15px; margin-top:0;" data-i18n="display_filters">DISPLAY FILTERS</label>
+                
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap:10px; margin-bottom:15px;">
+                    <input type="text" id="ble-filter-mac" placeholder="Filter MAC">
+                    <input type="text" id="ble-filter-name" placeholder="Filter Name / Vendor">
+                    <input type="number" id="ble-filter-rssi" placeholder="Min RSSI (-90)" value="-110">
+                </div>
+                
+                <div class="btn-group">
+                    <button onclick="startBleSniffer()" id="btn-ble-start">
+                        <svg style="width:16px; height:16px; vertical-align:middle; margin-right:5px;" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></svg> START
+                    </button>
+                    
+                    <button class="danger" onclick="stopBleSniffer()" id="btn-ble-stop" disabled style="opacity:0.5; cursor:not-allowed;">
+                        <svg style="width:16px; height:16px; vertical-align:middle; margin-right:5px;" viewBox="0 0 24 24"><path fill="currentColor" d="M6 6h12v12H6z"/></svg> STOP
+                    </button>
+
+                    <button class="secondary" onclick="clearBleTable()">CLEAR</button>
+                </div>
+                
+                <div style="margin-top:5px; font-size:0.8rem; color:#666; text-align:right;">
+                    <span>Devices Found:</span> <span id="ble-device-count" style="color:var(--accent); font-weight:bold;">0</span>
+                </div>
+            </div>
+
+            <div class="card" style="padding:0; display:flex; flex-direction:column; flex:1; min-height:0; margin-bottom:0;">
+                <div style="flex:1; overflow-y:auto; overflow-x:auto;">
+                    <table class="wifi-table" style="font-family: 'Courier New', monospace; font-size: 0.8rem; width: 100%; border-collapse: collapse;">
+                        <thead style="position: sticky; top: 0; background: #1e1e1e; z-index: 10;">
+                            <tr>
+                                <th style="white-space: nowrap;">MAC Address</th>
+                                <th>RSSI</th>
+                                <th>Identity (Name/Vendor)</th>
+                                <th>Classification</th>
+                                <th>Pkts</th>
+                                <th>Last Seen</th>
+                                <th>Extra Data / Serial</th>
+                            </tr>
+                        </thead>
+                        <tbody id="ble-body">
+                            <tr><td colspan="7" style="text-align:center; padding: 20px; color:#666;">Ready to scan BLE devices...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- BLE SPAM -->
+        <div id="view-ble-spam" class="view-container">
+            <h2 data-i18n="ble_spam_title">BLE Spam Attack</h2>
+            <div class="card">
+                <p style="font-size:0.85rem; color:#aaa; margin-top:0;" data-i18n="ble_spam_desc">Broadcast fake BLE advertisements to trigger persistent popups on nearby devices.</p>
+
+                <label data-i18n="target_device_ecosystem">TARGET ECOSYSTEM</label>
+                <select id="ble-spam-type">
+                    <option value="0">Apple (AirPods, Setup New Device)</option>
+                    <option value="1">Samsung (Galaxy Buds/Watch)</option>
+                    <option value="2">Google (Fast Pair)</option>
+                    <option value="3">Microsoft (Swift Pair)</option>
+                    <option value="4" selected>All Vendors (Randomize)</option>
+                </select>
+
+                <div style="margin-top: 15px; padding: 10px; background: rgba(255, 171, 64, 0.1); border-left: 3px solid #ffab40; color: #aaa; font-size: 0.8rem; font-style: italic;">
+                    <strong style="color:#ffab40;">Note:</strong> iOS and Android devices may require the screen to be unlocked to display pairing popups.
+                </div>
+
+                <div class="btn-group" style="margin-top: 25px;">
+                    <button class="danger" onclick="startBleSpam()" id="btn-ble-spam-start">
+                        <svg style="width:16px; height:16px; vertical-align:middle; margin-right:5px;" viewBox="0 0 24 24"><path fill="currentColor" d="M8 5v14l11-7z"/></svg> <span data-i18n="btn_start_attack">START SPAM</span>
+                    </button>
+                    <button class="secondary" onclick="stopBleSpam()" id="btn-ble-spam-stop" disabled style="opacity:0.5; cursor:not-allowed;">
+                        <svg style="width:16px; height:16px; vertical-align:middle; margin-right:5px;" viewBox="0 0 24 24"><path fill="currentColor" d="M6 6h12v12H6z"/></svg> <span data-i18n="btn_stop">STOP</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- STA CONNECTION -->
+        <div id="view-sta" class="view-container">
+            <h2 data-i18n="sta_connection_title">Target Connection (STA)</h2>
+            <div class="card">
+                <p style="font-size:0.85rem; color:#aaa; margin-top:0;">Connect the ESP32 to a target network to access its internal subnet.</p>
+                
+                <div style="display:flex; gap:10px; margin-bottom:15px; flex-wrap: wrap;">
+                    <input type="text" id="sta-ssid" placeholder="Selected Target SSID" style="background:#222; cursor:not-allowed; flex:1; min-width: 200px;">
+                    <input type="text" id="sta-password" placeholder="WiFi Password (if required)" style="flex:1; min-width: 200px;">
+                </div>
+                
+                <div class="btn-group">
+                    <button onclick="connectSta()" data-i18n="btn_connect">CONNECT</button>
+                    <button class="secondary" onclick="disconnectSta()" data-i18n="btn_disconnect">DISCONNECT</button>
+                    <button class="secondary" onclick="getLastWifiCredential()" data-i18n="btn_get_last_target">GET LAST TARGET</button>
+                </div>
+                
+                <div style="margin-top:20px; font-size:0.85rem; padding: 15px; background: #121212; border-radius: 4px; border: 1px solid #333; display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div style="grid-column: span 2; border-bottom: 1px solid #222; padding-bottom: 8px;">
+                        <span style="color:#666;">Connected Network:</span> <span id="sta-connected-ssid" style="font-weight:bold; color:#fff; font-size:0.95rem;">NONE</span>
+                    </div>
+                    <div><span style="color:#666;">Status:</span> <span id="sta-status" style="color:#ff5252; font-weight:bold;">DISCONNECTED</span></div>
+                    <div><span style="color:#666;">Local IP:</span> <span id="sta-ip" style="font-family:monospace; color:var(--accent);">--.--.--.--</span></div>
+                    <div><span style="color:#666;">Gateway:</span> <span id="sta-gw" style="font-family:monospace; color:#aaa;">--.--.--.--</span></div>
+                    <div><span style="color:#666;">Subnet:</span> <span id="sta-mask" style="font-family:monospace; color:#aaa;">--.--.--.--</span></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HOST DISCOVERY -->
+        <div id="view-host-discovery" class="view-container">
+            <h2 data-i18n="host_discovery_title">Subnet Scan</h2>
+            
+            <div class="card">
+                <p style="margin-top:0; color:#aaa; font-size:0.9rem; margin-bottom: 20px;">Map the internal network to find active devices, hostnames, and exposed services.</p>
+
+                <!-- 1. DASHBOARD STATS -->
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap:15px; margin-bottom:25px;">
+                    <div style="background:#121212; border:1px solid #333; border-radius:6px; padding:15px; text-align:center;">
+                        <div style="font-size:1.8rem; font-weight:bold; color:var(--accent); font-family:monospace;" id="hd-stat-hosts">--</div>
+                        <div style="font-size:0.7rem; color:#888; text-transform:uppercase; letter-spacing:1px; margin-top:5px;">Hosts Found</div>
+                    </div>
+                    <div style="background:#121212; border:1px solid #333; border-radius:6px; padding:15px; text-align:center;">
+                        <div style="font-size:1.8rem; font-weight:bold; color:var(--accent); font-family:monospace;" id="hd-stat-services">--</div>
+                        <div style="font-size:0.7rem; color:#888; text-transform:uppercase; letter-spacing:1px; margin-top:5px;">With Services</div>
+                    </div>
+                    <div style="background:#121212; border:1px solid #333; border-radius:6px; padding:15px; text-align:center;">
+                        <div style="font-size:1.8rem; font-weight:bold; color:var(--accent); font-family:monospace;" id="hd-stat-vendors">--</div>
+                        <div style="font-size:0.7rem; color:#888; text-transform:uppercase; letter-spacing:1px; margin-top:5px;">Vendors</div>
+                    </div>
+                    <div style="background:#121212; border:1px solid #333; border-radius:6px; padding:15px; text-align:center;">
+                        <div style="font-size:1.8rem; font-weight:bold; color:#ccc; font-family:monospace;" id="hd-stat-time">--:--</div>
+                        <div style="font-size:0.7rem; color:#888; text-transform:uppercase; letter-spacing:1px; margin-top:5px;">Last Scan</div>
+                    </div>
+                </div>
+
+                <!-- 2. CONTROL TOOLBAR -->
+                <div style="background:#181818; border:1px solid #333; border-radius:6px; padding:15px; margin-bottom:25px; display:flex; flex-wrap:wrap; gap:20px; justify-content:space-between; align-items:center;">
+                    
+                    <!-- Scan Options -->
+                    <div style="display:flex; flex-wrap:wrap; gap:15px; align-items:center;">
+                        <span style="font-size:0.75rem; color:#888; font-weight:bold; letter-spacing:1px;">OPTIONS:</span>
+                        
+                        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#ccc; cursor:pointer;">
+                            <input type="checkbox" id="hd-include-mdns" style="width:auto; margin:0; accent-color:var(--accent);">
+                            mDNS 
+                            <span style="color:#666; font-size:0.75rem; background:#111; padding:2px 6px; border-radius:3px;">+5 sec</span>
+                        </label>
+                        
+                        <label style="display:flex; align-items:center; gap:8px; font-size:0.85rem; color:#ccc; cursor:pointer;">
+                            <input type="checkbox" id="hd-include-ssdp" style="width:auto; margin:0; accent-color:var(--accent);">
+                            SSDP/UPnP
+                            <span style="color:#666; font-size:0.75rem; background:#111; padding:2px 6px; border-radius:3px;" title="Includes one extra HTTP request per UPnP device to read its friendly name/model">+3-6 sec</span>
+                        </label>
+                    </div>
+
+                    <!-- Actions -->
+                    <div class="btn-group" style="margin-top:0;">
+                        <button onclick="startHostScan()" style="margin:0;">
+                            <svg style="width:16px; height:16px; vertical-align:middle; margin-right:5px;" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z"/></svg> 
+                            START SWEEP
+                        </button>
+                        <button class="secondary" onclick="clearHostScan();" style="margin:0;">CLEAR</button>
+                    </div>
+                </div>
+
+                <!-- 3. TABLE HEADER & FILTER -->
+                <div style="display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:10px; flex-wrap:wrap; gap:10px;">
+                    <div style="font-weight:bold; color:var(--accent); font-size: 0.85rem; padding-left:5px;">DISCOVERED TARGETS</div>
+                    <input type="text" id="hd-filter" oninput="renderHostScanTable()" placeholder="Filter by IP, MAC, Hostname..." 
+                           style="width:100%; max-width: 300px; padding:8px 12px; background:#121212; border:1px solid #444; border-radius:4px; color:white; font-size:0.8rem; margin:0;">
+                </div>
+
+                <!-- 4. DEVICE LIST (Fing-style rows) -->
+                <div style="border:1px solid #333; border-radius:6px; background:#121212; overflow:hidden;">
+                    <div id="host-scan-body">
+                        <div class="host-empty">Run a sweep to find targets</div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- PORT SCANNER -->
+        <div id="view-port-scan" class="view-container">
+            <h2 data-i18n="port_scanner_title">Port Scanner</h2>
+            <div class="card">
+                <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap:15px; margin-bottom:15px;">
+                    <div>
+                        <label style="margin-top:0;">TARGET IP</label>
+                        <input type="text" id="ps-ip" placeholder="e.g. 192.168.1.5">
+                    </div>
+                    <div>
+                        <label style="margin-top:0;">SCAN METHOD</label>
+                        <select id="ps-method">
+                            <option value="1">SYN Scan (Stealth)</option>
+                            <option value="0">Connect Scan</option>
+                            <option value="2" disabled>FIN Scan (Not Implemented)</option>
+                            <option value="3" disabled>NULL Scan (Not Implemented)</option>
+                            <option value="4" disabled>XMAS Scan (Not Implemented)</option>
+                            <option value="5" disabled>ACK Scan (Not Implemented)</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="margin-top:0;">PORTS TARGET</label>
+                        <select id="ps-ports-preset" onchange="toggleCustomPorts()">
+                            <option value="top20">Top 20 Ports (Fast)</option>
+                            <option value="top100">Top 100 Ports</option>
+                            <option value="iot">IoT Default Ports</option>
+                            <option value="custom">Custom (Manual)</option>
+                        </select>
+                    </div>
+                    <div id="custom-ports-container" style="display:none;">
+                        <label style="margin-top:0;">CUSTOM PORTS</label>
+                        <input type="text" id="ps-custom-ports" placeholder="e.g. 80, 443, 8000-8080">
+                    </div>
+                </div>
+                
+                <div class="btn-group">
+                    <button class="danger" onclick="startPortScan()" id="btn-ps-start">START SCAN</button>
+                    <button class="secondary" onclick="stopPortScan()" id="btn-ps-stop" disabled style="opacity:0.5; cursor:not-allowed;">STOP</button>
+                    <button class="secondary" onclick="document.getElementById('ps-terminal').innerHTML = '<div style=\'color:#666;\'>Ready. Enter target and click START.</div>';">CLEAR</button>
+                </div>
+                
+                <div id="ps-terminal" style="margin-top:20px; background:var(--terminal-bg); padding:15px; flex: 1; min-height: 150px; overflow-y:auto; border:1px solid #333; font-family:'Courier New', monospace; color:#0f0; font-size:0.85rem; border-radius:4px;">
+                    <div style="color:#666;">Ready. Enter target and click START.</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- HADNSHAKES -->
+        <div id="view-handshakes" class="view-container">
+            <h2 data-i18n="captured_handshakes">Captured Handshakes</h2>
+            <div class="card" style="padding:0; overflow-x:auto;">
+                <div style="padding:15px; border-bottom:1px solid #333; font-weight:bold; color:var(--accent);">
+                    LIST OF CAPTURED HANDSHAKES
+                </div>
+                <table class="wifi-table" style="font-family: 'Courier New', monospace; font-size: 0.85rem;">
+                    <thead style="background: #181818;">
+                        <tr>
+                            <th>Target SSID</th>
+                            <th>BSSID (Access Point)</th>
+                            <th>Channel</th>
+                            <th>Encryption Type</th>
+                            <th>Capture Mode</th>
+                            <th style="text-align: center;">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody id="handshakers-bank-body">
+                        <tr>
+                            <td colspan="6" style="text-align:center; padding:20px; color:#666;">No handshake captured.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PASSWORDS -->
+        <div id="view-passwords" class="view-container">
+            <h2 data-i18n="captured_creds_title">Captured Credentials</h2>
+            <div class="card">
+                <textarea id="passwords-textarea" readonly
+                    style="height: 350px; background-color: #000; color:#0f0; border:none;"></textarea>
+                <div class="btn-group">
+                    <button onclick="fetchPasswords()" data-i18n="btn_refresh">REFRESH</button>
+                    <button class="secondary"
+                        onclick="document.getElementById('passwords-textarea').value=''" data-i18n="btn_clear">CLEAR</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- SETTINGS -->
+        <div id="view-settings" class="view-container">
+            <h2 data-i18n="configuration_title">Configuration</h2>
+            <div class="card">
+                <form id="hotspot-form" onsubmit="handleSettings(event)">
+                    <label data-i18n="mgmt_ap_ssid">Management AP SSID</label>
+                    <input type="text" id="ssid" name="ssid">
+                    <label data-i18n="password">Password</label>
+                    <input type="text" id="password" name="password">
+                    <label data-i18n="channel">Channel</label>
+                    <input type="number" id="channel" name="channel" min="1" max="13">
+                    <label data-i18n="tx_rate">TX Power Rate</label>
+                    <select id="tx_rate" name="tx_rate">
+                        <optgroup label="Max Range / Attack (802.11b)">
+                            <option value="0">1 Mbps (Long Preamble)</option>
+                            <option value="2">5.5 Mbps (Long Preamble)</option>
+                        </optgroup>
+                        <optgroup label="Balanced / Default (802.11g)">
+                            <option value="11">6 Mbps</option>
+                            <option value="15">9 Mbps (Default)</option>
+                            <option value="10">12 Mbps</option>
+                            <option value="9">24 Mbps</option>
+                        </optgroup>
+                        <optgroup label="High Speed (802.11g/n)">
+                            <option value="12">54 Mbps</option>
+                            <option value="16">MCS0 (6.5 Mbps / LGI)</option>
+                            <option value="23">MCS7 (65 Mbps / LGI)</option>
+                        </optgroup>
+                    </select>
+                    <div class="btn-group">
+                        <button type="submit" data-i18n="btn_save_reboot">SAVE & REBOOT</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <!-- TERMINAL -->
+        <div class="terminal-panel" id="terminal">
+            <div class="log-entry"><span class="log-time">[SYSTEM]</span> <span class="log-info" data-i18n="sys_ready">Ready.</span></div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURAZIONE & COSTANTI
+        // ==========================================
+        const WS_URL = `ws://${window.location.host}/ws`;
+        
+        const CMD = {
+            GET_STATUS: 0,
+            SET_AP_SETTINGS: 1,
+            GET_AP_SETTINGS: 2,
+            WIFI_SCAN: 3,
+            START_EVILTWIN: 4,
+            STOP_EVILTWIN: 5,
+            GET_EVILTWIN_TARGET: 6,
+            CHECK_INPUT_PASSWORD: 7,
+            GET_PASSWORDS: 8,
+            KARMA_ATTACK_SCAN: 9,
+            GET_KARMA_PROBES: 10,
+            KARMA_ATTACK_START: 11,
+            START_DEAUTHER: 12,
+            STOP_DEAUTHER: 13,
+            START_RAW_SNIFFER: 14,
+            STOP_RAW_SNIFFER: 15,
+            GET_RECON_DATA_AP: 16,
+            GET_RECON_DATA_CLI: 17,
+            WIFI_CONNECT: 18,
+            WIFI_DISCONNECT: 19,
+            DOWNLOAD_HANDSHAKE: 20,
+            START_PACKET_ANALYZER: 21,
+            STOP_PACKET_ANALYZER: 22,
+            GET_LAST_WIFI_CREDENTIALS: 23,
+            HOST_DISCOVERY: 24,
+            PORT_SCAN_SINGLE: 25,
+            START_BLE_SNIFFER: 26,
+            STOP_BLE_SNIFFER: 27,
+            GET_BLE_DEVICES: 28,
+            BLE_DEVICES_CLEAR: 29,
+            START_BLE_SPAM: 30,
+            STOP_BLE_SPAM: 31,
+        };
+
+        // Stato globale
+        let ws = null;
+        let reqIdCounter = 0;
+        let pendingRequests = new Map();
+        let isConnected = false;
+        let statusInterval = null;
+        let reconPollingInterval = null;
+        let isReconRunning = false;
+        let currentTarget = null;
+        let karmaInterval = null;
+        let ssidFinderInterval = null;
+        let isSsidFinderRunning = false;
+
+        // Cache locale per i dati Recon
+        let lastApsData = [];
+        let lastClientsData = [];
+        let apMap = {}; // BSSID -> SSID
+
+        // Packet sniffer
+        let snifferActive = false;
+        let isSnifferPaused = false;
+        let totalPacketsRx = 0;
+        let displayedPackets = 0;
+        const SUBTYPES = {
+            1: [ // MANAGEMENT (Enum libwifi_mgmt_subtypes) -> val = enum << 4
+                { name: "All Management", val: 0xFFFF },
+                { name: "Assoc Req (0)", val: 0x00 },          // SUBTYPE_ASSOC_REQ
+                { name: "Assoc Resp (1)", val: 0x10 },         // SUBTYPE_ASSOC_RESP
+                { name: "Reassoc Req (2)", val: 0x20 },        // SUBTYPE_REASSOC_REQ
+                { name: "Reassoc Resp (3)", val: 0x30 },       // SUBTYPE_REASSOC_RESP
+                { name: "Probe Req (4)", val: 0x40 },          // SUBTYPE_PROBE_REQ
+                { name: "Probe Resp (5)", val: 0x50 },         // SUBTYPE_PROBE_RESP
+                { name: "Timing Adv (6)", val: 0x60 },         // SUBTYPE_TIME_ADV
+                { name: "Beacon (8)", val: 0x80 },             // SUBTYPE_BEACON
+                { name: "ATIM (9)", val: 0x90 },               // SUBTYPE_ATIM
+                { name: "Disassoc (10)", val: 0xA0 },          // SUBTYPE_DISASSOC
+                { name: "Auth (11)", val: 0xB0 },              // SUBTYPE_AUTH
+                { name: "Deauth (12)", val: 0xC0 },            // SUBTYPE_DEAUTH
+                { name: "Action (13)", val: 0xD0 },            // SUBTYPE_ACTION
+                { name: "Action No Ack (14)", val: 0xE0 }      // SUBTYPE_ACTION_NOACK
+            ],
+            2: [ // CONTROL (Mappatura su Filtri Hardware ESP32)
+                { name: "All Control", val: 0xFFFFFFFF },
+                { name: "RTS (11)", val: (1<<27) },            // SUBTYPE_RTS
+                { name: "CTS (12)", val: (1<<28) },            // SUBTYPE_CTS
+                { name: "ACK (13)", val: (1<<29) },            // SUBTYPE_ACK
+                { name: "Block Ack Req (8)", val: (1<<24) },   // SUBTYPE_BLOCK_ACK_REQ
+                { name: "Block Ack (9)", val: (1<<25) },       // SUBTYPE_BLOCK_ACK
+                { name: "PS-Poll (10)", val: (1<<26) },        // SUBTYPE_PS_POLL
+                { name: "CF-End (14)", val: (1<<30) },         // SUBTYPE_CF_END
+                { name: "CF-End+Ack (15)", val: (1<<31) },     // SUBTYPE_CF_END_CF_ACK
+                { name: "Wrapper (7)", val: (1<<23) }          // SUBTYPE_WRAPPER
+            ],
+            3: [ // DATA (Enum libwifi_data_subtypes) -> val = enum << 4
+                { name: "All Data", val: 0xFFFF },
+                { name: "Data (0)", val: 0x00 },               // SUBTYPE_DATA
+                { name: "Data Null (4)", val: 0x40 },          // SUBTYPE_DATA_NULL
+                { name: "QoS Data (8)", val: 0x80 },           // SUBTYPE_DATA_QOS_DATA
+                { name: "QoS Data CF-Ack (9)", val: 0x90 },    // SUBTYPE_DATA_QOS_DATA_CF_ACK
+                { name: "QoS Data CF-Poll (10)", val: 0xA0 },  // SUBTYPE_DATA_QOS_DATA_CF_POLL
+                { name: "QoS Data CF-Ack+Poll (11)", val: 0xB0 }, // SUBTYPE_DATA_QOS_DATA_CF_ACK_CF_POLL
+                { name: "QoS Null (12)", val: 0xC0 },          // SUBTYPE_DATA_QOS_NULL
+                { name: "QoS CF-Poll (14)", val: 0xE0 },       // SUBTYPE_DATA_QOS_CF_POLL
+                { name: "QoS CF-Ack+Poll (15)", val: 0xF0 }    // SUBTYPE_DATA_QOS_CF_ACK_CF_POLL
+            ]
+        };
+
+        const PORT_SERVICES = {
+            20: "ftp-data", 21: "ftp", 22: "ssh", 23: "telnet", 25: "smtp",
+            53: "dns", 67: "dhcps", 68: "dhcpc", 69: "tftp", 80: "http",
+            110: "pop3", 111: "rpcbind", 119: "nntp", 123: "ntp", 135: "msrpc",
+            137: "netbios-ns", 138: "netbios-dgm", 139: "netbios-ssn", 143: "imap",
+            161: "snmp", 162: "snmptrap", 389: "ldap", 443: "https", 445: "microsoft-ds",
+            465: "smtps", 500: "isakmp", 514: "syslog", 515: "printer", 548: "afp",
+            587: "submission", 631: "ipp", 873: "rsync", 902: "vmware-auth", 990: "ftps",
+            993: "imaps", 995: "pop3s", 1080: "socks", 1194: "openvpn", 1433: "ms-sql-s",
+            1521: "oracle", 1723: "pptp", 1883: "mqtt", 1900: "upnp", 2049: "nfs",
+            2121: "ccproxy-ftp", 3128: "squid-http", 3306: "mysql", 3389: "ms-wbt-server",
+            3690: "svn", 3702: "ws-discovery", 4899: "radmin", 5060: "sip",
+            5432: "postgresql", 5683: "coap", 5900: "vnc", 5938: "teamviewer",
+            8000: "http-alt", 8080: "http-proxy", 8443: "https-alt", 8888: "sun-answerbook",
+            10000: "webmin", 32768: "filenet-tms", 37777: "dahua-dvr", 49152: "msrpc"
+        };
+
+        // ==========================================
+        // LOGGER & UI UTILS
+        // ==========================================
+        function log(msg, type = 'info') {
+            const term = document.getElementById('terminal');
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            
+            // Mappa i livelli del C alle classi CSS
+            let colorClass = 'log-info';
+            if (type === 'error') colorClass = 'log-error';
+            else if (type === 'success') colorClass = 'log-success';
+            else if (type === 'warning') colorClass = 'log-warning';
+
+            const time = new Date().toLocaleTimeString().split(' ')[0];
+            entry.innerHTML = `<span class="log-time">[${time}]</span> <span class="${colorClass}">${msg}</span>`;
+            
+            term.appendChild(entry);
+            if (term.scrollHeight - term.scrollTop <= term.clientHeight + 50) {
+                term.scrollTop = term.scrollHeight; 
+            }
+        }
+
+        function showToast(msg) {
+            const t = document.getElementById('toast');
+            t.innerText = msg;
+            t.classList.add('show');
+            setTimeout(() => t.classList.remove('show'), 3000);
+        }
+
+        function toggleSidebar() { 
+            document.getElementById('sidebar').classList.toggle('open'); 
+        }
+
+        function showView(viewId, menuItem) {
+            try {
+                // 1. Forza la chiusura sidebar PRIMA di fare qualsiasi altra cosa
+                const sidebar = document.getElementById('sidebar');
+                if (sidebar) sidebar.classList.remove('open');
+
+                // 2. Cambio classe Active sui container
+                document.querySelectorAll('.view-container').forEach(el => el.classList.remove('active'));
+                const targetView = document.getElementById(viewId);
+                if (targetView) targetView.classList.add('active');
+
+                // 3. Cambio classe Active sul menu
+                document.querySelectorAll('.menu-item').forEach(el => el.classList.remove('active'));
+                if (menuItem) {
+                    menuItem.classList.add('active');
+                    const span = menuItem.querySelector('span');
+                    if (span) document.getElementById('page-title').innerText = span.innerText;
+                }
+
+                // 4. Esecuzione logiche specifiche (protette da try interno)
+                if (viewId === 'view-settings') loadApSettings();
+                if (viewId === 'view-passwords') fetchPasswords();
+                if (viewId === 'view-deauth') updateDeauthUI();
+                
+                // Se è Recon, aggiorna i dati ma non bloccare l'interfaccia
+                if (viewId === 'view-recon') {
+                    if (typeof fetchReconDataAp === "function") fetchReconDataAp();
+                    if (typeof fetchReconDataCli === "function") fetchReconDataCli();
+                }
+
+            } catch (err) {
+                console.error("Errore nel cambio vista:", err);
+                // Anche se c'è un errore, chiudiamo la sidebar per non bloccare l'utente
+                document.getElementById('sidebar').classList.remove('open');
+            }
+
+            // Reset scroll
+            const mainContent = document.querySelector('.main-content');
+            if (mainContent) mainContent.scrollTop = 0;
+        }
+
+        function updateAttackTypeDesc() {
+            const type = document.getElementById('deauth-frame-type').value;
+            const descEl = document.getElementById('attack-desc');
+            const metaEl = document.getElementById('attack-meta');
+
+            // Configurazione dati attacchi
+            const attackData = {
+                "0": { level: "LOW / MEDIUM", cls: "impact-medium", desc: "Sends <b>802.11 Deauthentication</b> frames. Effective on legacy networks. Completely blocked by WPA3/PMF." },
+                "1": { level: "LOW / MEDIUM", cls: "impact-medium", desc: "Sends <b>802.11 Disassociation</b> frames. Forces re-association. Blocked by PMF." },
+                "2": { level: "HIGH", cls: "impact-high", desc: "Uses <b>broadcast</b> deauth frames. Can disrupt entire non-PMF networks instantly. Extremely noisy." },
+                "3": { level: "MEDIUM", cls: "impact-medium", desc: "<b>Authentication flood</b>: Overwhelms AP state tables. Can freeze cheap routers, but modern APs limit this." },
+                "4": { level: "HIGH", cls: "impact-high", desc: "<b>Association flood</b>: Consumes AP memory/clients slots. effective DoS against consumer routers." },
+                "5": { level: "CRITICAL", cls: "impact-critical", desc: "<b>CSA Spoofing</b>: Forces clients to switch channel immediately. Causes instant drops even on some PMF networks." },
+                "6": { level: "LOW", cls: "impact-low", desc: "<b>EAPOL-Logoff</b>: Specific to WPA-Enterprise. Only works on implementations that don't validate frame state." },
+                "7": { level: "MEDIUM", cls: "impact-medium", desc: "<b>EAPOL-Start Spam</b>: Stresses the AP CPU by initiating many fake handshake sessions." },
+                "8": { level: "MEDIUM", cls: "impact-medium", desc: "<b>EAP Failure</b>: Can abort authentication process mid-way. Effective during connection phase." },
+                "9": { level: "LOW", cls: "impact-low", desc: "<b>EAP Identity Spam</b>: Minor annoyance, keeps client/AP busy answering identity requests." },
+                "10": { level: "LOW", cls: "impact-low", desc: "<b>Handshake Disruption</b>: Surgical denial of service. Prevents clients from completing the 4-Way Handshake." },
+                "11": { level: "LOW", cls: "impact-low", desc: "<b>WPA3 SAE Flood</b>: Cryptographic DoS. Exhausts AP CPU by forcing heavy math calculations. Deadly for WPA3 APs." },
+                "12": { level: "LOW", cls: "impact-low", desc: "<b>PMF Downgrade</b>: Attempts to force legacy mode. Low success rate on modern configured networks." },
+                "13": { level: "HIGH", cls: "impact-high", desc: "<b>NAV Abuse (Broadcast)</b>: Jams the network logically by reserving airtime (32ms). Virtual jamming." },
+                "14": { level: "CRITICAL / DEADLY", cls: "impact-critical", desc: "<b>Beacon Regulatory Abuse</b>: Exploits 802.11h/Compliance. Forces clients to drop power or switch channel. <br><b>Bypasses PMF. Highly Effective.</b>" }
+            };
+
+            const data = attackData[type] || { level: "UNKNOWN", cls: "impact-low", desc: "Select an attack." };
+
+            metaEl.innerHTML = `<span class="impact-badge ${data.cls}">EFFECTIVENESS: ${data.level}</span>`;
+            descEl.innerHTML = data.desc;
+            
+            const borderColors = {
+                "impact-low": "#adb5bd",
+                "impact-medium": "#ffab40",
+                "impact-high": "#ff5252",
+                "impact-critical": "#ff0000"
+            };
+            descEl.style.borderLeftColor = borderColors[data.cls];
+        }
+        
+        function formatBigNumber(num) {
+            if (num >= 1000000) return (num / 1000000).toFixed(2) + 'M';
+            if (num >= 1000) return (num / 1000).toFixed(1) + 'k';
+            return num.toString();
+        }
+        
+        //Sniffer Functions
+        function handlePacket(pkt) {
+            if(!document.getElementById('view-sniffer').classList.contains('active')) return;
+
+            totalPacketsRx++;
+            
+            if (isSnifferPaused) {
+                updateCounters();
+                return;
+            }
+
+            const minRssi = parseInt(document.getElementById('disp-filter-rssi').value) || -100;
+            if(pkt.rssi < minRssi) { updateCounters(); return; }
+
+            const fSrc = document.getElementById('disp-filter-src').value.trim().toUpperCase();
+            if(fSrc && !pkt.src.includes(fSrc)) { updateCounters(); return; }
+
+            const fDst = document.getElementById('disp-filter-dst').value.trim().toUpperCase();
+            if(fDst && !pkt.dst.includes(fDst)) { updateCounters(); return; }
+
+            const fSsid = document.getElementById('disp-filter-ssid').value.trim().toUpperCase();
+            if(fSsid && !pkt.info.toUpperCase().includes(fSsid)) { updateCounters(); return; }
+
+            displayedPackets++;
+            const tbody = document.getElementById('sniffer-body');
+            const row = document.createElement('tr');
+            
+            let color = "#bbb";
+            let bgColor = "transparent";
+            let fontWeight = "normal";
+            
+            if(pkt.type_str === "MGMT") {
+                if(pkt.subtype_str.includes("BEACON")) color = "#a380ff";
+                else if(pkt.subtype_str.includes("PROBE")) color = "#ff80ea";
+                else color = "#e0c0ff";
+            }
+            else if(pkt.type_str === "DATA") { color = "#80b3ff"; }
+            else if(pkt.type_str === "EAPOL") {
+                color = "#ffd700"; bgColor = "rgba(255, 215, 0, 0.1)"; fontWeight = "bold";
+            }
+            else if(pkt.type_str === "CTRL") { color = "#888"; }
+
+            row.style.color = color;
+            row.style.backgroundColor = bgColor;
+            row.style.fontWeight = fontWeight;
+
+            let rssiColor = pkt.rssi > -60 ? "#0f0" : (pkt.rssi > -80 ? "#ff0" : "#f00");
+
+            row.innerHTML = `
+                <td style="color:#fff">${pkt.ch}</td>
+                <td style="color:${rssiColor}">${pkt.rssi}</td>
+                <td style="font-size:0.75rem; font-weight:bold; opacity:0.7;">${pkt.type_str}</td>
+                <td><span style="border:1px solid ${color}; padding:1px 4px; border-radius:3px; font-size:0.7rem;">${pkt.subtype_str}</span></td>
+                <td>${pkt.src}</td>
+                <td>${pkt.dst}</td>
+                <td style="color:#aaa;">${pkt.len}</td>
+                <td style="font-size:0.75rem; white-space:nowrap;">${pkt.info}</td>
+            `;
+            
+            tbody.insertBefore(row, tbody.firstChild);
+            if(tbody.children.length > 200) tbody.removeChild(tbody.lastChild);
+            
+            updateCounters();
+        }
+        
+        function populateChannels() {
+            const sel = document.getElementById('sniff-chan');
+            if(!sel) return;
+            sel.innerHTML = "";
+            
+            let grp24 = document.createElement('optgroup');
+            grp24.label = "2.4 GHz";
+            for(let i=1; i<=14; i++) {
+                let opt = document.createElement('option');
+                opt.value = i; opt.innerText = "CH " + i;
+                grp24.appendChild(opt);
+            }
+            sel.appendChild(grp24);
+
+            let grp5 = document.createElement('optgroup');
+            grp5.label = "5 GHz";
+            const ch5 = [36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165];
+            ch5.forEach(c => {
+                let opt = document.createElement('option');
+                opt.value = c; opt.innerText = "CH " + c;
+                grp5.appendChild(opt);
+            });
+            sel.appendChild(grp5);
+        }
+        
+        function togglePause() {
+            isSnifferPaused = !isSnifferPaused;
+            const btn = document.getElementById('btn-sniff-pause');
+            if(isSnifferPaused) {
+                btn.innerText = "RESUME VIEW";
+                btn.style.border = "1px solid var(--accent)";
+                btn.style.color = "var(--accent)";
+            } else {
+                btn.innerText = "PAUSE VIEW";
+                btn.style.border = "1px solid #444";
+                btn.style.color = "white";
+            }
+        }
+        
+        function clearSnifferTable() {
+            document.getElementById('sniffer-body').innerHTML = "";
+            totalPacketsRx = 0;
+            displayedPackets = 0;
+            updateCounters();
+        }
+
+        function updateCounters() {
+            const totEl = document.getElementById('pkt-total-count');
+            const dispEl = document.getElementById('pkt-display-count');
+            if(totEl) totEl.innerText = totalPacketsRx;
+            if(dispEl) dispEl.innerText = displayedPackets;
+        }
+        
+        function updateSubtypes() {
+            const type = document.getElementById('sniff-type').value;
+            const subSel = document.getElementById('sniff-subtype');
+            subSel.innerHTML = "";
+            subSel.disabled = false;
+
+            if (type == "0") {
+                let opt = document.createElement('option');
+                opt.value = 0; opt.innerText = "All Subtypes";
+                subSel.appendChild(opt);
+                subSel.disabled = true;
+                return;
+            }
+
+            if (SUBTYPES[type]) {
+                SUBTYPES[type].forEach(st => {
+                    let opt = document.createElement('option');
+                    opt.value = st.val;
+                    opt.innerText = st.name;
+                    subSel.appendChild(opt);
+                });
+            }
+        }
+
+        // ==========================================
+        // WEBSOCKET ENGINE
+        // ==========================================
+        function connectWS() {
+            log("Connecting to WebSocket...", "info");
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen = () => {
+                isConnected = true;
+                log("WebSocket Connected!", "info");
+                showToast("System Online");
+                if (statusInterval) clearInterval(statusInterval);
+                if (reconPollingInterval) clearInterval(reconPollingInterval);
+                document.querySelector('.top-bar').style.borderBottom = "1px solid var(--border)";
+                statusInterval = setInterval(requestSystemStatus, 2000);
+                // Alternate polling
+                reconPollingInterval = setInterval(() => {
+                    fetchReconDataAp();
+                    setTimeout(fetchReconDataCli, 2000);
+                }, 5000);
+            };
+
+            ws.onclose = () => {
+                isConnected = false;
+                log("Connection lost. Reconnecting...", "error");
+                showToast("Connection Lost - Check WiFi");
+                document.querySelector('.top-bar').style.borderBottom = "2px solid var(--danger)";
+                setTimeout(connectWS, 3000);
+            };
+
+            ws.onerror = (err) => {
+                console.error("WS Error:", err);
+                ws.close();
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    if (msg.type === 'pcap_file') {
+                        const byteCharacters = atob(msg.payload);
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const blob = new Blob([byteArray], {type: "application/vnd.tcpdump.pcap"});
+                        const link = document.createElement('a');
+                        link.href = window.URL.createObjectURL(blob);
+                        link.download = msg.filename;
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+                        showToast("PCAP Downloaded successfully!");
+                        return;
+                    }
+                    if (msg.type === 'packet') { handlePacket(msg); return; }
+                    if (msg.type === 'log') { log(msg.msg, msg.level); return; }
+                    if (msg.req_id && pendingRequests.has(msg.req_id)) {
+                        const { resolve, reject } = pendingRequests.get(msg.req_id);
+                        if (msg.status === 'error') reject(msg.message || "Unknown error");
+                        else resolve(msg);
+                        pendingRequests.delete(msg.req_id);
+                    }
+                } catch (e) { console.error("JSON Parse Error:", e); }
+            };
+        }
+
+        function sendCommand(cmdId, params = {}) {
+            return new Promise((resolve, reject) => {
+                if (!isConnected) { reject("WebSocket not connected"); return; }
+                const id = ++reqIdCounter;
+                pendingRequests.set(id, { resolve, reject });
+                const payload = JSON.stringify({ cmd: cmdId, req_id: id, ...params });
+                ws.send(payload);
+                setTimeout(() => {
+                    if (pendingRequests.has(id)) {
+                        pendingRequests.delete(id);
+                        reject("Timeout waiting for ESP32");
+                    }
+                }, 30000); 
+            });
+        }
+
+        // ==========================================
+        // MULTILANGUAGE (JSON Fetch)
+        // ==========================================
+        let currentTranslations = {};
+
+        async function changeLanguage(langCode) {
+            try {
+                const response = await fetch(`/lang/${langCode}.json`);
+                if (!response.ok) throw new Error(`Impossibile caricare /lang/${langCode}.json`);
+                
+                currentTranslations = await response.json();
+                
+                document.querySelectorAll('[data-i18n]').forEach(el => {
+                    const key = el.getAttribute('data-i18n');
+                    if (currentTranslations[key]) {
+                        if (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA') {
+                            el.placeholder = currentTranslations[key];
+                        } else {
+                            el.innerText = currentTranslations[key];
+                        }
+                    }
+                });
+
+                const activeMenuItem = document.querySelector('.menu-item.active span[data-i18n]');
+                if (activeMenuItem) document.getElementById('page-title').innerText = activeMenuItem.innerText;
+
+                localStorage.setItem('esp32_lang', langCode);
+            } catch (error) { console.error("Errore Multilingua:", error); }
+        }
+
+        async function initLanguage() {
+            const savedLang = localStorage.getItem('esp32_lang') || 'en';
+            const langSelect = document.getElementById('lang-select');
+            if (langSelect) langSelect.value = savedLang;
+            await changeLanguage(savedLang);
+        }
+        
+        // ==========================================
+        // FUNZIONI API (STATUS, SCAN, ETC.)
+        // ==========================================
+        async function requestSystemStatus() {
+            if (!isConnected) return;
+            try {
+                const data = await sendCommand(CMD.GET_STATUS);
+                
+                if (data.uptime) document.getElementById('uptime-val').innerText = data.uptime;
+                if (data.ram !== undefined) {
+                    document.getElementById('ram-text-val').innerText = data.ram + '%';
+                    const bar = document.getElementById('ram-bar');
+                    bar.style.width = data.ram + '%';
+                    bar.style.backgroundColor = data.ram > 85 ? 'var(--danger)' : 'var(--accent)';
+                }
+
+                const modEt = document.getElementById('mod-et');
+                const modDeauth = document.getElementById('mod-deauth');
+                const modKarma = document.getElementById('mod-karma');
+                const globalBadge = document.getElementById('global-status-badge').querySelector('span');
+
+                const setInactive = (el) => {
+                    el.style.borderColor = "#333";
+                    el.querySelector('.mod-status').innerText = currentTranslations["status_inactive"] || "INACTIVE";
+                    el.querySelector('.mod-status').style.color = "#444";
+                };
+                const setActive = (el, color) => {
+                    el.style.borderColor = color;
+                    el.querySelector('.mod-status').innerText = "RUNNING";
+                    el.querySelector('.mod-status').style.color = color;
+                    el.querySelector('.mod-status').style.textShadow = `0 0 10px ${color}`;
+                };
+
+                setInactive(modEt);
+                setInactive(modDeauth);
+                setInactive(modKarma);
+
+                let activeModules = [];
+                if(data.et_running) { setActive(modEt, "var(--accent)"); activeModules.push("EVIL TWIN"); }
+                if(data.deauth_running) { setActive(modDeauth, "var(--danger)"); activeModules.push("DEAUTH"); }
+                if(data.karma_running) { setActive(modKarma, "#e040fb"); activeModules.push("KARMA"); }
+
+                const gbParent = document.getElementById('global-status-badge');
+                if(activeModules.length > 0) {
+                    globalBadge.innerText = activeModules.join(" + ");
+                    gbParent.style.borderColor = "var(--accent)";
+                    gbParent.style.color = "#fff";
+                    gbParent.style.background = "rgba(0, 230, 118, 0.1)";
+                    gbParent.style.boxShadow = "0 0 10px rgba(0,0,0,0.5)";
+                } else {
+                    globalBadge.innerText = currentTranslations["system_idle"] || "SYSTEM IDLE";
+                    gbParent.style.borderColor = "#444";
+                    gbParent.style.color = "#aaa";
+                    gbParent.style.background = "#333";
+                    gbParent.style.boxShadow = "none";
+                }
+
+                if (data.et_running) {
+                    document.getElementById('home-ssid').innerText = data.ssid || "Unknown";
+                    document.getElementById('home-bssid').innerText = data.bssid || "--";
+                    document.getElementById('home-ch').innerText = data.ch || "--";
+                    document.getElementById('home-vendor').innerText = data.vendor || "Unknown";
+                    document.getElementById('home-auth').innerText = data.auth || "Open";
+                    
+                    const rssi = data.rssi || -100;
+                    const rssiEl = document.getElementById('home-rssi');
+                    rssiEl.innerText = rssi + " dBm";
+                    rssiEl.style.color = rssi > -60 ? "#0f0" : (rssi > -80 ? "#ffab40" : "#ff5252");
+
+                    const badge5g = document.getElementById('home-5g-badge');
+                    if (data.has_5g) {
+                        badge5g.innerHTML = `DETECTED CH ${data.ch_5g}`;
+                        badge5g.style.background = "rgba(0, 188, 212, 0.2)";
+                        badge5g.style.color = "#00bcd4";
+                        badge5g.style.border = "1px solid #00bcd4";
+                    } else {
+                        badge5g.innerText = "NOT FOUND";
+                        badge5g.style.background = "#222";
+                        badge5g.style.color = "#555";
+                        badge5g.style.border = "1px solid transparent";
+                    }
+
+                } else if (!data.et_running && currentTarget) {
+                    document.getElementById('home-ssid').innerText = currentTarget.ssid;
+                    document.getElementById('home-bssid').innerText = currentTarget.bssid;
+                    document.getElementById('home-ch').innerText = currentTarget.channel;
+                    document.getElementById('home-auth').innerText = "SELECTED";
+                    document.getElementById('home-rssi').innerText = currentTarget.signal + " dBm";
+                } else {
+                    document.getElementById('home-ssid').innerText = currentTranslations["no_target"] || "No Target";
+                    document.getElementById('home-bssid').innerText = "--:--:--:--:--:--";
+                    document.getElementById('home-ch').innerText = "--";
+                    document.getElementById('home-vendor').innerText = "--";
+                    document.getElementById('home-auth').innerText = "--";
+                    document.getElementById('home-rssi').innerText = "-- dBm";
+                }
+
+                const hsBadge = document.getElementById('home-hs-badge');
+                if (data.hs_state === 2) { 
+                    hsBadge.innerText = "CAPTURED (4-WAY)";
+                    hsBadge.style.background = "rgba(0, 230, 118, 0.2)";
+                    hsBadge.style.color = "var(--accent)";
+                    hsBadge.style.border = "1px solid var(--accent)";
+                } else if (data.hs_state === 1) { 
+                    hsBadge.innerText = "CAPTURED (PMKID)";
+                    hsBadge.style.background = "rgba(255, 171, 64, 0.2)";
+                    hsBadge.style.color = "#ffab40";
+                    hsBadge.style.border = "1px solid #ffab40";
+                } else {
+                    hsBadge.innerText = currentTranslations["status_waiting"] || "WAITING";
+                    hsBadge.style.background = "#222";
+                    hsBadge.style.color = "#555";
+                    hsBadge.style.border = "1px solid transparent";
+                }
+
+                document.getElementById('home-clients').innerText = data.n_clients || 0;
+                document.getElementById('home-aps').innerText = data.n_aps || 0;
+
+                const txSent = data.tx_sent || 0;
+                const txDrop = data.tx_drop || 0;
+                const txPps = data.tx_pps || 0;
+                const totalTx = txSent + txDrop;
+
+                document.getElementById('stat-tx-sent').innerText = formatBigNumber(txSent);
+                document.getElementById('stat-tx-drop').innerText = formatBigNumber(txDrop);
+                document.getElementById('stat-tx-pps').innerText = formatBigNumber(txPps);
+
+                let queueHealth = 100; 
+                if (totalTx > 0) {
+                    queueHealth = Math.round((txSent / totalTx) * 100);
+                }
+
+                let msg = currentTranslations["sys_idle_msg"] || "System idle.";
+                let color = "#666";
+                // La barra ora segue ESATTAMENTE la percentuale di Health calcolata
+                let barWidth = queueHealth; 
+
+                if (txPps === 0) {
+                    barWidth = 0; // A riposo azzeriamo la barra
+                }
+                else if (txPps >= 40) {
+                    // PPS Alti: L'attacco è letale. La barra è VERDE, anche se scende al 58%
+                    color = "#00e676"; 
+                    msg = `LETHAL: High injection rate. AP+STA balancing perfectly.`;
+                } 
+                else if (txPps >= 15) {
+                    // PPS Medi: L'attacco è discreto. La barra è ARANCIONE
+                    color = "#ffab40"; 
+                    msg = `MODERATE: Injection active. Radio is heavily slicing time.`;
+                } 
+                else {
+                    // PPS Bassi: L'attacco è scarso.
+                    if (queueHealth < 50) {
+                        // Se stiamo anche droppando tanto, la situazione è critica (ROSSO)
+                        color = "#ff1744"; 
+                        msg = `POOR: Severe packet loss and low rate. Radio struggling.`;
+                    } else {
+                        // Inviamo piano ma non droppiamo (ARANCIONE)
+                        color = "#ffab40"; 
+                        msg = `WEAK: Low injection rate.`;
+                    }
+                }
+
+                document.getElementById('stat-quality-perc').innerText = txPps > 0 ? (queueHealth + "% Health") : "IDLE";
+                document.getElementById('stat-quality-bar').style.width = barWidth + "%";
+                document.getElementById('stat-quality-bar').style.backgroundColor = color;
+                document.getElementById('stat-message').innerText = msg;
+                document.getElementById('stat-message').style.color = color;
+
+                /*const sdEl = document.getElementById('status-sd');
+                if (data.sd !== undefined) {
+                    sdEl.innerText = data.sd ? "REC" : "ERR";
+                    sdEl.style.color = data.sd ? "var(--accent)" : "var(--danger)";
+                }*/
+                const usbBadge = document.getElementById('badge-usb');
+                if (data.usb_wifi !== undefined) {
+                    usbBadge.style.display = data.usb_wifi ? "flex" : "none";
+                }
+
+                // --- AGGIORNAMENTO NETWORK STATUS (IP, GW, MASK) ---
+                const dashStaSsid = document.getElementById('dash-sta-ssid');
+                const dashStaBadge = document.getElementById('dash-sta-badge');
+                const dashStaIp = document.getElementById('dash-sta-ip');
+                const dashStaGw = document.getElementById('dash-sta-gw');
+                const dashStaMask = document.getElementById('dash-sta-mask');
+
+                const staStatusEl = document.getElementById('sta-status');
+                const staIpEl = document.getElementById('sta-ip');
+                const staGwEl = document.getElementById('sta-gw');
+                const staMaskEl = document.getElementById('sta-mask');
+                const staSsidEl = document.getElementById('sta-connected-ssid');
+
+                const activeSsid = data.wifi_sta_ssid ? data.wifi_sta_ssid : "No Network";
+
+                
+                if (data.has_ip) {
+                    // Dashboard Card
+                    if(dashStaBadge) {
+                        dashStaSsid.innerText = activeSsid;
+                        dashStaIp.innerText = data.ip;
+                        dashStaGw.innerText = data.gateway || "--.--.--.--";
+                        dashStaMask.innerText = data.netmask || "--.--.--.--";
+                        dashStaBadge.innerText = "CONNECTED";
+                        dashStaBadge.style.background = "rgba(0, 230, 118, 0.2)";
+                        dashStaBadge.style.color = "var(--accent)";
+                        dashStaBadge.style.border = "1px solid var(--accent)";
+                    }
+                    // STA Tab
+                    if(staStatusEl) {
+                        staStatusEl.innerText = "CONNECTED";
+                        staStatusEl.style.color = "var(--accent)";
+                        staIpEl.innerText = data.ip;
+                        staGwEl.innerText = data.gateway || "--.--.--.--";
+                        staMaskEl.innerText = data.netmask || "--.--.--.--";
+                        if(staSsidEl) staSsidEl.innerText = activeSsid;
+                    }
+                }
+                else if (data.wifi_connected) {
+                    // Dashboard Card
+                    if(dashStaBadge) {
+                        dashStaSsid.innerText = activeSsid;
+                        dashStaIp.innerText = "--.--.--.--";
+                        dashStaGw.innerText = "--.--.--.--";
+                        dashStaMask.innerText = "--.--.--.--";
+                        dashStaBadge.innerText = "DHCP REQ...";
+                        dashStaBadge.style.background = "rgba(255, 171, 64, 0.2)";
+                        dashStaBadge.style.color = "#ffab40";
+                        dashStaBadge.style.border = "1px solid #ffab40";
+                    }
+                    // STA Tab
+                    if(staStatusEl) {
+                        staStatusEl.innerText = "OBTAINING IP...";
+                        staStatusEl.style.color = "#ffab40";
+                        staIpEl.innerText = "--.--.--.--";
+                        if(staSsidEl) staSsidEl.innerText = activeSsid;
+                    }
+                } else {
+                    // Dashboard Card
+                    if(dashStaBadge) {
+                        dashStaSsid.innerText = "No Network";
+                        dashStaIp.innerText = "--.--.--.--";
+                        dashStaGw.innerText = "--.--.--.--";
+                        dashStaMask.innerText = "--.--.--.--";
+                        dashStaBadge.innerText = "OFFLINE";
+                        dashStaBadge.style.background = "#222";
+                        dashStaBadge.style.color = "#555";
+                        dashStaBadge.style.border = "1px solid transparent";
+                    }
+                    // STA Tab
+                    if(staStatusEl) {
+                        staStatusEl.innerText = "DISCONNECTED";
+                        staStatusEl.style.color = "var(--danger)";
+                        staIpEl.innerText = "--.--.--.--";
+                        staGwEl.innerText = "--.--.--.--";
+                        staMaskEl.innerText = "--.--.--.--";
+                        if(staSsidEl) staSsidEl.innerText = "NONE";
+                    }
+                }
+            } catch (e) { console.error(e); }
+        }
+
+        async function scanNetworks() {
+            log("Starting WiFi Scan (WS)...");
+            const tbody = document.getElementById('wifi-networks-body');
+            tbody.innerHTML = `<tr><td colspan="6" style="text-align:center; color:var(--accent);">Scanning in progress...</td></tr>`;
+            
+            try {
+                const response = await sendCommand(CMD.WIFI_SCAN);
+                const networks = response.data; 
+
+                tbody.innerHTML = '';
+                if (!networks || networks.length === 0) {
+                    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;">${currentTranslations["no_scan_data"] || "No networks found"}</td></tr>`;
+                    return;
+                }
+
+                networks.sort((a, b) => b.signal - a.signal);
+                networks.forEach(net => {
+                    const tr = document.createElement('tr');
+                    const safeSsid = net.ssid.replace(/'/g, "\\'");
+                    
+                    tr.innerHTML = `
+                        <td style="font-weight:bold; ${(net.ssid && net.ssid.trim()) !== "" ? 'color:white;' : 'color:#666;'}">${(net.ssid && net.ssid.trim()) !== "" ? net.ssid : '[Hidden SSID]'}</td>
+                        <td>${net.signal}</td>
+                        <td>${net.channel}</td>
+                        <td style="font-family:monospace; font-size:0.85rem;">${net.bssid}</td>
+                        <td>${net.authmode}</td> 
+                        <td>${net.wps ? 'Yes' : 'No'}</td>
+                        <td>
+                            <button style="margin:0; padding:6px 10px; font-size:0.7rem;" 
+                                onclick="selectTarget('${safeSsid}', '${net.bssid}', ${net.channel}, ${net.signal}, ${net.authmode_code})">
+                                TARGET
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            } catch (err) {
+                log(`Scan Error: ${err}`, "error");
+                tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:var(--danger);">Scan Failed</td></tr>';
+            }
+        }
+
+        async function loadApSettings() {
+            try {
+                const data = await sendCommand(CMD.GET_AP_SETTINGS);
+                document.getElementById('ssid').value = data.ssid || '';
+                document.getElementById('password').value = data.password || '';
+                document.getElementById('channel').value = data.channel || 1;
+                document.getElementById('tx_rate').value = data.tx_rate !== undefined ? data.tx_rate : 15;
+            } catch (err) { log("Error loading settings", "error"); }
+        }
+
+        async function handleSettings(e) {
+            e.preventDefault();
+            const ssid = document.getElementById('ssid').value;
+            const password = document.getElementById('password').value;
+            const channel = parseInt(document.getElementById('channel').value);
+            const tx_rate = parseInt(document.getElementById('tx_rate').value);
+
+            try {
+                showToast("Saving...");
+                const res = await sendCommand(CMD.SET_AP_SETTINGS, { ssid, password, channel, tx_rate });
+                if(res.status === "ok") { showToast("Settings Saved!"); }
+            } catch (err) { showToast("Error saving settings"); }
+        }
+
+        function selectTarget(ssid, bssid, channel, signal, authmode) {
+            currentTarget = { ssid, bssid, channel, signal, authmode };
+            document.getElementById('current-target-ssid').innerText = ssid;
+            document.getElementById('current-target-bssid').innerText = bssid;
+            document.getElementById('home-ssid').innerText = ssid;
+            const ssfSsid = document.getElementById('ssf-target-ssid');
+            if(ssfSsid) {
+                if (ssid && ssid.trim() !== "") {
+                    ssfSsid.innerText = ssid;
+                    ssfSsid.style.color = "white";
+                } else {
+                    ssfSsid.innerText = "[Hidden SSID]";
+                    ssfSsid.style.color = "#666";
+                }
+                document.getElementById('ssf-target-bssid').innerText = bssid;
+                document.getElementById('ssf-target-ch').innerText = channel;
+            }
+
+            const staSsidInput = document.getElementById('sta-ssid');
+            if (staSsidInput) {
+                staSsidInput.value = ssid || "";
+            }
+
+            showToast(`Target Selected: ${ssid || '[Hidden SSID]'}`);
+            
+            const evilTwinMenu = document.querySelectorAll('.menu-item')[3]; 
+            showView('view-eviltwin', evilTwinMenu);
+            if(document.getElementById('view-deauth').classList.contains('active')) updateDeauthUI();
+        }
+
+        function updateDeauthUI() {
+            const mode = document.getElementById('deauth-mode').value;
+            const ssidEl = document.getElementById('deauth-target-ssid');
+            const bssidEl = document.getElementById('deauth-target-bssid');
+            const chEl = document.getElementById('deauth-target-ch');
+            const broadcastChContainer = document.getElementById('deauth-broadcast-channel-container');
+            const broadcastChSelect = document.getElementById('deauth-broadcast-channel');
+
+            if (mode === 'broadcast') {
+                broadcastChContainer.style.display = 'block'; // Mostra il selettore
+                ssidEl.innerText = "ALL NETWORKS (BROADCAST)";
+                ssidEl.style.color = "#ffab40";
+                bssidEl.innerText = "FF:FF:FF:FF:FF:FF";
+                
+                // Legge il canale dal nuovo menu
+                const selectedCh = broadcastChSelect.value;
+                if (selectedCh === "0") {
+                    chEl.innerText = "HOPPING (ALL)";
+                } else {
+                    chEl.innerText = selectedCh;
+                }
+            } else {
+                broadcastChContainer.style.display = 'none'; // Nasconde il selettore
+                ssidEl.style.color = "white";
+                if (currentTarget) {
+                    ssidEl.innerText = currentTarget.ssid;
+                    bssidEl.innerText = currentTarget.bssid;
+                    chEl.innerText = currentTarget.channel;
+                } else {
+                    ssidEl.innerText = currentTranslations["no_target_selected"] || "No Target Selected";
+                    bssidEl.innerText = "--:--:--:--:--:--";
+                    chEl.innerText = "--";
+                }
+            }
+        }
+
+        async function startEvilTwin() {
+            if (!currentTarget) { showToast("No target selected!"); return; }
+            log(`Launching Evil Twin on ${currentTarget.ssid}...`);
+            const params = {
+                ssid: currentTarget.ssid, bssid: currentTarget.bssid,
+                channel: currentTarget.channel, signal: currentTarget.signal,
+                authmode_code: currentTarget.authmode,
+                scheme: parseInt(document.getElementById('attack-scenario').value)
+            };
+            try {
+                const res = await sendCommand(CMD.START_EVILTWIN, params);
+                if(res.status === 'ok') showToast("Evil Twin Started!");
+            } catch(e) {
+                log("Error starting Attack: " + e, "error");
+            }
+        }
+
+        async function stopEvilTwin() {
+            log(`Stopping Evil Twin Attack...`);
+            try {
+                const res = await sendCommand(CMD.STOP_EVILTWIN);
+                if(res.status === 'ok') {
+                    showToast("Evil Twin Attack Stopped!");
+                }
+            } catch(e) {
+                log("Error stopping Attack: " + e, "error");
+            }
+        }
+
+        async function startKarmaScan() {
+            log("Starting Karma Scan...");
+            try {
+                await sendCommand(CMD.KARMA_ATTACK_SCAN, { start_stop: 1 });
+                showToast("Scanning Probes...");
+                if(karmaInterval) clearInterval(karmaInterval);
+                karmaInterval = setInterval(fetchKarmaProbes, 4000);
+            } catch(e) {
+                log("Error starting scan: " + e, "error");
+            }
+        }
+
+        async function stopKarmaScan() {
+            log("Stopping Karma Scan...");
+            try {
+                await sendCommand(CMD.KARMA_ATTACK_SCAN, { start_stop: 0 });
+                showToast("Scan Stopped");
+                if(karmaInterval) clearInterval(karmaInterval);
+            } catch(e) { log("Error stopping scan: " + e, "error"); }
+        }
+
+        async function fetchKarmaProbes() {
+            try {
+                const res = await sendCommand(CMD.GET_KARMA_PROBES);
+                const data = res.data;
+                
+                const tbody = document.getElementById('karma-scan-body');
+                tbody.innerHTML = '';
+
+                if(!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center; color:#666;">Listening...</td></tr>';
+                    return;
+                }
+
+                data.forEach(p => {
+                     const tr = document.createElement('tr');
+                     const safeSsid = p.ssid.replace(/'/g, "\\'");
+                     tr.innerHTML = `
+                        <td style="font-family:monospace; color:#aaa;">${p.mac}</td>
+                        <td style="font-weight:bold; color:white;">${p.ssid}</td>
+                        <td>${p.rssi}</td>
+                        <td>${p.channel}</td>
+                        <td>
+                            <button class="danger" style="padding:4px 8px; font-size:0.7rem;"
+                                onclick="launchKarmaAttack('${safeSsid}', ${p.channel})">ATTACK</button>
+                        </td>
+                     `;
+                     tbody.appendChild(tr);
+                });
+            } catch(e) { }
+        }
+
+        async function launchKarmaAttack(ssid, channel) {
+            const scenario = parseInt(document.getElementById('karma-scenario').value);
+            if(confirm(`Attack ${ssid}?`)) {
+                try {
+                    await sendCommand(CMD.KARMA_ATTACK_START, { ssid: ssid, channel: channel, scheme: scenario });
+                    showToast(`Karma Started on ${ssid}`);
+                } catch(e) {}
+            }
+        }
+
+        async function fetchPasswords() {
+            const area = document.getElementById('passwords-textarea');
+            area.value = "Fetching...";
+            try {
+                const res = await sendCommand(CMD.GET_PASSWORDS);
+                if(res.content) area.value = res.content;
+                else area.value = "(No passwords found or file empty)";
+            } catch(e) { area.value = "Connection Error"; }
+        }
+
+        async function startDeauth() {
+            const mode = document.getElementById('deauth-mode').value;
+            const selectEl = document.getElementById('deauth-frame-type');
+            const frameType = parseInt(selectEl.value);
+            const attackName = selectEl.options[selectEl.selectedIndex].text;
+            let targetBssid = "", targetChannel = 0, targetSsid = "";
+
+            if (mode === 'broadcast') {
+                targetBssid = "FF:FF:FF:FF:FF:FF"; 
+                targetChannel = parseInt(document.getElementById('deauth-broadcast-channel').value);
+                const chText = targetChannel === 0 ? "HOPPING" : `CH ${targetChannel}`;
+                log(`Starting BROADCAST Attack (Type: ${attackName}, ${chText})...`, "warning");
+            } else {
+                if (!currentTarget) { showToast("ERROR: No Target Selected!"); return; }
+                targetBssid = currentTarget.bssid; targetChannel = currentTarget.channel; targetSsid = currentTarget.ssid;
+                log(`Starting Attack on ${currentTarget.ssid} (Type: ${attackName})...`, "warning");
+            }
+            
+            try {
+                const res = await sendCommand(CMD.START_DEAUTHER, {
+                    ssid: targetSsid,
+                    bssid: targetBssid,
+                    channel: targetChannel,
+                    mode: mode,
+                    packet_type: frameType
+                });
+                
+                if(res.status === 'ok') {
+                    showToast("Attack STARTED");
+                } else {
+                    showToast("Error starting attack");
+                    log("Server Error: " + res.message, "error");
+                }
+            } catch(e) {
+                log("Error starting Deauth: " + e, "error");
+            }
+        }
+        
+        async function stopDeauth() {
+            try {
+                log("Stopping deauth attack... please wait...", "warning");
+                await sendCommand(CMD.STOP_DEAUTHER);
+                showToast("Attack STOPPED");
+                log("Deauth attack stopped.", "success");
+            } catch(e) {
+                log("Error stopping: " + e, "error");
+            }
+        }
+        
+        async function startCapture() {
+            const btnStart = document.getElementById('btn-sniff-start');
+            const btnStop = document.getElementById('btn-sniff-stop');
+            
+            const type = parseInt(document.getElementById('sniff-type').value);
+            const subtype = parseInt(document.getElementById('sniff-subtype').value);
+            const channel = parseInt(document.getElementById('sniff-chan').value);
+            const hopping = document.getElementById('sniff-hop').checked;
+
+            log(`Starting Sniffer: CH=${hopping?'HOP':channel}, Type=${type}, Sub=${subtype}`, "info");
+
+            try {
+                // 1. Invia PRIMA il comando di Start Sniffer (applica filtri, canale, ecc)
+                await sendCommand(CMD.START_RAW_SNIFFER, { 
+                    type: type,
+                    subtype: subtype,
+                    channel: channel,
+                    hopping: hopping
+                });
+
+                // 2. Invia POI il comando per agganciare il Packet Analyzer
+                await sendCommand(CMD.START_PACKET_ANALYZER);
+
+                snifferActive = true;
+                showToast("Packet Analyzer Started");
+                
+                // Aggiorna la UI
+                btnStart.disabled = true; btnStart.style.opacity = "0.5"; btnStart.style.cursor = "not-allowed";
+                btnStop.disabled = false; btnStop.style.opacity = "1"; btnStop.style.cursor = "pointer";
+
+                document.getElementById('sniff-chan').disabled = true;
+                document.getElementById('sniff-hop').disabled = true;
+                document.getElementById('sniff-type').disabled = true;
+                document.getElementById('sniff-subtype').disabled = true;
+            } catch (err) {
+                showToast("Error starting analyzer: " + err);
+                log("Packet Analyzer Start Error: " + err, "error");
+            }
+        }
+
+        async function stopCapture() {
+            const btnStart = document.getElementById('btn-sniff-start');
+            const btnStop = document.getElementById('btn-sniff-stop');
+
+            try {
+                // 1. Invia PRIMA il comando per sganciare il Packet Analyzer
+                await sendCommand(CMD.STOP_PACKET_ANALYZER);
+
+                // 2. Invia POI il comando per fermare lo Sniffer radio
+                await sendCommand(CMD.STOP_RAW_SNIFFER);
+
+                snifferActive = false;
+                showToast("Packet Analyzer Stopped");
+                log("Packet Analyzer stopped.", "warning");
+
+                // Aggiorna la UI
+                btnStart.disabled = false; btnStart.style.opacity = "1"; btnStart.style.cursor = "pointer";
+                btnStop.disabled = true; btnStop.style.opacity = "0.5"; btnStop.style.cursor = "not-allowed";
+
+                document.getElementById('sniff-chan').disabled = false;
+                document.getElementById('sniff-hop').disabled = false;
+                document.getElementById('sniff-type').disabled = false;
+                document.getElementById('sniff-subtype').disabled = false;
+                
+                updateSubtypes();
+            } catch (err) {
+                log("Packet Analyzer Stop Error: " + err, "error");
+            }
+        }
+        
+        // ==========================================
+        // RECON: FETCH ACCESS POINTS
+        // ==========================================
+        async function fetchReconDataAp() {
+            try {
+                const res = await sendCommand(CMD.GET_RECON_DATA_AP);
+                if (!res.aps) return;
+                // Il firmware manda ogni AP come array posizionale (meno byte
+                // sul filo, meno malloc su un device con poca RAM) invece che
+                // come oggetto con chiavi ripetute: [ssid, bssid, rssi, ch,
+                // pkts, bytes, sec, hs] -- vedi api_get_recon_data_aps() in
+                // server_api.c. Lo riportiamo subito a oggetti con le stesse
+                // chiavi di sempre cosi' il resto della UI non cambia.
+                lastApsData = res.aps.map(row => ({
+                    ssid: row[0], bssid: row[1], rssi: row[2], ch: row[3],
+                    pkts: row[4], bytes: row[5], sec: row[6], hs: row[7]
+                }));
+
+                // Aggiorniamo la mappa BSSID -> SSID e la mappa dei conteggi
+                const clientCountMap = {};
+                lastClientsData.forEach(cli => {
+                    const bssidUpper = cli.bssid.toUpperCase();
+                    clientCountMap[bssidUpper] = (clientCountMap[bssidUpper] || 0) + 1;
+                });
+
+                const apBody = document.getElementById('recon-ap-body');
+                apBody.innerHTML = '';
+                
+                lastApsData.sort((a, b) => b.rssi - a.rssi).forEach(ap => {
+                    const bssidUpper = ap.bssid.toUpperCase();
+                    apMap[bssidUpper] = (ap.ssid && ap.ssid.trim() !== "") ? ap.ssid : `<span style="color:#666">&lt;hidden&gt;</span>`;
+                    const cliCount = clientCountMap[bssidUpper] || 0;
+
+                    // --- HOOK PER L'SSID FINDER ---
+                    if (isSsidFinderRunning && currentTarget && bssidUpper === currentTarget.bssid.toUpperCase()) {
+                        // Se l'AP ha un nome valido e l'avevamo segnato come nascosto...
+                        if (ap.ssid && ap.ssid.trim() !== "") {
+                            const tbody = document.getElementById('ssid-finder-body');
+                            if (!tbody.innerHTML.includes(ap.ssid)) { // Evitiamo doppi inserimenti
+                                tbody.innerHTML = `
+                                    <tr>
+                                        <td style="color:#aaa; font-family:monospace;">${bssidUpper}</td>
+                                        <td style="font-weight:bold; color:var(--accent); font-size:1.1rem;">${ap.ssid}</td>
+                                        <td style="color:white;">${ap.ch}</td>
+                                    </tr>
+                                `;
+                                log(`HIDDEN SSID REVEALED: ${ap.ssid} (${bssidUpper})`, "success");
+                                showToast(`SSID Found: ${ap.ssid}!`);
+                                
+                                // Autoseleziona il nuovo target con il nome corretto
+                                selectTarget(ap.ssid, bssidUpper, ap.ch, ap.rssi, ap.authmode_code);
+                            }
+                        }
+                    }
+                    // -----------------------------
+
+                    let hsText = "-", hsColor = "#444";
+                    if (ap.hs === 2) { hsText = "WPA"; hsColor = "#00e676"; }
+                    else if (ap.hs === 1) { hsText = "PMKID"; hsColor = "#ffab40"; }
+
+                    apBody.innerHTML += `
+                        <tr>
+                            <td style="font-weight:bold; ${(ap.ssid && ap.ssid.trim()) !== "" ? 'color:#fff;' : 'color:#666;'}">${(ap.ssid && ap.ssid.trim()) !== "" ? ap.ssid : '[Hidden SSID]'}</td>
+                            <td style="color:#aaa; font-family:monospace;">${bssidUpper}</td>
+                            <td style="color:${ap.rssi > -70 ? '#00e676' : (ap.rssi > -85 ? '#ffab40' : '#ff5252')}">${ap.rssi}</td>
+                            <td style="color:#fff;">${ap.ch}</td>
+                            <td>${ap.pkts}</td>
+                            <td style="color:#00bcd4; font-weight:bold;">${cliCount}</td>
+                            <td style="color:#aaa;">${formatBigNumber(ap.bytes)}</td>
+                            <td>${ap.sec}</td>
+                            <td style="color:${hsColor}; font-weight:bold; font-size:0.75rem;">${hsText}</td>
+                        </tr>
+                    `;
+                });
+
+                updateTargetMonitors();
+                renderHandshakeBank();
+            } catch(e) { console.warn("AP Fetch Error:", e); }
+        }
+
+        // ==========================================
+        // RECON: FETCH CLIENTS
+        // ==========================================
+        async function fetchReconDataCli() {
+            try {
+                const res = await sendCommand(CMD.GET_RECON_DATA_CLI);
+                if (!res.clients) return;
+                // Stesso formato compatto degli AP: [mac, bssid, ch, rssi,
+                // pkts, bytes, probes] -- vedi api_get_recon_data_clients()
+                // in server_api.c.
+                lastClientsData = res.clients.map(row => ({
+                    mac: row[0], bssid: row[1], ch: row[2], rssi: row[3],
+                    pkts: row[4], bytes: row[5], probes: row[6]
+                }));
+
+                const cliBody = document.getElementById('recon-cli-body');
+                const karmaBody = document.getElementById('karma-scan-body');
+                cliBody.innerHTML = '';
+                let karmaHtml = ''; // Variabile per accumulare l'HTML della tabella Karma
+                
+                lastClientsData.sort((a, b) => {
+                    const bssidCompare = a.bssid.localeCompare(b.bssid);
+                    if (bssidCompare !== 0) return bssidCompare;
+                    return b.rssi - a.rssi;
+                }).forEach(cli => {
+                    const bssidUpper = cli.bssid.toUpperCase();
+                    const macUpper = cli.mac.toUpperCase();
+                    let associatedApName = (bssidUpper === "FF:FF:FF:FF:FF:FF") ? 
+                        '<span style="color:#666">(Not Associated)</span>' : 
+                        (apMap[bssidUpper] || `<span style="color:#888; font-family:monospace;">${bssidUpper}</span>`);
+
+                    cliBody.innerHTML += `
+                        <tr>
+                            <td style="color:#fff; font-weight:bold; font-family:monospace;">${macUpper}</td>
+                            <td style="color:#00e676; font-weight:bold;">${associatedApName}</td>
+                            <td style="color:#fff;">${cli.ch}</td>
+                            <td style="color:${cli.rssi > -70 ? '#00e676' : (cli.rssi > -85 ? '#ffab40' : '#ff5252')}">${cli.rssi}</td>
+                            <td style="color:#fff;">${Array.isArray(cli.probes) ? cli.probes.map(escapeHtml).join(', ') : ''}</td>
+                            <td>${cli.pkts}</td>
+                            <td style="color:#aaa;">${formatBigNumber(cli.bytes)}</td>
+                        </tr>
+                    `;
+
+                    // --- Popolamento automatico lista Karma Probes ---
+                    if (Array.isArray(cli.probes) && cli.probes.length > 0) {
+                        cli.probes.forEach(probeSsid => {
+                            if (!probeSsid) return;
+                            const safeSsid = probeSsid.replace(/'/g, "\\'");
+                            
+                            karmaHtml += `
+                                <tr>
+                                    <td style="font-family:monospace; color:#aaa;">${macUpper}</td>
+                                    <td style="font-weight:bold; color:white;">${escapeHtml(probeSsid)}</td>
+                                    <td>${cli.rssi}</td>
+                                    <td>${cli.ch}</td>
+                                    <td>
+                                        <button class="danger" style="padding:4px 8px; font-size:0.7rem;"
+                                            onclick="launchKarmaAttack('${safeSsid}', ${cli.ch})">ATTACK</button>
+                                    </td>
+                                </tr>
+                            `;
+                        });
+                    }
+                });
+
+                if (karmaBody) {
+                    if (karmaHtml !== '') {
+                        karmaBody.innerHTML = karmaHtml;
+                    } else if (!karmaInterval) {
+                        karmaBody.innerHTML = '<tr><td colspan="5" style="text-align:center; padding: 20px; color:#666;" data-i18n="click_scan_probes">No probes detected yet. Start Recon or Karma scan...</td></tr>';
+                    }
+                }
+                
+                updateTargetMonitors();
+            } catch(e) { console.warn("CLI Fetch Error:", e); }
+        }
+
+        async function connectSta() {
+            const ssid = document.getElementById('sta-ssid').value;
+            const pwd = document.getElementById('sta-password').value;
+            if(!ssid) { showToast("Select a target AP from Scanner first!"); return; }
+            
+            log(`Connecting STA to ${ssid}...`, "warning");
+            document.getElementById('sta-status').innerText = "CONNECTING...";
+            document.getElementById('sta-status').style.color = "#ffab40";
+            
+            try {
+                await sendCommand(CMD.WIFI_CONNECT, { ssid: ssid, password: pwd });
+                showToast("Connection requested...");
+            } catch(e) { log("STA connect error: " + e, "error"); }
+        }
+
+        async function disconnectSta() {
+            log(`Disconnecting STA...`, "warning");
+            try {
+                await sendCommand(CMD.WIFI_DISCONNECT);
+            } catch(e) { log("Disconnect error: " + e, "error"); }
+        }
+
+        function updateTargetMonitors() {
+            if (!currentTarget) return;
+            const targetBssidUpper = currentTarget.bssid.toUpperCase();
+            
+            const targetAp = lastApsData.find(ap => ap.bssid.toUpperCase() === targetBssidUpper);
+            const cliCount = lastClientsData.filter(c => c.bssid.toUpperCase() === targetBssidUpper).length;
+
+            const updateUI = (prefix) => {
+                const monitor = document.getElementById(`${prefix}-live-monitor`);
+                if (monitor && targetAp) {
+                    monitor.style.display = 'block';
+                    document.getElementById(`${prefix}-live-pkts`).innerText = targetAp.pkts;
+                    document.getElementById(`${prefix}-live-bytes`).innerText = formatBigNumber(targetAp.bytes);
+                    document.getElementById(`${prefix}-live-clients`).innerText = cliCount;
+                }
+            };
+
+            if (document.getElementById('view-eviltwin').classList.contains('active')) updateUI('et');
+            if (document.getElementById('view-deauth').classList.contains('active')) updateUI('deauth');
+        }
+
+        function renderHandshakeBank() {
+            const bankBody = document.getElementById('handshakers-bank-body');
+            if (!bankBody) return;
+
+            // Filtriamo localmente dalla memoria globale solo gli AP che hanno un handshake (hs > 0)
+            const captured = lastApsData.filter(ap => ap.hs > 0);
+
+            if (captured.length === 0) {
+                bankBody.innerHTML = `<tr><td colspan="6" style="text-align:center; padding:20px; color:#666;">Listening on radio channel... No handshake captured yet.</td></tr>`;
+                return;
+            }
+
+            bankBody.innerHTML = '';
+            captured.forEach(ap => {
+                let typeText = ap.hs === 2 ? "WPA (4-WAY)" : "PMKID HASH";
+                let badgeColor = ap.hs === 2 ? "var(--accent)" : "#ffab40";
+                let bGColor = ap.hs === 2 ? "rgba(0, 230, 118, 0.1)" : "rgba(255, 171, 64, 0.1)";
+
+                bankBody.innerHTML += `
+                    <tr style="border-bottom: 1px solid #222;">
+                        <td style="font-weight:bold; color:#fff;">${ap.ssid || '<span style="color:#555">&lt;hidden&gt;</span>'}</td>
+                        <td style="font-family:monospace; color:#aaa;">${ap.bssid.toUpperCase()}</td>
+                        <td style="color:#fff;">${ap.ch}</td>
+                        <td style="color:#888;">${ap.sec}</td>
+                        <td>
+                            <span style="background:${bGColor}; color:${badgeColor}; border: 1px solid ${badgeColor}; padding:2px 6px; border-radius:3px; font-size:0.7rem; font-weight:bold;">
+                                ${typeText}
+                            </span>
+                        </td>
+                        <td style="text-align:center;">
+                            <button style="padding:5px 12px; font-size:0.7rem; margin:0;" onclick="downloadTargetPcap('${ap.bssid}')">
+                                DOWNLOAD PCAP
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+        }
+
+        async function downloadTargetPcap(bssid) {
+            showToast("Generating custom PCAP structure...");
+            try {
+                await sendCommand(CMD.DOWNLOAD_HANDSHAKE, { bssid: bssid });
+            } catch (e) { log("PCAP Download requested timeout/error", "error"); }
+        }
+
+        // ==========================================
+        // RECON: START / STOP CONTROLS
+        // ==========================================
+        function populateReconChannels() {
+            const sel = document.getElementById('recon-chan');
+            if(!sel) return;
+            
+            let grp24 = document.createElement('optgroup');
+            grp24.label = "2.4 GHz";
+            for(let i=1; i<=14; i++) {
+                let opt = document.createElement('option');
+                opt.value = i; opt.innerText = "CH " + i;
+                grp24.appendChild(opt);
+            }
+            sel.appendChild(grp24);
+
+            let grp5 = document.createElement('optgroup');
+            grp5.label = "5 GHz";
+            const ch5 = [36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165];
+            ch5.forEach(c => {
+                let opt = document.createElement('option');
+                opt.value = c; opt.innerText = "CH " + c;
+                grp5.appendChild(opt);
+            });
+            sel.appendChild(grp5);
+        }
+
+        function populateDeauthChannels() {
+            const sel = document.getElementById('deauth-broadcast-channel');
+            if(!sel) return;
+            
+            let grp24 = document.createElement('optgroup');
+            grp24.label = "2.4 GHz";
+            for(let i=1; i<=14; i++) {
+                let opt = document.createElement('option');
+                opt.value = i; opt.innerText = "CH " + i;
+                grp24.appendChild(opt);
+            }
+            sel.appendChild(grp24);
+
+            let grp5 = document.createElement('optgroup');
+            grp5.label = "5 GHz";
+            const ch5 = [36, 40, 44, 48, 52, 56, 60, 64, 100, 104, 108, 112, 116, 120, 124, 128, 132, 136, 140, 144, 149, 153, 157, 161, 165];
+            ch5.forEach(c => {
+                let opt = document.createElement('option');
+                opt.value = c; opt.innerText = "CH " + c;
+                grp5.appendChild(opt);
+            });
+            sel.appendChild(grp5);
+        }
+        
+        function startRecon() {
+            const chanVal = parseInt(document.getElementById('recon-chan').value);
+            const hopping = (chanVal === 0);
+            const channel = hopping ? 1 : chanVal; // Fallback al ch 1 iniziale se in hopping
+            
+            log(`Starting Airodump (airodump-ng): CH=${hopping ? 'HOPPING' : channel}`, "info");
+            
+            sendCommand(CMD.START_RAW_SNIFFER, { 
+                type: 0, 
+                subtype: 0, 
+                channel: channel, 
+                hopping: hopping
+            }).then(() => {
+                isReconRunning = true;
+                showToast("Airodump Started");
+                
+                const btnStart = document.getElementById('btn-recon-start');
+                const btnStop = document.getElementById('btn-recon-stop');
+                
+                btnStart.disabled = true; btnStart.style.opacity = "0.5"; btnStart.style.cursor = "not-allowed";
+                document.getElementById('recon-chan').disabled = true;
+                
+                btnStop.disabled = false; btnStop.style.opacity = "1"; btnStop.style.cursor = "pointer";
+            }).catch(err => {
+                showToast("Error starting Airodump");
+                log("Airodump Start Error: " + err, "error");
+            });
+        }
+
+        function stopRecon() {
+            log("Stopping Airodump...", "warning");
+            
+            sendCommand(CMD.STOP_RAW_SNIFFER).then(() => {
+                isReconRunning = false;
+                showToast("Airodump Stopped");
+                
+                const btnStart = document.getElementById('btn-recon-start');
+                const btnStop = document.getElementById('btn-recon-stop');
+                
+                btnStart.disabled = false; btnStart.style.opacity = "1"; btnStart.style.cursor = "pointer";
+                document.getElementById('recon-chan').disabled = false;
+                
+                btnStop.disabled = true; btnStop.style.opacity = "0.5"; btnStop.style.cursor = "not-allowed";
+            }).catch(err => {
+                log("Airodump Stop Error: " + err, "error");
+            });
+        }
+
+        function clearReconData() {
+            lastApsData = [];
+            lastClientsData = [];
+            apMap = {};
+            
+            const apBody = document.getElementById('recon-ap-body');
+            if(apBody) apBody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding:15px; color:#666;">Data cleared. Start Airodump to map networks...</td></tr>';
+            
+            const cliBody = document.getElementById('recon-cli-body');
+            if(cliBody) cliBody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding:15px; color:#666;">Data cleared. Waiting for clients...</td></tr>';
+            
+            showToast("Airodump Data Cleared");
+            log("Airodump memory cleared.", "info");
+        }
+        
+        async function getLastWifiCredential() {
+            try {
+                const res = await sendCommand(CMD.GET_LAST_WIFI_CREDENTIALS);
+                if (!res.ssid && !res.password) {
+                    showToast("Last wifi credentials not found.");
+                    log("Last wifi credentials not found.", "info");
+                    return;
+                }
+                const sta_ssid = document.getElementById('sta-ssid');
+                const sta_password = document.getElementById('sta-password');
+                sta_ssid.value = res.ssid || '';
+                sta_password.value = res.password || '';
+
+                showToast("Last wifi credentials loaded from memory.");
+                log("Last wifi credentials loaded from memory.", "info");
+            } catch(e) { console.warn("Last Wifi Credentials Fetch Error:", e); }
+        }
+
+        let hostScanData = [];
+
+        // Monochrome icon set for the Fing-style row list. Device identity is
+        // conveyed by icon shape (not color) to stay consistent with the
+        // single-accent dark theme used everywhere else in this UI.
+        const HOST_DEVICE_ICONS = {
+            router: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2L4 7v2h16V7l-8-5zM5 10v2h1v9h2v-6h8v6h2v-9h1v-2H5zm4 2h6v2H9v-2z"/></svg>',
+            media: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 3H3c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h5v2h8v-2h5c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 14H3V5h18v12zM10 8l6 4-6 4V8z"/></svg>',
+            printer: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M19 8H5c-1.66 0-3 1.34-3 3v6h4v4h12v-4h4v-6c0-1.66-1.34-3-3-3zm-3 11H8v-5h8v5zm3-7c-.55 0-1-.45-1-1s.45-1 1-1 1 .45 1 1-.45 1-1 1zm-1-9H6v4h12V3z"/></svg>',
+            phone: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M17 1H7c-1.1 0-2 .9-2 2v18c0 1.1.9 2 2 2h10c1.1 0 2-.9 2-2V3c0-1.1-.9-2-2-2zm0 18H7V4h10v15z"/></svg>',
+            computer: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M20 18c1.1 0 1.99-.9 1.99-2L22 6c0-1.1-.9-2-2-2H4c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2H0v2h24v-2h-4zM4 6h16v10H4V6z"/></svg>',
+            camera: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 2 7.17 4H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2h-3.17L15 2H9zm3 15c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/></svg>',
+            iot: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 2v2H4v2h2v12H4v2h2v2h2v-2h8v2h2v-2h2v-2h-2V6h2V4h-2V2h-2v2H8V2H6zm2 4h8v12H8V6z"/></svg>',
+            device: '<svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm1-13h-2v6l5.25 3.15.75-1.23-4-2.42V7z"/></svg>'
+        };
+
+        // Guess a device category from vendor name + advertised mDNS/SSDP
+        // service types, purely to pick a representative icon - not shown
+        // anywhere else, so a wrong guess just falls back to a generic dot.
+        function classifyHostIcon(host) {
+            const vendor = (host.vendor || '').toLowerCase();
+            const hostname = (host.hostname || '').toLowerCase();
+            const types = (host.services || []).map(s => (s.type || '').toLowerCase());
+            // The UPnP friendlyName/manufacturer/modelName (when resolved via
+            // ssdp_fetch_device_info) is a far more reliable signal than
+            // guessing from vendor OUI alone - e.g. "Fire TV di Stefano" or
+            // "Vodafone Power Station WiFi 6" tells us exactly what it is.
+            const nameHints = [host.friendly_name, host.manufacturer, host.model].filter(Boolean).join(' ').toLowerCase();
+
+            if (/router|gateway|modem|station wifi|access point/.test(nameHints)) {
+                return 'router';
+            }
+            if (/fire ?tv|apple ?tv|chromecast|smart ?tv|\btv\b|roku|shield|soundbar|speaker|echo dot|echo show/.test(nameHints)) {
+                return 'media';
+            }
+            if (/printer|laserjet|deskjet|officejet|inkjet/.test(nameHints)) {
+                return 'printer';
+            }
+            if (/camera|\bcam\b|doorbell/.test(nameHints)) {
+                return 'camera';
+            }
+            if (/iphone|ipad|android|galaxy|pixel phone/.test(nameHints)) {
+                return 'phone';
+            }
+            if (/macbook|imac|desktop|laptop|workstation/.test(nameHints)) {
+                return 'computer';
+            }
+
+            if (types.some(t => t.includes('internetgatewaydevice') || t.includes('wandevice') || t.includes('wanconnectiondevice')) ||
+                /tp-link|netgear|arcadyan|vodafone|d-link|asus|linksys|huawei|zte corp|fastweb|technicolor|sagemcom/.test(vendor)) {
+                return 'router';
+            }
+            if (types.some(t => t.includes('mediarenderer') || t.includes('mediaserver') || t.includes('googlecast') || t.includes('airplay') || t.includes('raop')) ||
+                /sonos|roku|amazon/.test(vendor) || /chromecast|appletv|firetv|echo/.test(hostname)) {
+                return 'media';
+            }
+            if (types.some(t => t.includes('_ipp') || t.includes('printer')) ||
+                /canon|epson|brother industries|hewlett|hp inc|lexmark/.test(vendor)) {
+                return 'printer';
+            }
+            if (/hikvision|dahua|axis communications|reolink|foscam|ubiquiti/.test(vendor) || hostname.includes('cam')) {
+                return 'camera';
+            }
+            if (/apple|samsung electronics|xiaomi|oneplus|google/.test(vendor) && /iphone|android|galaxy|pixel/.test(hostname)) {
+                return 'phone';
+            }
+            if (types.some(t => t.includes('_smb') || t.includes('workstation')) ||
+                /dell|lenovo|intel corp|microsoft|raspberry|asustek/.test(vendor)) {
+                return 'computer';
+            }
+            if (/tuya|espressif|shenzhen|meross|sonoff|shelly|itead|china dragon/.test(vendor)) {
+                return 'iot';
+            }
+            return 'device';
+        }
+
+        // Friendly label for a service badge - shown directly on the row,
+        // no hover needed.
+        function friendlyServiceLabel(s) {
+            if (s.source === 'mdns') {
+                const map = {
+                    '_googlecast._tcp': 'Cast', '_airplay._tcp': 'AirPlay', '_raop._tcp': 'AirPlay Audio',
+                    '_ipp._tcp': 'Printer', '_http._tcp': 'HTTP', '_https._tcp': 'HTTPS',
+                    '_smb._tcp': 'SMB', '_ssh._tcp': 'SSH', '_afpovertcp._tcp': 'AFP'
+                };
+                const key = (s.type || '').toLowerCase().replace('.local', '').replace(/\.$/, '');
+                if (map[key]) return map[key];
+                return (s.type || 'mDNS').replace(/^_/, '').replace(/\._tcp.*$/i, '').replace(/\._udp.*$/i, '') || 'mDNS';
+            }
+            const map = {
+                'internetgatewaydevice': 'Router', 'wanconnectiondevice': 'Router', 'wandevice': 'Router', 'lanconnectiondevice': 'Router',
+                'mediarenderer': 'Media Renderer', 'mediaserver': 'Media Server', 'basicdevice': 'UPnP Device'
+            };
+            const key = (s.type || '').toLowerCase();
+            return map[key] || s.type || 'UPnP';
+        }
+
+        function escapeHtml(str) {
+            return String(str ?? '').replace(/[&<>"']/g, c => ({
+                '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+            })[c]);
+        }
+
+        // Numeric IPv4 sort key - plain string sort would put "192.168.1.10"
+        // before "192.168.1.2", so compare the dotted quad as one number instead.
+        function ipToSortKey(ip) {
+            const parts = (ip || '').split('.').map(Number);
+            if (parts.length !== 4 || parts.some(n => Number.isNaN(n))) return -1;
+            return ((parts[0] << 24) | (parts[1] << 16) | (parts[2] << 8) | parts[3]) >>> 0;
+        }
+
+        function clearHostScan() {
+            hostScanData = [];
+            document.getElementById('hd-filter').value = '';
+            document.getElementById('host-scan-body').innerHTML = '<div class="host-empty">Cleared</div>';
+            document.getElementById('hd-stat-hosts').textContent = '--';
+            document.getElementById('hd-stat-services').textContent = '--';
+            document.getElementById('hd-stat-vendors').textContent = '--';
+        }
+
+        function renderHostScanTable() {
+            const container = document.getElementById('host-scan-body');
+            const filterVal = document.getElementById('hd-filter').value.trim().toLowerCase();
+
+            const filtered = !filterVal ? hostScanData : hostScanData.filter(host =>
+                (host.ip || '').toLowerCase().includes(filterVal) ||
+                (host.mac || '').toLowerCase().includes(filterVal) ||
+                (host.hostname || '').toLowerCase().includes(filterVal) ||
+                (host.vendor || '').toLowerCase().includes(filterVal) ||
+                (host.friendly_name || '').toLowerCase().includes(filterVal) ||
+                (host.model || '').toLowerCase().includes(filterVal)
+            );
+
+            container.innerHTML = '';
+
+            if (filtered.length === 0) {
+                container.innerHTML = '<div class="host-empty">Nessun host trovato</div>';
+                return;
+            }
+
+            filtered.forEach(host => {
+                const row = document.createElement('div');
+                row.className = 'host-row';
+
+                const iconKey = classifyHostIcon(host);
+                const vendorName = (host.vendor && host.vendor !== "Unknown Vendor") ? host.vendor : "Unknown Vendor";
+                const hasFriendly = !!(host.friendly_name && host.friendly_name.trim());
+                const hasHostname = host.hostname && host.hostname !== "N/A";
+                // friendly_name comes from the device's own UPnP description
+                // (its self-reported name, e.g. "Fire TV di Stefano") - the
+                // most trustworthy source when present, ahead of the DNS/mDNS
+                // hostname and far ahead of a bare vendor guess.
+                const primaryName = hasFriendly ? host.friendly_name : (hasHostname ? host.hostname : vendorName);
+
+                const subBits = [];
+                if (hasFriendly) {
+                    const modelBits = [host.manufacturer, host.model].filter(Boolean).join(' ');
+                    subBits.push(modelBits || vendorName);
+                } else if (hasHostname) {
+                    subBits.push(vendorName);
+                }
+                if (host.mac && host.mac !== "N/A") subBits.push(host.mac);
+
+                let badgesHtml = '';
+                if (host.services && host.services.length > 0) {
+                    badgesHtml = `<div class="host-badges">${host.services.map(s => {
+                        const label = friendlyServiceLabel(s);
+                        const title = s.source === 'mdns'
+                            ? `${s.name && s.name !== 'N/A' ? s.name : s.type} : ${s.port}`
+                            : (s.server && s.server !== 'N/A' ? s.server : (s.location || ''));
+                        return `<span class="host-badge" title="${escapeHtml(title)}">${escapeHtml(label)}</span>`;
+                    }).join('')}</div>`;
+                }
+
+                row.innerHTML = `
+                    <div class="host-icon">${HOST_DEVICE_ICONS[iconKey]}</div>
+                    <div class="host-info">
+                        <div class="host-name">${escapeHtml(primaryName)}</div>
+                        <div class="host-sub">${escapeHtml(subBits.join(' · '))}</div>
+                        ${badgesHtml}
+                    </div>
+                    <div class="host-ip">
+                        <div class="host-ip-addr">${escapeHtml(host.ip)}</div>
+                        <button class="secondary host-use-btn"
+                                onclick="document.getElementById('ps-ip').value='${host.ip}'; showToast('IP ${host.ip} copiato nel Port Scanner!');">
+                            USE
+                        </button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+        }
+
+        function updateHostScanStats() {
+            const total = hostScanData.length;
+            const withServices = hostScanData.filter(h => h.services && h.services.length > 0).length;
+            const vendors = new Set(
+                hostScanData.map(h => h.vendor).filter(v => v && v !== "Unknown Vendor" && v !== "Randomized MAC")
+            ).size;
+
+            document.getElementById('hd-stat-hosts').textContent = total;
+            document.getElementById('hd-stat-services').textContent = withServices;
+            document.getElementById('hd-stat-vendors').textContent = vendors;
+            document.getElementById('hd-stat-time').textContent = new Date().toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+        }
+
+        async function startHostScan() {
+            const container = document.getElementById('host-scan-body');
+            const includeMdns = document.getElementById('hd-include-mdns').checked;
+            const includeSsdp = document.getElementById('hd-include-ssdp').checked;
+
+            container.innerHTML = '<div class="host-empty" style="color:var(--accent); font-style:normal;">Subnet scan in progress (this may take a while)...</div>';
+
+            try {
+                const res = await sendCommand(CMD.HOST_DISCOVERY, {
+                    include_mdns: includeMdns,
+                    include_ssdp: includeSsdp
+                });
+
+                hostScanData = (res.data || []).sort((a, b) => ipToSortKey(a.ip) - ipToSortKey(b.ip));
+                renderHostScanTable();
+                updateHostScanStats();
+
+                showToast("Subnet Sweep Completato!");
+                log(`Trovati ${hostScanData.length} host nella rete.`, "success");
+
+            } catch (err) {
+                container.innerHTML = '<div class="host-empty" style="color:var(--danger); font-style:normal;">Errore durante la scansione</div>';
+                showToast("Errore Host Discovery");
+                log("Errore chiamata API Host Discovery: " + err, "error");
+            }
+        }
+
+        // ==========================================
+        // PORT SCANNER LOGIC
+        // ==========================================
+        let isPortScanRunning = false;
+
+        function toggleCustomPorts() {
+            const val = document.getElementById('ps-ports-preset').value;
+            const container = document.getElementById('custom-ports-container');
+            if(val === 'custom') {
+                container.style.display = 'block';
+            } else {
+                container.style.display = 'none';
+            }
+        }
+
+        function getPortList() {
+            let preset = document.getElementById('ps-ports-preset').value;
+            
+            if(preset === 'top20') {
+                return [21, 22, 23, 25, 53, 80, 110, 111, 135, 139, 143, 443, 445, 993, 995, 1723, 3306, 3389, 5900, 8080];
+            }
+            if(preset === 'top100') {
+                // Selezione delle porte TCP/UDP più lette e scansionate su Nmap
+                return [
+                    20, 21, 22, 23, 25, 53, 67, 68, 69, 80, 110, 111, 119, 123, 135, 137, 138, 139, 143, 161, 
+                    162, 389, 443, 445, 465, 500, 514, 515, 548, 587, 631, 873, 902, 990, 993, 995, 1025, 1026, 
+                    1080, 1194, 1433, 1521, 1720, 1723, 2000, 2049, 2082, 2083, 2121, 2222, 2601, 2604, 3128, 
+                    3306, 3389, 3690, 4899, 5000, 5009, 5050, 5060, 5101, 5190, 5357, 5432, 5631, 5666, 5800, 
+                    5900, 5901, 5938, 6000, 6646, 7070, 7443, 7990, 8000, 8008, 8009, 8080, 8081, 8443, 8888, 
+                    9000, 9090, 9100, 9999, 10000, 32768, 49152
+                ];
+            }
+            if(preset === 'iot') {
+                return [21, 22, 23, 80, 443, 1883, 5683, 8080, 8443, 3702, 1900, 554, 8000, 37777];
+            }
+            if(preset === 'custom') {
+                let raw = document.getElementById('ps-custom-ports').value;
+                if(!raw) return [];
+                
+                let ports = [];
+                let parts = raw.split(','); // Divide per virgola
+                
+                for(let part of parts) {
+                    part = part.trim();
+                    if(!part) continue;
+                    
+                    // Se contiene un trattino, processa come Range
+                    if(part.includes('-')) {
+                        let range = part.split('-');
+                        let start = parseInt(range[0].trim());
+                        let end = parseInt(range[1].trim());
+                        
+                        if(!isNaN(start) && !isNaN(end) && start <= end) {
+                            for(let p = start; p <= end; p++) {
+                                ports.push(p);
+                            }
+                        }
+                    } else {
+                        // Altrimenti è una porta singola
+                        let p = parseInt(part);
+                        if(!isNaN(p)) ports.push(p);
+                    }
+                }
+                return [...new Set(ports)].filter(p => p > 0 && p <= 65535);
+            }
+            return [];
+        }
+
+        async function startPortScan() {
+            const ip = document.getElementById('ps-ip').value.trim();
+            if(!ip) { showToast("Error: Insert Target IP"); return; }
+            
+            const ports = getPortList();
+            if(!ports || ports.length === 0) { showToast("Error: Invalid or empty port list"); return; }
+            
+            // Protezione Anti-Crash del browser
+            if(ports.length > 2000) {
+                if(!confirm(`WARNING: You are about to scan ${ports.length} ports. This will take a long time and might freeze the browser. Proceed?`)) {
+                    return;
+                }
+            }
+            
+            const methodSelect = document.getElementById('ps-method');
+            const method = parseInt(methodSelect.value);
+            const methodName = methodSelect.options[methodSelect.selectedIndex].text;
+            
+            const term = document.getElementById('ps-terminal');
+            
+            // Pulisce il terminale
+            term.innerHTML = `<div style="color:var(--accent)">Starting ${methodName} on ${ip} (${ports.length} ports)...</div>`;
+            
+            isPortScanRunning = true;
+            const btnStart = document.getElementById('btn-ps-start');
+            const btnStop = document.getElementById('btn-ps-stop');
+            
+            btnStart.disabled = true; btnStart.style.opacity = "0.5"; btnStart.style.cursor = "not-allowed";
+            btnStop.disabled = false; btnStop.style.opacity = "1"; btnStop.style.cursor = "pointer";
+            
+            let closedCount = 0; // Contatore per le porte chiuse
+
+            // Loop Sequenziale per ogni porta
+            for(let i = 0; i < ports.length; i++) {
+                if(!isPortScanRunning) {
+                    term.innerHTML += `<div style="color:var(--warning)">Scan aborted by user.</div>`;
+                    term.scrollTop = term.scrollHeight;
+                    break;
+                }
+
+                const port = ports[i];
+                
+                // Cerca il nome del servizio nel dizionario
+                const serviceName = PORT_SERVICES[port] ? `(${PORT_SERVICES[port]})` : "";
+                
+                // Div temporaneo di attesa
+                const waitDiv = document.createElement('div');
+                waitDiv.style.color = '#aaa';
+                waitDiv.innerText = `Scanning port ${port}...`;
+                term.appendChild(waitDiv);
+                term.scrollTop = term.scrollHeight;
+                
+                try {
+                    // Manda il comando WebSocket per l'ESATTA porta corrente
+                    const res = await sendCommand(CMD.PORT_SCAN_SINGLE, { 
+                        ip: ip, 
+                        port: port, 
+                        method: method 
+                    });
+                    
+                    // Se la porta è CHIUSA, nascondi l'output e salta al prossimo giro
+                    if (res.status_code === 1) { 
+                        waitDiv.remove();
+                        closedCount++;
+                        continue; 
+                    }
+
+                    // 0=PORT_OPEN, 2=PORT_FILTERED, 3=PORT_ERROR
+                    let statusColor = '#ffab40';
+                    let statusText = 'UNKNOWN';
+                    
+                    if (res.status_code === 0) { 
+                        statusColor = '#00e676'; 
+                        statusText = 'OPEN'; 
+                    }
+                    else if (res.status_code === 2) { 
+                        statusColor = '#ffab40'; 
+                        statusText = 'FILTERED'; 
+                    }
+                    else { 
+                        statusColor = 'var(--danger)'; 
+                        statusText = 'ERROR'; 
+                    }
+
+                    waitDiv.innerHTML = `Port <span style="color:white; font-weight:bold; display:inline-block; width:45px;">${port}</span> <span style="color:${statusColor}; font-weight:bold; width:150px; display:inline-block;">[${statusText}]</span> <span style="color:#888; font-style:italic;">${serviceName}</span>`;
+                    
+                } catch(e) {
+                    waitDiv.innerHTML = `Port <span style="color:white; font-weight:bold; display:inline-block; width:45px;">${port}</span> <span style="color:var(--danger); width:150px; display:inline-block;">[ERROR]</span> <span style="color:#888; font-style:italic;">${serviceName}</span>`;
+                }
+            }
+            
+            if(isPortScanRunning) {
+                let summary = `<div style="color:var(--accent); margin-top:10px;">Scan completed.`;
+                if (closedCount > 0) {
+                    summary += ` <span style="color:#888; font-style:italic;">(${closedCount} closed ports hidden)</span>`;
+                }
+                summary += `</div>`;
+                
+                term.innerHTML += summary;
+                term.scrollTop = term.scrollHeight;
+            }
+            
+            isPortScanRunning = false;
+            btnStart.disabled = false; btnStart.style.opacity = "1"; btnStart.style.cursor = "pointer";
+            btnStop.disabled = true; btnStop.style.opacity = "0.5"; btnStop.style.cursor = "not-allowed";
+        }
+
+        function stopPortScan() {
+            isPortScanRunning = false;
+            showToast("Stopping port scan...");
+        }
+
+        // ==========================================
+        // BLE SNIFFER LOGIC (POLLING)
+        // ==========================================
+        let isBleScanning = false;
+        let blePollingInterval = null;
+
+        async function startBleSniffer() {
+            log("Starting BLE Scanner...", "info");
+            const btnStart = document.getElementById('btn-ble-start');
+            const btnStop = document.getElementById('btn-ble-stop');
+
+            try {
+                await sendCommand(CMD.START_BLE_SNIFFER);
+                isBleScanning = true;
+                showToast("BLE Scanner Started");
+
+                btnStart.disabled = true; btnStart.style.opacity = "0.5"; btnStart.style.cursor = "not-allowed";
+                btnStop.disabled = false; btnStop.style.opacity = "1"; btnStop.style.cursor = "pointer";
+                
+                // Avvia il polling ogni 2 secondi
+                if (blePollingInterval) clearInterval(blePollingInterval);
+                blePollingInterval = setInterval(fetchBleDevices, 2000);
+
+            } catch (err) {
+                showToast("Error starting BLE scanner");
+                log("BLE Scanner Start Error: " + err, "error");
+            }
+        }
+
+        async function stopBleSniffer() {
+            log("Stopping BLE Scanner...", "warning");
+            const btnStart = document.getElementById('btn-ble-start');
+            const btnStop = document.getElementById('btn-ble-stop');
+
+            try {
+                await sendCommand(CMD.STOP_BLE_SNIFFER);
+                isBleScanning = false;
+                showToast("BLE Scanner Stopped");
+
+                // Ferma il polling
+                if (blePollingInterval) {
+                    clearInterval(blePollingInterval);
+                    blePollingInterval = null;
+                }
+
+                btnStart.disabled = false; btnStart.style.opacity = "1"; btnStart.style.cursor = "pointer";
+                btnStop.disabled = true; btnStop.style.opacity = "0.5"; btnStop.style.cursor = "not-allowed";
+            } catch (err) {
+                log("BLE Scanner Stop Error: " + err, "error");
+            }
+        }
+
+        async function clearBleTable() {
+            try {
+                await sendCommand(CMD.BLE_DEVICES_CLEAR);
+                showToast("BLE Scanner Devices Cleared");
+            } catch (err) {
+                log("BLE Scanner Devices Clear Error: " + err, "error");
+            }
+            document.getElementById('ble-body').innerHTML = '<tr><td colspan="6" style="text-align:center; padding: 20px; color:#666;">Ready to scan BLE devices...</td></tr>';
+            document.getElementById('ble-device-count').innerText = "0";
+        }
+
+        function fetchBleDevices() {
+            if (isBleScanning && document.getElementById('view-ble').classList.contains('active')) {
+                sendCommand(CMD.GET_BLE_DEVICES)
+                    .then(res => handleBleDevices(res)) // <-- AGGIUNGI QUESTA RIGA
+                    .catch(e => console.log("BLE fetch error", e));
+            }
+        }
+
+        // ==========================================
+        // BLE SPAM LOGIC
+        // ==========================================
+        let isBleSpamming = false;
+
+        async function startBleSpam() {
+            const typeSelect = document.getElementById('ble-spam-type');
+            const typeVal = parseInt(typeSelect.value);
+            const typeName = typeSelect.options[typeSelect.selectedIndex].text;
+
+            log(`Starting BLE Spam... Target: ${typeName}`, "warning");
+            
+            const btnStart = document.getElementById('btn-ble-spam-start');
+            const btnStop = document.getElementById('btn-ble-spam-stop');
+
+            try {
+                // Invia il comando al C con il parametro 'type' corrispondente al tuo enum ble_spam_vendor_t
+                const res = await sendCommand(CMD.START_BLE_SPAM, { type: typeVal });
+                if (res.status === 'ok') {
+                    isBleSpamming = true;
+                    showToast("BLE Spam Attack Started!");
+
+                    btnStart.disabled = true; btnStart.style.opacity = "0.5"; btnStart.style.cursor = "not-allowed";
+                    btnStop.disabled = false; btnStop.style.opacity = "1"; btnStop.style.cursor = "pointer";
+                    typeSelect.disabled = true;
+                } else {
+                    showToast(res.message || "Failed to start BLE Spam");
+                    log("BLE Spam Start Error: " + (res.message || "unknown"), "error");
+                }
+            } catch (err) {
+                showToast("Error starting BLE Spam");
+                log("BLE Spam Start Error: " + err, "error");
+            }
+        }
+
+        async function stopBleSpam() {
+            log("Stopping BLE Spam...", "info");
+            const btnStart = document.getElementById('btn-ble-spam-start');
+            const btnStop = document.getElementById('btn-ble-spam-stop');
+            const typeSelect = document.getElementById('ble-spam-type');
+
+            try {
+                await sendCommand(CMD.STOP_BLE_SPAM);
+                isBleSpamming = false;
+                showToast("BLE Spam Stopped");
+
+                btnStart.disabled = false; btnStart.style.opacity = "1"; btnStart.style.cursor = "pointer";
+                btnStop.disabled = true; btnStop.style.opacity = "0.5"; btnStop.style.cursor = "not-allowed";
+                typeSelect.disabled = false;
+            } catch (err) {
+                log("BLE Spam Stop Error: " + err, "error");
+            }
+        }
+        
+        // Funzione per mappare l'array posizionale proveniente dall'ESP32
+        function handleBleDevices(msg) {
+            if(!msg.devices) return;
+
+            const tbody = document.getElementById('ble-body');
+            tbody.innerHTML = '';
+
+            const minRssi = parseInt(document.getElementById('ble-filter-rssi').value) || -100;
+            const fMac = document.getElementById('ble-filter-mac').value.trim().toUpperCase();
+            const fNameData = document.getElementById('ble-filter-name').value.trim().toLowerCase();
+
+            let visibleCount = 0;
+            
+            // L'array ora è: [mac, rssi, name, vendor, label, serial, pkts, seconds_ago, data]
+            msg.devices.sort((a, b) => b[1] - a[1]).forEach(row => {
+                const mac = row[0];
+                const rssi = row[1];
+                const name = row[2];
+                const vendor = row[3];
+                const label = row[4];
+                const serial = row[5];
+                const pkts = row[6];
+                const secondsAgo = row[7];
+                const dataHex = row[8];
+
+                // Applica i filtri
+                if(rssi < minRssi) return;
+                if(fMac && !mac.includes(fMac)) return;
+                if(fNameData && !name.toLowerCase().includes(fNameData) && !vendor.toLowerCase().includes(fNameData)) return;
+
+                visibleCount++;
+
+                const tr = document.createElement('tr');
+                let rssiColor = rssi > -60 ? "#0f0" : (rssi > -80 ? "#ffab40" : "#ff5252");
+                
+                let identityHtml = name !== "" 
+                    ? `<div style="color:#fff; font-weight:bold;">${name}</div><div style="color:#888; font-size:0.7rem;">${vendor}</div>`
+                    : `<div style="color:#888; font-style:italic;">&lt;No Name&gt;</div><div style="color:#aaa; font-size:0.7rem;">${vendor}</div>`;
+
+                let badgeBg = "#222", badgeColor = "#aaa", badgeBorder = "transparent";
+                const lbl = label.toLowerCase();
+                if (lbl.includes("flipper") || lbl.includes("camera") || lbl.includes("airtag")) {
+                    badgeBg = "rgba(255, 82, 82, 0.15)"; badgeColor = "var(--danger)"; badgeBorder = "var(--danger)";
+                } else if (lbl.includes("tile") || lbl.includes("smarttag") || lbl.includes("chipolo") || lbl.includes("find my")) {
+                    badgeBg = "rgba(0, 230, 118, 0.15)"; badgeColor = "var(--accent)"; badgeBorder = "var(--accent)";
+                } else if (lbl.includes("apple") || lbl.includes("google") || lbl.includes("samsung")) {
+                    badgeBg = "rgba(255, 171, 64, 0.15)"; badgeColor = "#ffab40"; badgeBorder = "#ffab40";
+                }
+
+                let extraHtml = serial !== "" 
+                    ? `<span style="color:var(--accent); font-weight:bold;">SN: ${serial}</span>` 
+                    : `<span style="color:#666; word-break: break-all;">${dataHex}</span>`;
+
+                // Formattazione grafica del Last Seen basata sui dati reali del modulo C
+                let lastSeenStr = secondsAgo <= 2 ? "Active" : `${secondsAgo}s ago`;
+                let lastSeenColor = secondsAgo <= 2 ? "#00e676" : (secondsAgo < 15 ? "#ffab40" : "#666");
+
+                tr.innerHTML = `
+                    <td style="color:var(--accent); font-weight:bold; font-family:monospace; white-space: nowrap;">${mac}</td>
+                    <td style="color:${rssiColor}; font-weight:bold;">${rssi}</td>
+                    <td>${identityHtml}</td>
+                    <td><span style="background:${badgeBg}; color:${badgeColor}; border:1px solid ${badgeBorder}; padding:3px 6px; border-radius:4px; font-size:0.7rem; font-weight:bold; display:inline-block;">${label}</span></td>
+                    <td style="color:#fff;">${pkts}</td>
+                    <td style="color:${lastSeenColor}; font-size:0.75rem; font-weight:bold; white-space:nowrap;">${lastSeenStr}</td>
+                    <td style="font-size:0.75rem; font-family:monospace;">${extraHtml}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('ble-device-count').innerText = visibleCount;
+        }
+
+        // ==========================================
+        // INIT
+        // ==========================================
+        document.addEventListener('DOMContentLoaded', () => {
+            initLanguage();
+            updateAttackTypeDesc();
+            populateChannels();
+            populateReconChannels();
+            populateDeauthChannels();
+            log("System UI Initialized.");
+            // Ritardo di 800ms per permettere all'ESP32 di chiudere il socket HTTP
+            // prima di dover gestire l'handshake del WebSocket.
+            setTimeout(connectWS, 1000);
+        });
+
+    </script>
+</body>
+</html>

